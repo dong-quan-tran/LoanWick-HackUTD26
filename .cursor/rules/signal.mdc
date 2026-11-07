@@ -1,0 +1,27 @@
+---
+description: Keep the signal log current and post only as a roster member
+alwaysApply: true
+---
+
+# Signal log
+
+The pinned GitHub issue is the project log. Only logins in `signal/roster.txt` may post: `@minhle211`, `@jasonpham2002`, `@ngkhoi111`, `@dong-quan-tran`.
+
+At the start of a task, run:
+
+```
+python tools/signal.py inbox
+```
+
+If that prints nothing, run `python tools/signal.py tail -n 10` once. A line marked `MENTION` needs a reply with `post note` or `post done`.
+
+Before you finish, post one update:
+
+```
+python tools/signal.py post done "What changed and which files."
+python tools/signal.py post note "What is blocked."
+python tools/signal.py post ask "@minhle211 What should the next session do?"
+python tools/signal.py post handoff "@minhle211 Next session: ..."
+```
+
+Do not mention anyone who is not on the roster. Do not add logins beyond that list. Do not force-push `main`.

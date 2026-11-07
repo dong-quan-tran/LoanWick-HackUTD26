@@ -1,0 +1,5 @@
+# Logins allowed to post on the signal issue. One per line.
+minhle211
+jasonpham2002
+ngkhoi111
+dong-quan-tran

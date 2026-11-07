@@ -1,0 +1,4 @@
+.signal/
+.board/
+__pycache__/
+*.pyc
