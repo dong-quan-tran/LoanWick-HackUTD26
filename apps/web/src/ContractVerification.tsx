@@ -337,6 +337,19 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     try {
       const info = await inspectContractFile(file); if (generation.current !== activeGeneration) return;
       setFileInfo(info); setMessages([{ id: 'file', text: `${info.format} selected: ${info.name}`, detail: `${sizes(info.size)} · File format checked`, state: 'done' }]);
+      if (adapter.mode === 'fixture' && import.meta.env.PROD) {
+        setMessages(current => [...current, { id: 'intake', text: 'Reading the contract and comparing it with loans on file.', detail: 'This usually takes under a minute.', state: 'working' }]);
+        const response = await fetch('/api/investigate', { method: 'POST', headers: { 'content-type': file.type || 'application/pdf', 'x-filename': encodeURIComponent(file.name) }, body: file });
+        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string | null; extracted?: { businessName?: string; identifier?: string }; comparedWith?: unknown[]; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
+        if (generation.current !== activeGeneration) return;
+        if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
+        const finding = body.findings?.[0];
+        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
+        const read = [body.extracted?.businessName, body.extracted?.identifier && `serial ${body.extracted.identifier}`].filter(Boolean).join(' · ');
+        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? (finding ? `${body.extracted?.identifier ?? 'This collateral'} is also claimed by ${related}.` : 'No other loan on file claims this collateral.') });
+        setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: 'Contract read.', detail: read || undefined, state: 'done' }, { id: 'compare', text: `Compared with ${body.comparedWith?.length ?? 0} loans on file.`, state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
+        return;
+      }
       if (adapter.mode === 'fixture') {
         const finishedStages = await runStagedVerification(activeGeneration);
         if (!finishedStages) return;
@@ -360,11 +373,11 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
       setMessages([{ id: 'sample', text: 'Asking the verification service.', detail: 'Sample documents only. Your selected contract is not used.', state: 'working' }]);
       try {
         const response = await fetch('/api/investigate', { method: 'POST' });
-        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string; findings?: { title?: string; relatedApplicationIds?: string[] }[] };
+        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
         if (generation.current !== activeGeneration) return;
         if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
         const finding = body.findings?.[0];
-        const related = finding?.relatedApplicationIds?.join(', ') ?? '';
+        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
         setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? 'The service returned no explanation.' });
         setMessages([{ id: 'sample', text: 'Verification service finished.', detail: body.model ?? 'verification service', state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Related application ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
       } catch (value) { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'The verification service did not finish.'); }

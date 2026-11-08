@@ -96,7 +96,7 @@ export type AttachmentRequest = {
   documentType: string;
 };
 
-type Extraction = {
+export type Extraction = {
   extractionStatus: ExtractionStatus;
   evidence: ExtractedEvidence[];
   unknownFields: string[];
@@ -144,6 +144,11 @@ export async function ingestAuthorizedUpload(input: IngestInput): Promise<Stored
   writeFileSync(dataPath, input.bytes, { flag: "wx", mode: 0o600 });
   writeFileSync(metaPath, JSON.stringify(publicMeta(stored)), { flag: "wx", mode: 0o600 });
   return stored;
+}
+
+export async function extractContract(contentType: string, bytes: Buffer): Promise<Extraction> {
+  assertWithinUploadLimit(bytes.length, MAX_UPLOAD_BYTES);
+  return extractDocument(contentType, bytes);
 }
 
 export function prepareAttachment(stored: StoredUpload, currentApplicationRevision: number): AttachmentRequest {

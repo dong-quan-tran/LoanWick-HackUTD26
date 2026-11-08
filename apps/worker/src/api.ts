@@ -1,17 +1,24 @@
+import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { AnalysisSnapshot } from "@loanwick/contracts";
+import type { DatabaseFindingInput } from "@loanwick/database-adapter";
 
 import { loadConfig } from "./config/load-config.js";
 import { loadEnvFile } from "./config/load-env-file.js";
 import { WorkerRunError } from "./errors.js";
+import { extractContract, MAX_UPLOAD_BYTES } from "./extraction/intake.js";
+import { databaseFindings } from "./investigation/case-tools.js";
 import { runCaseInvestigation } from "./investigation/run-case.js";
+import { loadSeededLoans, uploadedFields, uploadSnapshot } from "./investigation/upload-snapshot.js";
 import { createProvider } from "./provider/create-provider.js";
 import { redactSecrets } from "./security/redact.js";
 
-loadEnvFile(resolve(dirname(fileURLToPath(import.meta.url)), "../.env"));
+const here = dirname(fileURLToPath(import.meta.url));
+loadEnvFile(resolve(here, "../.env"));
+const seededLoans = loadSeededLoans(resolve(here, "../../.."));
 
 const secrets = [process.env.NVIDIA_API_KEY ?? ""].filter((value) => value.length >= 8);
 const host = "127.0.0.1";
@@ -41,23 +48,47 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   }
   busy = true;
   try {
-    await readLimited(request);
-    const result = await investigateDemo();
-    send(response, 200, result);
+    const body = await readBody(request);
+    if (body.length === 0) {
+      const { fixture } = await import("../../../tests/helpers.js");
+      send(response, 200, { source: "server-demo", ...(await investigate(fixture("app-excavator-a") as AnalysisSnapshot)) });
+      return;
+    }
+    const contentType = request.headers["content-type"] ?? "application/octet-stream";
+    const extraction = await extractContract(contentType, body);
+    if (extraction.extractionStatus !== "extracted") {
+      send(response, 422, { error: "EXTRACTION_UNSUPPORTED", message: extraction.failureReason ?? "the contract text could not be read" });
+      return;
+    }
+    const sha256 = createHash("sha256").update(body).digest("hex");
+    const filename = safeName(request.headers["x-filename"]);
+    const snapshot = uploadSnapshot({ sha256, filename, extraction, loans: seededLoans });
+    send(response, 200, {
+      source: "uploaded-contract",
+      filename,
+      extracted: uploadedFields(extraction),
+      comparedWith: seededLoans.map((loan) => ({ id: loan.id, businessName: loan.businessName })),
+      ...(await investigate(snapshot)),
+    });
   } catch (error) {
     const code = error instanceof WorkerRunError ? error.code : "PROVIDER_ERROR";
     const message = redactSecrets(error instanceof Error ? error.message : "unknown failure", secrets);
-    const status = code === "TIMEOUT" ? 504 : code === "CONFIG" ? 503 : 502;
+    const status = code === "INVALID_ARGUMENTS" ? 400 : code === "TIMEOUT" ? 504 : code === "CONFIG" ? 503 : 502;
     send(response, status, { error: code, message });
   } finally {
     busy = false;
   }
 }
 
-async function investigateDemo() {
+async function investigate(snapshot: AnalysisSnapshot) {
   const config = loadConfig(process.env);
-  const { fixture } = await import("../../../tests/helpers.js");
-  const snapshot = fixture("app-excavator-a") as AnalysisSnapshot;
+  const names = new Map(snapshot.applications.map((application) => [application.id, application.businessName]));
+  const publicFindings = (findings: DatabaseFindingInput[]) => findings.map((finding) => ({
+    type: finding.type,
+    title: finding.title,
+    relatedApplicationIds: finding.relatedApplicationIds,
+    relatedBusinessNames: finding.relatedApplicationIds.map((id) => names.get(id) ?? id),
+  }));
   let lastError: unknown;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const controller = new AbortController();
@@ -70,28 +101,45 @@ async function investigateDemo() {
         signal: controller.signal,
       });
       return {
-        source: "server-demo",
+        applicationId: snapshot.applicationId,
         executionMode: result.executionMode,
         model: result.model,
         tools: result.toolEvents.map((event) => ({ name: event.toolName, status: event.status })),
-        findings: result.findings.map((finding) => ({
-          type: finding.type,
-          title: finding.title,
-          relatedApplicationIds: finding.relatedApplicationIds,
-        })),
+        findings: publicFindings(result.findings),
         assistantSummary: result.assistantSummary,
       };
     } catch (error) {
       lastError = error;
-      const retry = attempt === 1 && error instanceof WorkerRunError && error.code === "INVALID_ARGUMENTS";
-      if (!retry) {
-        throw error;
-      }
     } finally {
       clearTimeout(timer);
     }
   }
-  throw lastError;
+  const code = lastError instanceof WorkerRunError ? lastError.code : "PROVIDER_ERROR";
+  if (code === "CONFIG") {
+    throw lastError;
+  }
+  return {
+    applicationId: snapshot.applicationId,
+    executionMode: config.executionMode,
+    model: config.executionMode === "live" ? config.nvidiaModel : "fixture",
+    tools: [],
+    findings: publicFindings(await databaseFindings(snapshot)),
+    assistantSummary: null,
+    explanationError: code,
+  };
+}
+
+function safeName(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(raw ?? "");
+    } catch {
+      return "";
+    }
+  })();
+  const name = decoded.split(/[\\/]/).pop()?.replace(/[^A-Za-z0-9 ._()-]/g, "").trim().slice(0, 120) ?? "";
+  return name.length > 0 ? name : "uploaded-contract.pdf";
 }
 
 function send(response: ServerResponse, status: number, body: unknown): void {
@@ -104,17 +152,20 @@ function send(response: ServerResponse, status: number, body: unknown): void {
   response.end(payload);
 }
 
-function readLimited(request: IncomingMessage): Promise<void> {
+function readBody(request: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
     let size = 0;
     request.on("data", (chunk: Buffer) => {
       size += chunk.length;
-      if (size > 1024) {
+      if (size > MAX_UPLOAD_BYTES) {
         request.destroy();
-        reject(new WorkerRunError("INVALID_ARGUMENTS", "request body is too large"));
+        reject(new WorkerRunError("INVALID_ARGUMENTS", "upload exceeds the 10 MB limit"));
+        return;
       }
+      chunks.push(chunk);
     });
-    request.on("end", () => resolve());
+    request.on("end", () => resolve(Buffer.concat(chunks)));
     request.on("error", () => reject(new WorkerRunError("PROVIDER_ERROR", "request failed")));
   });
 }

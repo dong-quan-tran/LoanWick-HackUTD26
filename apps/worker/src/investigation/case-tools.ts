@@ -144,6 +144,7 @@ export function executeCaseTool(
       id: application.id,
       businessName: application.businessName,
       amountCents: application.amountCents,
+      amount: `${application.currency} ${(application.amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       currency: application.currency,
       stage: application.stage,
       revisions: {
