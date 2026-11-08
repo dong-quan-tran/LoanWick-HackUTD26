@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { DbConnection } from '../../spacetimedb/bindings/index.ts';
+import { createUploadCapability } from '../../spacetimedb/transport/capability.ts';
+import { startUploadTestServer } from '../../spacetimedb/tests/upload-https.ts';
 import { AnalysisSnapshotSchema } from '@loanwick/contracts';
 import { checkCollateralConflicts, checkGroupThreshold } from '@loanwick/analysis';
 import { toAnalysisSnapshot, toDatabaseFindings } from '@loanwick/database-adapter';
@@ -33,9 +37,9 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     });
   }
   const [officer, reviewer, worker] = await Promise.all([
-    connect('officer', ['staff_applications', 'staff_jobs', 'staff_findings', 'staff_documents', 'staff_evidence', 'staff_readiness', 'staff_match_candidates']),
+    connect('officer', ['staff_applications', 'staff_jobs', 'staff_findings', 'staff_documents', 'staff_evidence', 'staff_readiness', 'staff_match_candidates', 'my_upload_grants']),
     connect('reviewer', ['staff_applications', 'staff_readiness']),
-    connect('worker', ['worker_snapshots', 'worker_job_outcomes']),
+    connect('worker', ['worker_snapshots', 'worker_job_outcomes', 'worker_upload_grants']),
   ]);
   const app = (id: string) => [...officer.db.staffApplications.iter()].find(a => a.id === id);
   const outcome = (id: string) => [...worker.db.workerJobOutcomes.iter()].find(j => j.id === id);
@@ -50,18 +54,46 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
   async function finish(claimed: Awaited<ReturnType<typeof claim>>, results: ReturnType<typeof checkCollateralConflicts>) {
     const findings = await toDatabaseFindings(claimed.snapshot, results);
     await worker.reducers.completeInvestigation({ jobId: claimed.raw.id, claimEpoch: claimed.raw.claimEpoch, findings });
-    return eventually(() => outcome(claimed.raw.id), 'terminal outcome');
+    const terminal = await eventually(() => outcome(claimed.raw.id), 'terminal outcome');
+    if (terminal.status === 'succeeded') {
+      for (const id of terminal.acceptedFindingIds) {
+        await eventually(() => [...officer.db.staffFindings.iter()].find(f => f.id === id && f.jobId === claimed.raw.id && f.isCurrent), 'officer sees the accepted finding revision');
+      }
+    }
+    return terminal;
   }
+  const storage = mkdtempSync(join(tmpdir(), 'loanwick-bridge-bytes-'));
+  const staged: string[] = [];
+  suite.after(() => { for (const path of staged) unlinkSync(path); rmdirSync(storage); });
   async function attach(applicationId: string, suffix: string, type: string, values: Record<string, string | number | boolean>, replacesDocumentId?: string) {
-    const grantId = 'analysis-grant-' + suffix, documentId = 'analysis-doc-' + suffix;
-    const source = JSON.stringify({ label: 'SYNTHETIC DEMO DOCUMENT', ...values }, null, 2);
-    const evidence = Object.entries(values).map(([fieldName, value]) => ({ id: 'analysis-' + suffix + '-' + fieldName,
-      excerpt: JSON.stringify(fieldName) + ': ' + JSON.stringify(value), fieldName, fieldValue: String(value), extractionMethod: 'structured', pageNumber: undefined, locator: '$.' + fieldName }));
-    await officer.reducers.authorizeUpload({ grantId, applicationId, documentType: type, workerUserId: 'worker' });
-    await worker.reducers.attachDocument({ grantId, documentId, replacesDocumentId, displayFilename: suffix + '.json', storageKey: 'analysis-storage-' + suffix,
-      sha256: createHash('sha256').update(source).digest('hex'), extractionStatus: 'extracted', evidence });
-    await eventually(() => [...officer.db.staffDocuments.iter()].find(d => d.id === documentId), 'attached document');
-    return evidence.map(e => e.id);
+    const bytes = Buffer.from(JSON.stringify({ label: 'SYNTHETIC DEMO DOCUMENT', ...values }, null, 2));
+    let extractedIds: string[] = [], storedPath: string | undefined;
+    const send = await startUploadTestServer(suite, worker, async input => {
+      assert.equal(input.applicationId, applicationId); assert.equal(input.documentType, type);
+      assert.deepEqual(input.bytes, bytes); assert.equal(input.sha256, createHash('sha256').update(bytes).digest('hex'));
+      const parsed = JSON.parse(input.bytes.toString('utf8')) as Record<string, unknown>;
+      assert.equal(parsed.label, 'SYNTHETIC DEMO DOCUMENT'); delete parsed.label;
+      assert.deepEqual(parsed, values);
+      const evidence = Object.entries(parsed).map(([fieldName, value]) => ({ id: 'analysis-' + suffix + '-' + fieldName,
+        excerpt: JSON.stringify(fieldName) + ': ' + JSON.stringify(value), fieldName, fieldValue: String(value), extractionMethod: 'structured', pageNumber: undefined, locator: '$.' + fieldName }));
+      extractedIds = evidence.map(e => e.id);
+      storedPath = join(storage, input.documentId + '.json');
+      writeFileSync(storedPath, input.bytes, { flag: 'wx', mode: 0o600 }); staged.push(storedPath);
+      return { replacesDocumentId, displayFilename: suffix + '.json', storageKey: 'analysis-storage-' + suffix, extractionStatus: 'extracted', evidence };
+    });
+    const capability = await createUploadCapability();
+    await officer.reducers.authorizeUpload({ secretHash: capability.secretHash, applicationId, documentType: type, workerUserId: 'worker', maxBytes: bytes.length });
+    const grant = await eventually(() => [...officer.db.myUploadGrants.iter()].find(g => g.secretHash === capability.secretHash), 'uploader grant');
+    await eventually(() => [...worker.db.workerUploadGrants.iter()].find(g => g.id === grant.id && g.status === 'ready'), 'worker grant');
+    const headers = { 'X-Upload-Grant': grant.id, 'X-Upload-Secret': capability.secret, 'X-Application-Id': applicationId, 'X-Document-Type': type, Origin: 'https://loanwick.test' };
+    const uploaded = await send(headers, bytes);
+    assert.equal(uploaded.status, 201); assert.equal(uploaded.continued, true);
+    const documentId = (JSON.parse(uploaded.body) as { documentId: string }).documentId;
+    const document = await eventually(() => [...officer.db.staffDocuments.iter()].find(d => d.id === documentId), 'HTTPS document');
+    assert.ok(storedPath); assert.deepEqual(readFileSync(storedPath), bytes);
+    assert.equal(document.sha256, createHash('sha256').update(readFileSync(storedPath)).digest('hex'));
+    assert.equal((await send(headers, bytes)).status, 403, 'Upload capability must not be replayed');
+    return extractedIds;
   }
   let acceptedHigh: string;
   let acceptedGroup: string;

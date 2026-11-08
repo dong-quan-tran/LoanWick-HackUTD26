@@ -109,3 +109,7 @@ The separate `1-analysis-database-test` branch now exercises shared checks again
 ## Seed alignment completed
 
 The integration branch now seeds explicit ownership evidence and source-backed amount/currency fields. Fresh demo cases produce both expected findings immediately; no test-only uploads are required. The source manifest, generator, hash/locator checks, and live suites are documented in DATABASE-TESTS.md. Schema/reducer signatures and generated bindings are unchanged. Run npm run test:database:local for the complete disposable-server check. Upload transport remains with its owner; the user confirmed frontend/worker branches are still being built.
+
+## Upload capability integration completed
+
+Database commit `09288eb` is now merged into this isolated test branch. The bridge uses its real HTTPS handler: authorize a secret hash, correlate the generated grant, send bytes without a user database token, stage private bytes, extract fixture JSON, attach metadata/evidence, and reject replay. All 22 live tests pass locally. The test now waits for the officer projection to catch up after a worker outcome. Frontend/worker applications are still being built, so their final wiring remains pending.

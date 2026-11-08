@@ -1,11 +1,11 @@
 # Analysis/database test results
 
-Branch: `1-analysis-database-test`. Base database source: `0bc9396`. This branch adds the analysis adapter and fixes demo seed evidence. Main and the database owner's branch remain unchanged. No schema, reducer signature, or generated SDK binding was changed.
+Branch: `1-analysis-database-test`. Base database source: `09288eb` (includes single-use HTTPS upload capabilities). This branch adds the analysis adapter and fixes demo seed evidence. Main and the database owner's branch remain unchanged. The database owner supplied the upload schema and generated bindings. Our changes preserve those interfaces and only add seed data, adapters, and integration tests.
 
 ## Verified
 
 - SpacetimeDB CLI/server/SDK 2.14.0, Node 24.9.0.
-- Database suite: 12 passing tests; analysis bridge: 9 passing tests (counts include parent tests).
+- Database suite: 13 passing tests; analysis bridge: 9 passing tests (counts include parent tests).
 - Shared suite: 95 passing tests; typechecking and fixture evaluation pass.
 - Both live suites run against disposable loopback-only in-memory databases. No model or payment API is called.
 - Fresh seed produces the high ownership conflict and USD 1.15 million confirmed-group finding without test-only document uploads.
@@ -43,6 +43,8 @@ The adapter uses only authenticated worker projections. It converts bigint safel
 
 Legacy collateral needs an explicit asset namespace. Finding keys are hashed to stable database-sized values; oversized text/evidence is rejected rather than truncated. Structured facts stay in analysis/tool output because database findings have no structured facts column.
 
-The worker projection has no review history, so payment/readiness state remains authoritative on the server. Upload transport is being built by its owner; the current tests exercise database authorization/attachment operations, not HTTPS byte delivery. The frontend and AI worker are still being built and are not connected here.
+The worker projection has no review history, so payment/readiness state remains authoritative on the server. The supplied HTTPS upload handler is now tested end to end: secret-hash authorization, grant claim before body acceptance, real bytes staged in private temporary storage, fixture JSON extraction, database attachment, and replay rejection. Tests use a locally trusted certificate and never forward a user database token. Production worker extraction/storage is still its owner's work. The frontend and AI worker are still being built and are not connected here.
 
 This branch combines unmerged database work for validation. Keep the draft PR separate until the database owner is ready.
+
+CI exposed independent subscription timing: a worker terminal outcome can arrive before the officer view refreshes. The bridge waits for the accepted job ID and current finding revision before checking the officer projection.
