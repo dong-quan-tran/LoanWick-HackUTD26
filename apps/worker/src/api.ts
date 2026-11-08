@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { analyzeSnapshot } from "@loanwick/analysis";
 import type { AnalysisSnapshot } from "@loanwick/contracts";
 import type { DatabaseFindingInput } from "@loanwick/database-adapter";
 
@@ -82,13 +83,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
 
 async function investigate(snapshot: AnalysisSnapshot) {
   const config = loadConfig(process.env);
-  const names = new Map(snapshot.applications.map((application) => [application.id, application.businessName]));
-  const publicFindings = (findings: DatabaseFindingInput[]) => findings.map((finding) => ({
-    type: finding.type,
-    title: finding.title,
-    relatedApplicationIds: finding.relatedApplicationIds,
-    relatedBusinessNames: finding.relatedApplicationIds.map((id) => names.get(id) ?? id),
-  }));
+  const publicFindings = (findings: DatabaseFindingInput[]) => presentFindings(snapshot, findings);
   let lastError: unknown;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const controller = new AbortController();
@@ -105,7 +100,7 @@ async function investigate(snapshot: AnalysisSnapshot) {
         executionMode: result.executionMode,
         model: result.model,
         tools: result.toolEvents.map((event) => ({ name: event.toolName, status: event.status })),
-        findings: publicFindings(result.findings),
+        ...publicFindings(result.findings),
         assistantSummary: result.assistantSummary,
       };
     } catch (error) {
@@ -123,9 +118,47 @@ async function investigate(snapshot: AnalysisSnapshot) {
     executionMode: config.executionMode,
     model: config.executionMode === "live" ? config.nvidiaModel : "fixture",
     tools: [],
-    findings: publicFindings(await databaseFindings(snapshot)),
+    ...publicFindings(await databaseFindings(snapshot)),
     assistantSummary: null,
     explanationError: code,
+  };
+}
+
+function presentFindings(snapshot: AnalysisSnapshot, findings: DatabaseFindingInput[]) {
+  const names = new Map(snapshot.applications.map((application) => [application.id, application.businessName]));
+  const results = analyzeSnapshot(snapshot).results;
+  const sameEvidence = (left: readonly string[], right: readonly string[]) => [...left].sort().join("|") === [...right].sort().join("|");
+  const cited = new Set(findings.flatMap((finding) => finding.evidenceIds));
+  const evidence = snapshot.evidence.filter((item) => cited.has(item.id));
+  const documentIds = new Set(evidence.map((item) => item.documentId));
+  const relatedIds = new Set(findings.flatMap((finding) => finding.relatedApplicationIds));
+  const target = snapshot.applications.find((application) => application.id === snapshot.applicationId);
+  return {
+    findings: findings.map((finding) => ({
+      id: finding.deduplicationKey,
+      type: finding.type,
+      findingType: finding.type,
+      severity: finding.severity,
+      title: finding.title,
+      explanation: finding.explanation,
+      uncertainty: finding.uncertainty,
+      suggestedNextStep: finding.suggestedNextStep,
+      applicationIds: [snapshot.applicationId, ...finding.relatedApplicationIds],
+      relatedApplicationIds: finding.relatedApplicationIds,
+      relatedBusinessNames: finding.relatedApplicationIds.map((id) => names.get(id) ?? id),
+      evidenceIds: finding.evidenceIds,
+      facts: results.find((result) => result.findingType === finding.type && sameEvidence(result.evidenceIds, finding.evidenceIds))?.facts ?? {},
+    })),
+    case: {
+      application: { id: snapshot.applicationId, businessName: target?.businessName ?? snapshot.applicationId },
+      relatedApplications: snapshot.applications
+        .filter((application) => relatedIds.has(application.id))
+        .map((application) => ({ id: application.id, businessName: application.businessName, amountCents: application.amountCents, currency: application.currency })),
+      evidence,
+      documents: snapshot.documents
+        .filter((document) => documentIds.has(document.id))
+        .map((document) => ({ id: document.id, applicationId: document.applicationId, displayFilename: document.displayFilename, version: document.version })),
+    },
   };
 }
 

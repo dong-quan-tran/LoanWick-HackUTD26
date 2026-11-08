@@ -13,7 +13,21 @@ import contractFolio from './assets/contract-folio.webp';
 import engravedBanknote from './assets/engraved-banknote.webp';
 
 type Message = { id: string; text: string; state: 'done' | 'working' | 'attention'; detail?: string | undefined };
-type ServiceResult = { model: string; title: string; related: string; summary: string };
+type CaseNames = {
+  application: Pick<StaffCaseView['application'], 'id' | 'businessName'>;
+  relatedApplications?: Array<Pick<StaffCaseView['application'], 'id' | 'businessName'>> | undefined;
+};
+type ResultFinding = Pick<PresentedFinding, 'id' | 'findingType' | 'applicationIds' | 'facts' | 'title' | 'explanation' | 'uncertainty' | 'suggestedNextStep' | 'evidenceIds'>;
+type ResultDocument = Pick<DocumentMetadata, 'id' | 'displayFilename'>;
+type ServiceCase = CaseNames & { evidence: Evidence[]; documents: ResultDocument[] };
+type ServiceResult = { model: string; summary: string | null; comparedCount: number | null; findings: ResultFinding[]; view: ServiceCase | null };
+type ServiceResponse = {
+  message?: string; model?: string; assistantSummary?: string | null;
+  extracted?: { businessName?: string | null; identifier?: string | null };
+  comparedWith?: unknown[];
+  findings?: Array<ResultFinding & { relatedBusinessNames?: string[] }>;
+  case?: ServiceCase;
+};
 const sizes = (size: number) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const money = (cents: number, currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 const wait = (ms: number) => new Promise<void>(resolve => { window.setTimeout(resolve, ms); });
@@ -89,7 +103,9 @@ function friendlyToolSummary(event: ToolEvent): { text: string; detail?: string 
   };
 }
 
-function friendlyFinding(finding: PresentedFinding, view: StaffCaseView | null) {
+const joinNames = (names: string[]) => names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names.join('');
+
+function friendlyFinding(finding: ResultFinding, view: CaseNames | null) {
   const appNames = finding.applicationIds
     .map(id => id === view?.application.id ? view.application.businessName : view?.relatedApplications?.find(a => a.id === id)?.businessName)
     .filter((name): name is string => Boolean(name));
@@ -98,7 +114,7 @@ function friendlyFinding(finding: PresentedFinding, view: StaffCaseView | null) 
   if (finding.findingType === 'collateral_conflict') {
     const equipmentLabel = equipmentId ? `Equipment ${equipmentId}` : 'The same piece of equipment';
     const where = appNames.length >= 2
-      ? `${finding.applicationIds.length} separate loan applications (${appNames.join(' and ')})`
+      ? `${finding.applicationIds.length} separate loan applications (${joinNames(appNames)})`
       : `${finding.applicationIds.length} separate loan applications`;
     return {
       title: equipmentId
@@ -129,7 +145,7 @@ function friendlyFinding(finding: PresentedFinding, view: StaffCaseView | null) 
     const limit = typeof finding.facts?.thresholdCents === 'number' && finding.facts?.currency
       ? money(finding.facts.thresholdCents, finding.facts.currency)
       : 'the review limit';
-    const where = appNames.length >= 2 ? ` (${appNames.join(' and ')})` : '';
+    const where = appNames.length >= 2 ? ` (${joinNames(appNames)})` : '';
     return {
       title: `Connected borrowers exceed the ${limit} combined loan review limit`,
       explanation: `${finding.applicationIds.length} connected loan applications${where} request a combined total of ${total}, which is above the ${limit} limit that requires a group review.`,
@@ -147,7 +163,9 @@ function friendlyFinding(finding: PresentedFinding, view: StaffCaseView | null) 
 }
 
 function friendlyLocation(locator: string | null, pageNumber: number | null): string {
-  if (pageNumber) return `Page ${pageNumber}`;
+  const line = locator?.match(/^(?:page \d+ )?line (\d+)$/i)?.[1];
+  if (pageNumber) return line ? `Page ${pageNumber} · Line ${line}` : `Page ${pageNumber}`;
+  if (line) return `Line ${line}`;
   if (!locator) return 'Document record';
   const map: Record<string, string> = {
     '$.collateral.identifier': 'Equipment schedule · Equipment ID',
@@ -167,7 +185,7 @@ function friendlyLocation(locator: string | null, pageNumber: number | null): st
   return locator;
 }
 
-function friendlyEvidence(evidence: Evidence, source: DocumentMetadata | undefined, view: StaffCaseView | null) {
+function friendlyEvidence(evidence: Evidence, source: ResultDocument | undefined, view: CaseNames | null) {
   const isOwnApp = evidence.applicationId === view?.application.id;
   const appName = isOwnApp
     ? `${view.application.businessName} (this application)`
@@ -230,6 +248,27 @@ function friendlyEvidence(evidence: Evidence, source: DocumentMetadata | undefin
   const citation = `${appName} · ${filename} · Version ${evidence.documentVersion} · ${location}`;
 
   return { label, value, citation };
+}
+
+function FindingDetails({ finding, view, evidence, documents }: { finding: ResultFinding; view: CaseNames | null; evidence: readonly Evidence[]; documents: readonly ResultDocument[] }) {
+  const info = friendlyFinding(finding, view);
+  const cited = finding.evidenceIds.flatMap(id => evidence.filter(entry => entry.id === id));
+  const ordered = [...cited.filter(item => item.applicationId === view?.application.id), ...cited.filter(item => item.applicationId !== view?.application.id)];
+  return <details><summary>{info.title}</summary><p>{info.explanation}</p><p className={styles.muted}>{info.whyItMatters}</p><p className={styles.nextStep}><strong>Suggested next step:</strong> {info.nextStep}</p>{ordered.map(item => { const id = item.id; const shown = friendlyEvidence(item, documents.find(entry => entry.id === item.documentId), view); return <blockquote key={id}><p><strong>{shown.label}:</strong> {shown.value}</p><cite>{shown.citation}</cite></blockquote>; })}</details>;
+}
+
+const toServiceResult = (body: ServiceResponse): ServiceResult => ({
+  model: body.model ?? 'verification service',
+  summary: body.assistantSummary ?? null,
+  comparedCount: body.comparedWith?.length ?? null,
+  findings: body.findings ?? [],
+  view: body.case ?? null,
+});
+
+// The model writes light markdown; show its bullets as paragraphs and its bold runs as bold.
+function SummaryText({ text }: { text: string }) {
+  const blocks = text.replace(/【[^】]*】/g, '').split(/\s+-\s+|\s+(?=\*\*[^*]+\*\*\s+-\s)/).map(block => block.trim()).filter(Boolean);
+  return <>{blocks.map((block, index) => <p key={index}>{block.split(/\*\*(.+?)\*\*/g).map((part, at) => at % 2 ? <strong key={at}>{part}</strong> : part.replaceAll('*', ''))}</p>)}</>;
 }
 
 export function ContractVerification({ adapter, session }: { adapter: FrontendAdapter; session: SessionState }) {
@@ -340,14 +379,14 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
       if (adapter.mode === 'fixture' && import.meta.env.PROD) {
         setMessages(current => [...current, { id: 'intake', text: 'Reading the contract and comparing it with loans on file.', detail: 'This usually takes under a minute.', state: 'working' }]);
         const response = await fetch('/api/investigate', { method: 'POST', headers: { 'content-type': file.type || 'application/pdf', 'x-filename': encodeURIComponent(file.name) }, body: file });
-        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string | null; extracted?: { businessName?: string; identifier?: string }; comparedWith?: unknown[]; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
+        const body = await response.json() as ServiceResponse;
         if (generation.current !== activeGeneration) return;
         if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
         const finding = body.findings?.[0];
-        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
+        const related = joinNames(finding?.relatedBusinessNames ?? []);
         const read = [body.extracted?.businessName, body.extracted?.identifier && `serial ${body.extracted.identifier}`].filter(Boolean).join(' · ');
-        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? (finding ? `${body.extracted?.identifier ?? 'This collateral'} is also claimed by ${related}.` : 'No other loan on file claims this collateral.') });
-        setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: 'Contract read.', detail: read || undefined, state: 'done' }, { id: 'compare', text: `Compared with ${body.comparedWith?.length ?? 0} loans on file.`, state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
+        setServiceResult(toServiceResult(body));
+        setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: 'Contract read.', detail: read || undefined, state: 'done' }, { id: 'compare', text: `Compared with ${body.comparedWith?.length ?? 0} loans on file.`, state: 'done' }, { id: 'finding', text: finding ? friendlyFinding(finding, body.case ?? null).title : 'No other loan on file claims this equipment', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
         return;
       }
       if (adapter.mode === 'fixture') {
@@ -373,13 +412,13 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
       setMessages([{ id: 'sample', text: 'Asking the verification service.', detail: 'Sample documents only. Your selected contract is not used.', state: 'working' }]);
       try {
         const response = await fetch('/api/investigate', { method: 'POST' });
-        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
+        const body = await response.json() as ServiceResponse;
         if (generation.current !== activeGeneration) return;
         if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
         const finding = body.findings?.[0];
-        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
-        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? 'The service returned no explanation.' });
-        setMessages([{ id: 'sample', text: 'Verification service finished.', detail: body.model ?? 'verification service', state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Related application ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
+        const related = joinNames(finding?.relatedBusinessNames ?? []);
+        setServiceResult(toServiceResult(body));
+        setMessages([{ id: 'sample', text: 'Verification service finished.', detail: body.model ?? 'verification service', state: 'done' }, { id: 'finding', text: finding ? friendlyFinding(finding, body.case ?? null).title : 'No concern returned', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
       } catch (value) { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'The verification service did not finish.'); }
       finally { if (generation.current === activeGeneration) setBusy(false); }
       return;
@@ -431,13 +470,13 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
           <div className={styles.folioComposition} aria-hidden="true"><img src={contractFolio} width={192} height={128} className={styles.illustration} alt="" /></div><h2>{file ? file.name : 'Drop your loan contract here'}</h2><p>{file ? `${sizes(file.size)} · Ready to check` : 'PDF or Word document · Up to 10 MB'}</p>
           <input ref={fileInput} id="contract-file" tabIndex={-1} aria-label="Loan contract" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={running} onChange={e => choose(e.target.files?.[0])} className={styles.fileInput} />
           <div className={styles.actions}>{file ? <><button className={styles.primary} disabled={running || !applicationId || adapter.contractUploadNeedsReconciliation?.(applicationId)} onClick={() => void verify()}>{busy ? 'Checking file…' : 'Verify contract'}<Icon name="arrow" size={17} /></button><button disabled={running} onClick={() => fileInput.current?.click()}>Choose another file</button></> : <button className={styles.primary} disabled={running || !applicationId} onClick={() => fileInput.current?.click()}>Choose contract<Icon name="arrow" size={17} /></button>}</div>
-          {adapter.mode === 'fixture' && <p className={styles.localNote}>Sample workspace. Selected files stay on this device.</p>}
+          {adapter.mode === 'fixture' && <p className={styles.localNote}>{import.meta.env.PROD ? 'Demo workspace. Your PDF is sent to the LoanWick server, read, and compared with the demo loans on file.' : 'Sample workspace. Selected files stay on this device.'}</p>}
         </section>}
         {file && messages.length > 0 && <div className={styles.fileSummary}><Icon name="document" size={22} /><div><strong>{file.name}</strong><small>{fileInfo?.format ?? 'Selected file'} · {sizes(file.size)}</small></div></div>}
         {adapter.contractUploadNeedsReconciliation?.(applicationId) && <div className={styles.reconcile}><p>A previous upload needs confirmation before another file can be sent.</p><button disabled={busy} onClick={() => { setBusy(true); const activeGeneration = generation.current; void adapter.reconcileContractUpload?.(applicationId).then(id => { if (generation.current === activeGeneration) { setDocumentId(id); setError(''); setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: id ? 'Your contract has been received.' : 'The previous file was not received. You can choose it again.', state: id ? 'done' : 'attention' }]); } }).catch(value => { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'Upload outcome is still unconfirmed.'); }).finally(() => { if (generation.current === activeGeneration) setBusy(false); }); }}>Check previous upload</button></div>}
         {stream.length > 0 && <section className={styles.pipeline} aria-label="Verification progress"><div className={styles.pipelineHeading}><h2>Verification updates</h2><span>{sample ? 'Sample run' : adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span></div><div role="log" aria-live="polite" aria-relevant="additions text" aria-label="Verification messages"><ol className={styles.messages}>{stream.map(item => <li key={item.id}><span className={`${styles.messageIcon} ${styles[item.state]}`}><Icon name={item.state === 'done' ? 'check' : item.state === 'attention' ? 'alert' : 'clock'} size={17} /></span><div><p>{item.text}</p>{item.detail && <small>{item.detail}</small>}</div></li>)}</ol></div></section>}
-        {serviceResult && <section className={styles.result}><div><Icon name="alert" size={22} /><h2>{serviceResult.title}</h2></div><p>Result from the verification service ({serviceResult.model}).{serviceResult.related ? ` Related application ${serviceResult.related}.` : ''} Verification does not approve a loan.</p><p>{serviceResult.summary}</p></section>}
-        {complete && !serviceResult && <section className={styles.result}><div><Icon name={currentFindings.length ? 'alert' : 'check'} size={22} /><h2>{currentFindings.length ? `${currentFindings.length} item${currentFindings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{sample ? 'These are results from the synthetic sample case.' : 'Review the supporting evidence before making a decision.'} Verification does not approve a loan.</p>{currentFindings.map(finding => { const info = friendlyFinding(finding, view); return <details key={finding.id}><summary>{info.title}</summary><p>{info.explanation}</p><p className={styles.muted}>{info.whyItMatters}</p><p className={styles.nextStep}><strong>Suggested next step:</strong> {info.nextStep}</p>{finding.evidenceIds.map(id => { const evidence = view?.evidence.find(item => item.id === id); const source = view?.documents.find(item => item.id === evidence?.documentId); if (!evidence) return null; const item = friendlyEvidence(evidence, source, view); return <blockquote key={id}><p><strong>{item.label}:</strong> {item.value}</p><cite>{item.citation}</cite></blockquote>; })}</details>; })}</section>}
+        {serviceResult && <section className={styles.result}><div><Icon name={serviceResult.findings.length ? 'alert' : 'check'} size={22} /><h2>{serviceResult.findings.length ? `${serviceResult.findings.length} item${serviceResult.findings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{serviceResult.comparedCount !== null ? `Compared with ${serviceResult.comparedCount} loans on file. ` : ''}Review the supporting evidence before making a decision. Verification does not approve a loan.</p>{serviceResult.findings.map(finding => <FindingDetails key={finding.id} finding={finding} view={serviceResult.view} evidence={serviceResult.view?.evidence ?? []} documents={serviceResult.view?.documents ?? []} />)}{serviceResult.summary && <details><summary>AI explanation</summary><p className={styles.muted}>Written by {serviceResult.model} from the check results above. It explains the finding and does not decide it.</p><SummaryText text={serviceResult.summary} /></details>}</section>}
+        {complete && !serviceResult && <section className={styles.result}><div><Icon name={currentFindings.length ? 'alert' : 'check'} size={22} /><h2>{currentFindings.length ? `${currentFindings.length} item${currentFindings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{sample ? 'These are results from the synthetic sample case.' : 'Review the supporting evidence before making a decision.'} Verification does not approve a loan.</p>{currentFindings.map(finding => <FindingDetails key={finding.id} finding={finding} view={view} evidence={view?.evidence ?? []} documents={view?.documents ?? []} />)}</section>}
         {(complete || failed || (messages.length > 0 && !running)) && <button className={styles.newRun} disabled={running} onClick={reset}>New verification</button>}
         {adapter.mode === 'fixture' && !running && !jobId && !messages.length && <div className={styles.sample}><button disabled={!applicationId} onClick={() => void runSample()}>Try a sample verification<Icon name="arrow" size={15} /></button><span>Sample documents · No client data</span></div>}
       </>}

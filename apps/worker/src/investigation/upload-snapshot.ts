@@ -131,8 +131,9 @@ export function uploadSnapshot(input: {
     if (loan.identifier === null) {
       return [];
     }
-    const line = loan.sourceText.split("\n").find((text) => text.includes(loan.identifier ?? "")) ?? loan.sourceText.trim();
-    const base = { applicationId: loan.id, documentId: `doc-${loan.id}`, documentVersion: 1, pageNumber: null, locator: "line 1", excerpt: line, extractionMethod: "fixture" as const, createdAt: CREATED_AT };
+    const lines = loan.sourceText.split("\n");
+    const index = Math.max(0, lines.findIndex((text) => text.includes(loan.identifier ?? "")));
+    const base = { applicationId: loan.id, documentId: `doc-${loan.id}`, documentVersion: 1, pageNumber: null, locator: `line ${index + 1}`, excerpt: lines[index] ?? loan.sourceText.trim(), extractionMethod: "fixture" as const, createdAt: CREATED_AT };
     return [
       { ...base, id: `ev-${loan.id}-identifier`, fieldName: "identifier", extractedValue: loan.identifier },
       ...(loan.exclusiveOwnershipClaim
