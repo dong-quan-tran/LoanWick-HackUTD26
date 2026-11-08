@@ -1,0 +1,13 @@
+{
+  "label": "SYNTHETIC DEMO DOCUMENT",
+  "businessName": "Harbor Demo Fabrication",
+  "amountCents": 70000000,
+  "currency": "USD",
+  "address": "900 Demo Lane",
+  "syntheticRegistrationId": "SYNTH-REG-group-a",
+  "collateral": {
+    "identifier": "GRP-100",
+    "exclusiveOwnershipClaim": true
+  },
+  "confirmedGroup": "SYNTH-HARBOR-HOLDINGS"
+}

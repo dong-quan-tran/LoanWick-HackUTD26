@@ -1,0 +1,12 @@
+{
+  "label": "SYNTHETIC DEMO DOCUMENT",
+  "businessName": "Maple Demo Services",
+  "amountCents": 5000000,
+  "currency": "USD",
+  "address": "700 Demo Lane",
+  "syntheticRegistrationId": "SYNTH-REG-similar-a",
+  "collateral": {
+    "identifier": "CLN-001",
+    "exclusiveOwnershipClaim": true
+  }
+}

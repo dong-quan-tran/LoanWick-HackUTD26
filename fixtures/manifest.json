@@ -1,0 +1,157 @@
+{
+  "synthetic": true,
+  "contractVersion": "0.1.0",
+  "identities": [
+    {
+      "id": "user-officer",
+      "identity": "SYNTH-IDENTITY-officer",
+      "role": "officer",
+      "organizationId": "org-demo",
+      "displayName": "Synthetic officer",
+      "active": true
+    },
+    {
+      "id": "user-reviewer",
+      "identity": "SYNTH-IDENTITY-reviewer",
+      "role": "reviewer",
+      "organizationId": "org-demo",
+      "displayName": "Synthetic reviewer",
+      "active": true
+    },
+    {
+      "id": "user-worker",
+      "identity": "SYNTH-IDENTITY-worker",
+      "role": "worker",
+      "organizationId": "org-demo",
+      "displayName": "Synthetic worker",
+      "active": true
+    },
+    {
+      "id": "user-excavator-a",
+      "identity": "SYNTH-IDENTITY-excavator-a",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Cedar Demo Excavation borrower",
+      "active": true
+    },
+    {
+      "id": "user-excavator-b",
+      "identity": "SYNTH-IDENTITY-excavator-b",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Granite Demo Equipment borrower",
+      "active": true
+    },
+    {
+      "id": "user-office-a",
+      "identity": "SYNTH-IDENTITY-office-a",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Juniper Demo Design borrower",
+      "active": true
+    },
+    {
+      "id": "user-office-b",
+      "identity": "SYNTH-IDENTITY-office-b",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Willow Demo Studio borrower",
+      "active": true
+    },
+    {
+      "id": "user-similar-a",
+      "identity": "SYNTH-IDENTITY-similar-a",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Maple Demo Services borrower",
+      "active": true
+    },
+    {
+      "id": "user-similar-b",
+      "identity": "SYNTH-IDENTITY-similar-b",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Maple Demo Service borrower",
+      "active": true
+    },
+    {
+      "id": "user-group-a",
+      "identity": "SYNTH-IDENTITY-group-a",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Harbor Demo Fabrication borrower",
+      "active": true
+    },
+    {
+      "id": "user-group-b",
+      "identity": "SYNTH-IDENTITY-group-b",
+      "role": "borrower",
+      "organizationId": "org-demo",
+      "displayName": "Harbor Demo Distribution borrower",
+      "active": true
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-excavator-a",
+      "path": "fixtures/documents/excavator-a.json",
+      "sha256": "7b704db51c73becd1d486e7ff3d97f473f204841e37f90d452f2f6079433fcbb"
+    },
+    {
+      "id": "doc-excavator-b",
+      "path": "fixtures/documents/excavator-b.json",
+      "sha256": "deffca5b02fe6078cffce18b9c3b945d76f172d03a98825e038dbf3e2c4bace6"
+    },
+    {
+      "id": "doc-office-a",
+      "path": "fixtures/documents/office-a.json",
+      "sha256": "f94bd2f2bf02c36310c0a70dc8351757950c50127fdf77d51b95be0248fdbcfd"
+    },
+    {
+      "id": "doc-office-b",
+      "path": "fixtures/documents/office-b.json",
+      "sha256": "bb60f650c53111bbbe421cebb67a972c914e5bd3ca51f1866786b41db44c069f"
+    },
+    {
+      "id": "doc-similar-a",
+      "path": "fixtures/documents/similar-a.json",
+      "sha256": "625d06f60127499a8695370ee898123a10b0ef49e7be8abeddf6df85d595ec21"
+    },
+    {
+      "id": "doc-similar-b",
+      "path": "fixtures/documents/similar-b.json",
+      "sha256": "8ee4af1c55175e780e1bd3f864740e05750a2bc72ffd509c8bbcdda29fb5eb6e"
+    },
+    {
+      "id": "doc-group-a",
+      "path": "fixtures/documents/group-a.json",
+      "sha256": "18ddb85a8b8a7cfc8bc436da89f37270e80827655af22a715a653e77f0030e01"
+    },
+    {
+      "id": "doc-group-b",
+      "path": "fixtures/documents/group-b.json",
+      "sha256": "5d7e099dda97afc295d843ca0c13e6c2d5b9785b2e1fbef7fe32abbb295601e1"
+    }
+  ],
+  "scenarios": {
+    "collateralConflict": [
+      "app-excavator-a",
+      "app-excavator-b"
+    ],
+    "sharedOffice": [
+      "app-office-a",
+      "app-office-b"
+    ],
+    "similarNames": [
+      "app-similar-a",
+      "app-similar-b"
+    ],
+    "confirmedGroup": [
+      "app-group-a",
+      "app-group-b"
+    ],
+    "paymentChanged": "app-office-a",
+    "missingOwnershipAndHostileText": "app-similar-b",
+    "cleanControl": "app-similar-a"
+  }
+}

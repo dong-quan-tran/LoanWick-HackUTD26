@@ -1,0 +1,20 @@
+{
+  "application": {
+    "id": "app-excavator-a",
+    "businessName": "Cedar Demo Excavation",
+    "amountCents": 25000000,
+    "currency": "USD",
+    "stage": "reviewing"
+  },
+  "requests": [
+    {
+      "id": "request-fixture-1",
+      "applicationId": "app-excavator-a",
+      "borrowerSafeMessage": "Please provide current ownership documentation for equipment EX-0042 and an updated collateral schedule.",
+      "requestedDocumentType": "ownership_document",
+      "state": "sent",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  ],
+  "responses": []
+}
