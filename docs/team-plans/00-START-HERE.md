@@ -1,6 +1,6 @@
 # Four-person build plan
 
-Repository: https://github.com/minhle211/HackUTD-Fraud-detector
+Repository: https://github.com/minhle211/LoanWick-HackUTD26
 
 These are proposed implementation assignments based on the supplied commercial-loan investigation idea. At inspection, main contained coordination files and no application implementation or package manifests. Paths and commands below are planned deliverables, not existing functionality. DealPilot is a temporary product name.
 
