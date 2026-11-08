@@ -59,3 +59,11 @@ The server's ReleaseReadiness adds canRelease after actor/organization authoriza
 - ClarificationDraft references an existing finding. Worker may draft; officer alone sends. Its schema cannot prove free text contains no confidential information; generate from allowlisted own-case context and preview with an officer.
 
 Errors follow the shared ERROR_CODES and include a correlationId. Borrower-facing not-found/forbidden responses must not disclose other-case existence. Model/extraction failures remain explicit; live mode never silently becomes fixture mode.
+
+## Worker projection compatibility
+
+`AnalysisSnapshotSchema` is the boundary for minimal authorized worker inputs. It accepts full offline application records or minimal analysis applications without borrower identity/timestamps. Original `InvestigationSnapshotSchema` remains strict for full fixtures. Both share reference/revision checks. `fixture` is an explicit extraction method, not live extraction.
+
+An analysis relationship may cite `confirmationSource=authorized_projection` only when constructed from the server's authenticated confirmed-relationship view. That marker does not authenticate arbitrary JSON or model output. The adapter must remain outside model control. Missing review metadata is not replaced with invented identities or dates.
+
+Use `toAnalysisSnapshot` and `toDatabaseFindings` from the database-adapter package on this integration branch; see DATABASE-TESTS.md for evidence requirements, database write limits, and seed differences.

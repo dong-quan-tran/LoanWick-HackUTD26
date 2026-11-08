@@ -183,3 +183,17 @@ export interface CaseAdapter {
   changePaymentInstructions(input: { applicationId: string; observedPaymentRevision: number; syntheticAccountToken: string; beneficiaryName: string; evidenceIds: string[]; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   simulateRelease(input: { applicationId: string; idempotencyKey: string; correlationId: string }): Promise<OperationResult<DemoRelease>>;
 }
+
+// Workers receive only analysis inputs, not borrower identities or private case metadata.
+export interface AnalysisApplication extends RevisionVector {
+  id: string; businessName: string; amountCents: number; currency: string; stage: ApplicationStage;
+  organizationId?: string | undefined;
+}
+export type AnalysisRelationship = ApplicationRelationship | {
+  id: string; leftApplicationId: string; rightApplicationId: string;
+  decision: typeof MATCH_DECISIONS[number]; reason: string; evidenceIds: string[];
+  confirmationSource: 'authorized_projection';
+};
+export type AnalysisSnapshot = Omit<InvestigationSnapshot, 'applications' | 'relationships'> & {
+  applications: AnalysisApplication[]; relationships: AnalysisRelationship[];
+};

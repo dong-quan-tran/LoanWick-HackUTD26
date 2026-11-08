@@ -101,3 +101,15 @@ The inspected database branch uses SDK-native fields. Keep conversion in adapter
 | readiness also blocks pending jobs/clarifications | pure policy currently covers checks/findings/stage/releases | Treat server readiness as authoritative; extend shared input rules before claiming full parity |
 
 The database worker projection currently limits related-case evidence to linked collateral/entities. Above-threshold group output also needs amount/currency evidence for every counted case; request an authorized projection change rather than fetching unrelated private documents. The database normalizes identifiers independently; align its policy with the shared hyphen/namespace rules before using its candidate scope.
+
+## Real database test update
+
+The separate `1-analysis-database-test` branch now exercises shared checks against database commit `0bc9396`. The existing database suite (12 tests), bridge suite (8 tests), and shared checks (92 tests) pass locally. See DATABASE-TESTS.md. Database source and generated bindings were not edited. The worker projection is handled by a separate adapter and minimal analysis-input schema; missing seed evidence remains explicit. Frontend/live model checks remain pending.
+
+## Seed alignment completed
+
+The integration branch now seeds explicit ownership evidence and source-backed amount/currency fields. Fresh demo cases produce both expected findings immediately; no test-only uploads are required. The source manifest, generator, hash/locator checks, and live suites are documented in DATABASE-TESTS.md. Schema/reducer signatures and generated bindings are unchanged. Run npm run test:database:local for the complete disposable-server check. Upload transport remains with its owner; the user confirmed frontend/worker branches are still being built.
+
+## Upload capability integration completed
+
+Database commit `09288eb` is now merged into this isolated test branch. The bridge uses its real HTTPS handler: authorize a secret hash, correlate the generated grant, send bytes without a user database token, stage private bytes, extract fixture JSON, attach metadata/evidence, and reject replay. All 22 live tests pass locally. The test now waits for the officer projection to catch up after a worker outcome. Frontend/worker applications are still being built, so their final wiring remains pending.

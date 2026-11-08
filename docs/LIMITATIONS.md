@@ -1,6 +1,6 @@
 # Current limits
 
-- This branch implements shared packages and synthetic offline tooling. It does not implement or verify the other owners' web app, database module, job processing, uploads, or NVIDIA integration.
+- This integration branch tests shared packages against the database module. It does not implement or verify the web app, private byte-upload transport, or NVIDIA integration; see DATABASE-TESTS.md for the exact local test scope.
 - The fixture identities are synthetic labels; runtime schemas are not authentication or server authorization.
 - Evidence is traceable to submitted source text, not independently authenticated truth. A conflict is a review concern, never proof of fraud.
 - Equipment normalization uses one explicit demo syntax and isolates exact assetType namespaces. Real registration formats need their own verified policies before matching arbitrary real identifiers.

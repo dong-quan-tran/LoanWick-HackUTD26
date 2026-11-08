@@ -1,8 +1,8 @@
-# LoanWick
+# LoanWick's DealPilot - HackUTD
 
-LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
+DealPilot is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
-This branch includes Person 4's shared foundation and Person 1's frontend: TypeScript contracts/runtime schemas, deterministic checks, eight canonical applications, source-backed evidence, and a complete synthetic officer/borrower/reviewer demo. The live adapter has also passed a browser workflow against a disposable real database with separate authorized role sessions and Person 4's deterministic test bridge. Connected NVIDIA investigation, document intake, and original-source downloads remain pending.
+This tree combines the shared contracts and deterministic checks, the SpacetimeDB module, the officer/borrower/reviewer frontend, and the worker smoke client. The live adapter has passed a browser workflow against a disposable database with separate authorized role sessions. A connected NVIDIA investigation, document intake, and original-source downloads remain pending. See docs/DATABASE-TESTS.md for the tested database limits.
 
 ## Frontend
 
@@ -21,12 +21,19 @@ PowerShell users can use `npm.cmd` if local execution policy blocks npm.ps1.
 
 | Command | Behavior |
 | --- | --- |
-| npm run build | Build shared contracts and pure analysis to package-local dist/ |
+| npm run build | Build shared contracts, pure analysis, and the database adapter |
 | npm run typecheck | Build packages and type-check tests/configuration |
 | npm test | Build and run Vitest regression/fixture checks |
 | npm run evaluate | Compare deterministic outputs with independent expected fixtures and verify source hashes/excerpts |
 | npm run fixtures:views | Regenerate explicitly synthetic staff/borrower view samples |
-| npm run check | Typecheck, tests, and evaluation |
+| npm run dev:web | Start the fixture frontend at http://127.0.0.1:5173 |
+| npm run dev:web:live | Start the frontend against a live database |
+| npm run test:web | Run the web unit tests |
+| npm run test:e2e | Run the fixture browser tests |
+| npm run test:database:local | Start a disposable server, run both live suites, and stop the server |
+| npm run fixtures:database | Regenerate the source-backed database seed |
+| npm run test:database | Run the real analysis/database bridge against a ready loopback server |
+| npm run check | Typecheck, shared tests, evaluation, database seed check, and web typecheck/tests |
 
 Run build before importing the packages from Node. Package dist files are generated and ignored; do not edit or commit them. Dependency versions are pinned in package-lock.json. No credentials or SpacetimeDB installation are required for these shared checks.
 
@@ -55,6 +62,6 @@ Use `@loanwick/contracts/domain` for SDK-independent types/constants without loa
 - [Limitations](docs/LIMITATIONS.md)
 - [Original four-person assignments](docs/team-plans/00-START-HERE.md)
 
-The frontend startup commands are documented above. Worker/database startup remains owned by those components. Database identity bootstrap, private file storage, and model-provider secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
+The frontend startup commands are documented above. Database setup is in [docs/DATABASE-TESTS.md](docs/DATABASE-TESTS.md) and [spacetimedb/README.md](spacetimedb/README.md). The worker smoke client is in [apps/worker/README.md](apps/worker/README.md) and does not connect to the database yet. Database identity bootstrap, private file storage, and model-provider secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
 
-Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON uses LF line endings so document hashes stay stable across platforms. CI covers these shared packages, not the unfinished database/browser/model integration.
+Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON and database fixture text use LF line endings so document hashes stay stable across platforms. CI covers the shared packages, database checks, and web checks.

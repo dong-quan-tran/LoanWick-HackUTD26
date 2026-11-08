@@ -1,0 +1,45 @@
+name: Live database checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    name: Analysis and database (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            spacetimedb/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix spacetimedb
+      - name: Install pinned portable database tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/loanwick-spacetime"
+          mkdir -p "$tool_dir"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.14.0/spacetime-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$tool_dir/tools.tar.gz"
+          tar -xzf "$tool_dir/tools.tar.gz" -C "$tool_dir"
+          echo "LOANWICK_SPACETIME_CLI=$tool_dir/spacetimedb-cli" >> "$GITHUB_ENV"
+          echo "LOANWICK_SPACETIME_SERVER=$tool_dir/spacetimedb-standalone" >> "$GITHUB_ENV"
+      - run: npm --prefix spacetimedb run typecheck
+      - run: npm run fixtures:database:check
+      - run: npm run test:database:local

@@ -1,4 +1,5 @@
 # Source hashes must use the same bytes on Windows and Linux.
 fixtures/documents/*.json text eol=lf
+fixtures/database/*.txt text eol=lf
 # Preserve Person 2's generated bindings byte-for-byte, including generator EOF spacing.
 apps/web/src/generated/** linguist-generated=true -whitespace
