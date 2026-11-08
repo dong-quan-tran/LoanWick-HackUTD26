@@ -65,6 +65,8 @@ jobs:
         run: |
           diff -r spacetimedb/bindings apps/web/src/generated \
             || { echo "::error::apps/web/src/generated differs from spacetimedb/bindings. Copy the regenerated bindings."; exit 1; }
+      - name: Schema comparison tool regression tests
+        run: node --test spacetimedb/qa/schema-diff.test.mjs
 
   suites:
     name: Backend integration and QA suites
