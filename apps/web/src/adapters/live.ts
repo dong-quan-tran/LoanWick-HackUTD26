@@ -4,6 +4,7 @@ import type { CaseAdapter, DomainError, OperationResult, PolicyReadiness, User }
 import { DbConnection } from '../generated';
 import type * as Native from '../generated/types';
 import type { FrontendAdapter, SessionState } from './types';
+import { prioritizeBorrowerApplications } from './types';
 import { reconcileUploadGrant, UnconfirmedUploadError, uploadWithCapability } from './upload';
 import type { UploadGrant, UploadPort } from './upload';
 
@@ -83,8 +84,8 @@ export class LiveAdapter implements FrontendAdapter {
             }
             connection.subscriptionBuilder().onApplied(() => {
               if (generation !== this.generation) return;
-              const application = user.role === 'borrower' ? rows(connection.db.borrowerApplications)[0] : rows(connection.db.staffApplications)[0];
-              this.ready = true; this.state = { status: 'connected', user, message: null, ...(application ? { defaultApplicationId: publicId(application.id) } : {}) }; this.emit();
+              const application = user.role === 'borrower' ? this.borrowerApplications(connection)[0] : rows(connection.db.staffApplications).map(a => ({ id: publicId(a.id) }))[0];
+              this.ready = true; this.state = { status: 'connected', user, message: null, ...(application ? { defaultApplicationId: application.id } : {}) }; this.emit();
             }).onError(() => this.connectionError(generation, 'The authorized case subscription failed. Reconnect to retry.')).subscribe(tables.map(name => `SELECT * FROM ${name}`));
           }).onError(() => this.connectionError(generation, 'The session subscription failed. Check the database and identity setup.')).subscribe('SELECT * FROM my_user');
         })
@@ -110,6 +111,16 @@ export class LiveAdapter implements FrontendAdapter {
   subscribePortfolio: CaseAdapter['subscribePortfolio'] = (cb, error) => this.watch(() => {
     this.user(['officer', 'reviewer']); const db = this.db().db;
     return rows(db.staffApplications).map(app => ({ application: appView(app), openFindingCount: rows(db.staffFindings).filter(f => f.applicationId === app.id && f.status !== 'resolved').length, lastInvestigationStatus: (rows(db.staffJobs).filter(j => j.applicationId === app.id).sort((a, b) => a.createdAt.toISOString().localeCompare(b.createdAt.toISOString())).at(-1)?.status ?? null) as 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | null }));
+  }, cb, error);
+  private borrowerApplications(connection: DbConnection) {
+    const requests = rows(connection.db.borrowerClarifications);
+    return prioritizeBorrowerApplications(rows(connection.db.borrowerApplications).map(a => ({
+      ...BorrowerCaseViewSchema.shape.application.parse({ id: publicId(a.id), businessName: a.businessName, amountCents: safeCents(a.amountCents), currency: a.currency, stage: a.stage }),
+      pendingRequestCount: requests.filter(r => r.applicationId === a.id && r.state === 'sent').length,
+    })));
+  }
+  subscribeBorrowerApplications: NonNullable<FrontendAdapter['subscribeBorrowerApplications']> = (cb, error) => this.watch(() => {
+    this.user(['borrower']); return this.borrowerApplications(this.db());
   }, cb, error);
   subscribeBorrowerCase: CaseAdapter['subscribeBorrowerCase'] = (applicationId, cb, error) => this.watch(() => {
     this.user(['borrower']); const db = this.db().db; const rawId = nativeId(applicationId);

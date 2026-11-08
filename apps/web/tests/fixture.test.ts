@@ -21,6 +21,17 @@ function memoryStorage(initial?: string) {
   return { getItem: () => raw, setItem: (_key: string, value: string) => { raw = value; }, removeItem: () => { raw = null; } };
 }
 describe('complete synthetic workflow', () => {
+  test('lists only the authenticated borrower applications and sent request counts', async () => {
+    const adapter = new FixtureAdapter(); let error = '';
+    adapter.subscribeBorrowerApplications(() => { throw Error('Staff must not use the borrower list'); }, value => { error = value.code; })();
+    expect(error).toBe('UNAUTHORIZED');
+    await send(adapter); adapter.selectIdentity('borrower', appId);
+    let items: import('../src/adapters/types').BorrowerApplicationSummary[] = [];
+    adapter.subscribeBorrowerApplications(value => { items = value; }, value => { throw Error(value.message); })();
+    expect(items.find(a => a.id === appId)?.pendingRequestCount).toBe(1);
+    expect(items.some(a => a.id === 'app-excavator-b')).toBe(false);
+    expect(Object.keys(items[0]!).sort()).toEqual(['amountCents', 'businessName', 'currency', 'id', 'pendingRequestCount', 'stage']);
+  });
   test('preserves exact sources and produces actual deterministic tool activity', async () => {
     const adapter = new FixtureAdapter(); const before = staff(adapter);
     expect(before.investigations).toHaveLength(0); expect(before.toolEvents).toHaveLength(0);

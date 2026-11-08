@@ -153,6 +153,8 @@
 .breakWord { overflow-wrap: anywhere; }
 .borrowerPage { max-width: 780px; margin: 10px auto; display: grid; gap: 24px; }
 .borrowerPage .pageTitle { margin-bottom: 0; }
+.borrowerPicker { min-width: 0; }
+.borrowerPicker select { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
 .borrowerIntro { color: #5b7260; max-width: 70ch; }
 .borrowerMessage { font-size: 16px !important; line-height: 1.8; color: #2b4c38 !important; white-space: pre-wrap; }
 .syntheticAttachment { background: #f1f6ef; padding: 18px; border-radius: 6px; display: flex; align-items: flex-start; gap: 12px; }

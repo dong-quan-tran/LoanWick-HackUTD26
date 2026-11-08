@@ -11,6 +11,7 @@ import baseline from '../../../../fixtures/applications/demo.json';
 import manifest from '../../../../fixtures/manifest.json';
 import paymentSeed from './payment-seed.json';
 import type { FrontendAdapter, SessionState } from './types';
+import { prioritizeBorrowerApplications } from './types';
 
 const sourceFiles = import.meta.glob('../../../../fixtures/documents/*.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const StateSchema = z.strictObject({
@@ -148,6 +149,13 @@ export class FixtureAdapter implements FrontendAdapter {
   }
   subscribeCase: CaseAdapter['subscribeCase'] = (app, cb, err) => this.subscribe(() => this.staffView(app), cb, err);
   subscribeBorrowerCase: CaseAdapter['subscribeBorrowerCase'] = (app, cb, err) => this.subscribe(() => this.borrowerView(app), cb, err);
+  subscribeBorrowerApplications: NonNullable<FrontendAdapter['subscribeBorrowerApplications']> = (cb, err) => this.subscribe(() => {
+    if (this.user.role !== 'borrower') fail('UNAUTHORIZED', 'Borrower access is required.');
+    if (this.failure === 'offline') fail('INVALID_STATE', 'Disconnected. Retry to load your applications.');
+    return prioritizeBorrowerApplications(this.state.snapshot.applications.filter(a => a.borrowerUserId === this.user.id && a.organizationId === this.user.organizationId).map(({ id, businessName, amountCents, currency, stage }) => ({
+      id, businessName, amountCents, currency, stage, pendingRequestCount: this.state.requests.filter(r => r.applicationId === id && r.state === 'sent').length,
+    })));
+  }, cb, err);
   subscribePortfolio: CaseAdapter['subscribePortfolio'] = (cb, err) => this.subscribe(() => {
     if (!['officer', 'reviewer'].includes(this.user.role)) fail('UNAUTHORIZED', 'Staff access is required.');
     if (this.failure === 'offline') fail('INVALID_STATE', 'Disconnected. Retry to load applications.');
