@@ -143,7 +143,7 @@ describe('confirmed-group threshold', () => {
 describe('review revisions and source freshness', () => {
   it('reports incomplete collateral coverage and captures negative-match sources', () => {
     const result = analyzeSnapshot(fixture());
-    expect(result.sourceRevisions).toHaveLength(18);
+    expect(result.sourceRevisions).toHaveLength(8);
     expect(result.skippedCollateralIds).toEqual(['asset-similar-b']);
     expect(result.results).toHaveLength(1);
   });

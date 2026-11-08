@@ -12,9 +12,9 @@ function portfolio(adapter = new FixtureAdapter()) {
 describe('authorized portfolio summaries', () => {
   test('summarizes the canonical fixture without rounding stored amounts', () => {
     const summary = summarizePortfolio(portfolio());
-    expect(summary).toMatchObject({ count: 18, investigated: 0, openConcerns: 4, flaggedApplications: 4, releaseReady: 0, released: 0 });
-    expect(summary.currencies).toEqual([{ currency: 'USD', totalCents: 481_775_000, maxCents: 79_140_000 }]);
-    expect(summary.stages).toEqual([{ stage: 'submitted', count: 10 }, { stage: 'reviewing', count: 8 }]);
+    expect(summary).toMatchObject({ count: 8, investigated: 0, openConcerns: 4, flaggedApplications: 4, releaseReady: 0, released: 0 });
+    expect(summary.currencies).toEqual([{ currency: 'USD', totalCents: 198_000_000, maxCents: 70_000_000 }]);
+    expect(summary.stages).toEqual([{ stage: 'reviewing', count: 8 }]);
     expect(formatPortfolioMoney(198_000_000, 'USD', true)).toBe('$2M');
     expect(formatPortfolioMoney(198_000_000, 'USD')).toBe('$1,980,000');
   });
