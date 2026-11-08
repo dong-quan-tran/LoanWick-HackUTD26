@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "apps-web-src-app-tsx"
-primary_target: "apps/web/src/App.tsx"
-related_targets: ["apps/web/src/ContractVerification.tsx","apps/web/src/ContractVerification.module.css"]
+primary_target: "src/App.tsx"
+related_targets: ["src/ContractVerification.tsx","src/ContractVerification.module.css"]
 ---
 
 # Loan contract verification

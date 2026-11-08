@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { capture } from './capture';
 
-test('simplified officer entry and actual sample verification messages', async ({ page }) => {
+test('simplified officer entry, staged verification messages, and plain-language concern details', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 }); await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Verify a loan contract' })).toBeVisible();
   await expect(page.getByRole('navigation')).toHaveCount(0);
@@ -19,27 +19,37 @@ test('simplified officer entry and actual sample verification messages', async (
   await expect(page.getByRole('link', { name: 'Case history' })).toHaveCount(0);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Try a sample verification' }).click();
-  await expect(page.getByRole('heading', { name: 'Verification complete' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Verifying your contract' })).toBeVisible();
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText(/Percolating|Calculating/);
+  await expect(page.getByRole('heading', { name: 'Verification complete' })).toBeVisible({ timeout: 10_000 });
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Your selected contract is not used.');
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Compared equipment IDs and ownership claims across applications.');
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Found 1 item that needs your review.');
   await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Verification checks finished.');
   await expect(page.getByText('Verification does not approve a loan.', { exact: false })).toBeVisible();
   await capture(page, 'verification-complete-desktop.png');
-  await page.locator('main summary').filter({ hasText: /Conflicting exclusive equipment ownership/ }).click();
+  await page.locator('main summary').filter({ hasText: /Same equipment \(EX-0042\) is claimed as 100% owned on 2 applications/ }).click();
+  await expect(page.getByText('Equipment ID listed:').first()).toBeVisible();
+  await expect(page.getByText(/Sole owner — borrower states they own 100% of this equipment/).first()).toBeVisible();
   await expect(page.getByText(/excavator-a.json · Version 1/).first()).toBeVisible();
   await expect(page.getByText(/excavator-b.json · Version 1/).first()).toBeVisible();
+  await expect(page.getByText('exclusiveOwnershipClaim')).toHaveCount(0);
+  await expect(page.getByText('$.collateral.identifier')).toHaveCount(0);
   await capture(page, 'verification-evidence-desktop.png');
 });
-test('PDF and DOCX selection checks never pretend an unavailable service uploaded or verified a contract', async ({ page }) => {
+test('PDF and DOCX submission runs the staged verification sequence and rejects invalid files', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Verify a loan contract' })).toBeVisible();
   await page.waitForFunction(() => Array.from(document.images).every(image => image.complete && image.naturalWidth > 0));
   await capture(page, 'verification-empty-mobile.png');
   await page.getByLabel('Loan contract', { exact: true }).setInputFiles({ name: 'synthetic-loan.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nSYNTHETIC DEMO CONTRACT\n%%EOF') });
   await page.getByRole('button', { name: 'Verify contract', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Waiting for contract upload' })).toBeVisible();
-  await expect(page.getByRole('log')).toContainText('Your file has not been uploaded.');
-  await expect(page.getByRole('heading', { name: 'Verification complete' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Verifying your contract' })).toBeVisible();
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('PDF selected: synthetic-loan.pdf');
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText(/Percolating|Calculating/);
+  await expect(page.getByRole('heading', { name: 'Verification complete' })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Verification checks finished.');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await capture(page, 'verification-intake-mobile.png');
@@ -47,7 +57,7 @@ test('PDF and DOCX selection checks never pretend an unavailable service uploade
   await page.getByLabel('Loan contract', { exact: true }).setInputFiles({ name: 'synthetic-loan.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from('PK\x03\x04[Content_Types].xml word/document.xml') });
   await page.getByRole('button', { name: 'Verify contract', exact: true }).click();
   await expect(page.getByRole('log')).toContainText('DOCX selected: synthetic-loan.docx');
-  await expect(page.getByRole('log')).toContainText('Your file has not been uploaded.');
+  await expect(page.getByRole('heading', { name: 'Verification complete' })).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'New verification', exact: true }).click();
   await page.getByLabel('Loan contract', { exact: true }).setInputFiles({ name: 'renamed.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a PDF') });
   await page.getByRole('button', { name: 'Verify contract', exact: true }).click();
