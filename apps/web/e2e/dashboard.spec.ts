@@ -7,20 +7,21 @@ test('Applications is the staff home and filters leave portfolio summaries intac
   await expect(page).toHaveURL(/\/applications$/);
   await expect(page.getByRole('heading', { name: 'Applications', exact: true, level: 1 })).toBeVisible();
   const summary = page.getByRole('region', { name: 'Portfolio summary' });
-  await expect(summary.getByLabel('Applications summary')).toContainText('8');
+  await expect(summary.getByLabel('Applications summary')).toContainText('18');
   await expect(summary.getByLabel('Applications summary')).toContainText('0 investigated');
-  await expect(summary.getByLabel('Total requested summary')).toContainText('$2M');
-  await expect(summary.getByLabel('USD $1,980,000', { exact: true })).toBeVisible();
+  await expect(summary.getByLabel('Total requested summary')).toContainText('$5M');
+  await expect(summary.getByLabel('USD $4,817,750', { exact: true })).toBeVisible();
   await expect(summary.getByLabel('Open concerns summary')).toContainText('4 applications flagged');
+  await expect(page.getByRole('region', { name: 'Application pipeline' })).toContainText('Submitted 10');
   await expect(page.getByRole('region', { name: 'Application pipeline' })).toContainText('Reviewing 8');
   const table = page.getByRole('table');
-  await expect(table.getByRole('row')).toHaveCount(9);
+  await expect(table.getByRole('row')).toHaveCount(19);
   await page.getByLabel('Filter by concerns').selectOption('open');
   await expect(table.getByRole('row')).toHaveCount(5);
   await page.getByLabel('Search applications').fill('Cedar');
   await expect(table.getByRole('row')).toHaveCount(2);
-  await expect(summary.getByLabel('Applications summary')).toContainText('8');
-  await expect(summary.getByLabel('Total requested summary')).toContainText('$2M');
+  await expect(summary.getByLabel('Applications summary')).toContainText('18');
+  await expect(summary.getByLabel('Total requested summary')).toContainText('$5M');
   await page.getByLabel('Search applications').fill('no matching business');
   await expect(page.getByRole('heading', { name: 'No matching applications' })).toBeVisible();
   await expect(summary.getByLabel('Open concerns summary')).toContainText('4 applications flagged');
@@ -34,7 +35,7 @@ for (const viewport of [
   test(`dashboard layout and accessibility at ${viewport.name} size`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/applications');
-    await expect(page.getByRole('table').getByRole('row')).toHaveCount(9);
+    await expect(page.getByRole('table').getByRole('row')).toHaveCount(19);
     await page.evaluate(() => document.fonts.ready);
     await settleMotion(page);
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
@@ -82,9 +83,9 @@ test('portfolio updates after an investigation and borrower home stays isolated'
 test('reduced motion leaves arrivals visible and keyboard case tabs usable', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/applications');
-  await expect(page.getByRole('table').getByRole('row')).toHaveCount(9);
+  await expect(page.getByRole('table').getByRole('row')).toHaveCount(19);
   expect(await page.locator('main').evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
-  await expect(page.getByLabel('Total requested summary')).toContainText('$2M');
+  await expect(page.getByLabel('Total requested summary')).toContainText('$5M');
   await page.getByRole('link', { name: 'Cedar Demo Excavation', exact: true }).click();
   const evidence = page.getByRole('tab', { name: 'Findings & evidence' });
   await evidence.focus();

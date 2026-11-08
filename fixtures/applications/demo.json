@@ -112,6 +112,146 @@
       "paymentRevision": 1,
       "createdAt": "2026-11-07T12:00:00.000Z",
       "updatedAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "app-summit-hearth",
+      "borrowerUserId": "user-summit-hearth",
+      "organizationId": "org-demo",
+      "businessName": "Summit Hearth Bakery",
+      "amountCents": 8650000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-cove-dental",
+      "borrowerUserId": "user-cove-dental",
+      "organizationId": "org-demo",
+      "businessName": "Cove Dental Studio",
+      "amountCents": 21475000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-copperline-print",
+      "borrowerUserId": "user-copperline-print",
+      "organizationId": "org-demo",
+      "businessName": "Copperline Print Company",
+      "amountCents": 43720000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-mesa-cold",
+      "borrowerUserId": "user-mesa-cold",
+      "organizationId": "org-demo",
+      "businessName": "Mesa Cold Storage",
+      "amountCents": 12890000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-brightpath-vet",
+      "borrowerUserId": "user-brightpath-vet",
+      "organizationId": "org-demo",
+      "businessName": "Brightpath Veterinary Clinic",
+      "amountCents": 6425000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-ironleaf-mill",
+      "borrowerUserId": "user-ironleaf-mill",
+      "organizationId": "org-demo",
+      "businessName": "Ironleaf Millworks",
+      "amountCents": 31200000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-riverbend-glass",
+      "borrowerUserId": "user-riverbend-glass",
+      "organizationId": "org-demo",
+      "businessName": "Riverbend Glassworks",
+      "amountCents": 54860000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-plainfield-ag",
+      "borrowerUserId": "user-plainfield-ag",
+      "organizationId": "org-demo",
+      "businessName": "Plainfield Ag Supply",
+      "amountCents": 79140000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-pinnacle-auto",
+      "borrowerUserId": "user-pinnacle-auto",
+      "organizationId": "org-demo",
+      "businessName": "Pinnacle Auto Body",
+      "amountCents": 9785000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "app-sable-thread",
+      "borrowerUserId": "user-sable-thread",
+      "organizationId": "org-demo",
+      "businessName": "Sable Thread Apparel",
+      "amountCents": 15630000,
+      "currency": "USD",
+      "stage": "submitted",
+      "applicationRevision": 1,
+      "collateralRevision": 1,
+      "paymentRevision": 1,
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "updatedAt": "2026-11-08T16:00:00.000Z"
     }
   ],
   "documents": [
@@ -202,6 +342,116 @@
       "extractionStatus": "succeeded",
       "createdAt": "2026-11-07T12:00:00.000Z",
       "uploadedBy": "user-group-b"
+    },
+    {
+      "id": "doc-summit-hearth",
+      "applicationId": "app-summit-hearth",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "416db079b756f70c39947a54c20cfaaa9213fb26448018557cbc4d394a661f0b",
+      "displayFilename": "02-summit-hearth-bakery.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-summit-hearth"
+    },
+    {
+      "id": "doc-cove-dental",
+      "applicationId": "app-cove-dental",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "b6a5c705c54fd7a22116c43200cd803be05c9e1c830ab6c7e5df703e262869cf",
+      "displayFilename": "03-cove-dental-studio.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-cove-dental"
+    },
+    {
+      "id": "doc-copperline-print",
+      "applicationId": "app-copperline-print",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "aeaaed0ae0deb09176b4a9500510ebc5aca5a34d1b10f66cd670291b7b1d7c76",
+      "displayFilename": "04-copperline-print.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-copperline-print"
+    },
+    {
+      "id": "doc-mesa-cold",
+      "applicationId": "app-mesa-cold",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "edaa43604bd9c24092fd2101ac5a8550095ab6efc02b9eac893d1bb55b1b7a1f",
+      "displayFilename": "05-mesa-cold-storage.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-mesa-cold"
+    },
+    {
+      "id": "doc-brightpath-vet",
+      "applicationId": "app-brightpath-vet",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "8bb5c34a900dade8d0541565caa468d57ff5eb5ae360a7f5db7644ac1c274fb3",
+      "displayFilename": "06-brightpath-veterinary.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-brightpath-vet"
+    },
+    {
+      "id": "doc-ironleaf-mill",
+      "applicationId": "app-ironleaf-mill",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "97169e8e76477f8c7abc0051b34594bdc553480850901b5b672d320181d53579",
+      "displayFilename": "07-ironleaf-millworks.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-ironleaf-mill"
+    },
+    {
+      "id": "doc-riverbend-glass",
+      "applicationId": "app-riverbend-glass",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "7d6e7a7a564732666469822ee345a6fec0b3d59d0e3d62eb4b8139e8b12ddaf2",
+      "displayFilename": "08-riverbend-glassworks.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-riverbend-glass"
+    },
+    {
+      "id": "doc-plainfield-ag",
+      "applicationId": "app-plainfield-ag",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "0cc24062b072a3d8988216e86b72cc75c2b1be62d045747871c3dd85fd8b2114",
+      "displayFilename": "09-plainfield-ag-supply.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-plainfield-ag"
+    },
+    {
+      "id": "doc-pinnacle-auto",
+      "applicationId": "app-pinnacle-auto",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "49c665b80775f595500069892d9a80d2b4ab60df4637e90fa5245f5826f4160e",
+      "displayFilename": "10-pinnacle-auto-body.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-pinnacle-auto"
+    },
+    {
+      "id": "doc-sable-thread",
+      "applicationId": "app-sable-thread",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "b0281101c74c54fcd9c85378205b0e07b14e83e94ea317591620c77eb787ef97",
+      "displayFilename": "11-sable-thread-apparel.pdf",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-08T16:00:00.000Z",
+      "uploadedBy": "user-sable-thread"
     }
   ],
   "evidence": [
@@ -867,6 +1117,266 @@
       "extractedValue": "USD",
       "extractionMethod": "structured",
       "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-summit-hearth-identifier",
+      "applicationId": "app-summit-hearth",
+      "documentId": "doc-summit-hearth",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: OV-482917",
+      "fieldName": "identifier",
+      "extractedValue": "OV-482917",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-summit-hearth-ownership",
+      "applicationId": "app-summit-hearth",
+      "documentId": "doc-summit-hearth",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Summit Hearth Bakery claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-cove-dental-identifier",
+      "applicationId": "app-cove-dental",
+      "documentId": "doc-cove-dental",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: IM-173640",
+      "fieldName": "identifier",
+      "extractedValue": "IM-173640",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-cove-dental-ownership",
+      "applicationId": "app-cove-dental",
+      "documentId": "doc-cove-dental",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Cove Dental Studio claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-copperline-print-identifier",
+      "applicationId": "app-copperline-print",
+      "documentId": "doc-copperline-print",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: PR-905218",
+      "fieldName": "identifier",
+      "extractedValue": "PR-905218",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-copperline-print-ownership",
+      "applicationId": "app-copperline-print",
+      "documentId": "doc-copperline-print",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Copperline Print Company claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-mesa-cold-identifier",
+      "applicationId": "app-mesa-cold",
+      "documentId": "doc-mesa-cold",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: RF-661034",
+      "fieldName": "identifier",
+      "extractedValue": "RF-661034",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-mesa-cold-ownership",
+      "applicationId": "app-mesa-cold",
+      "documentId": "doc-mesa-cold",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Mesa Cold Storage claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-brightpath-vet-identifier",
+      "applicationId": "app-brightpath-vet",
+      "documentId": "doc-brightpath-vet",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: XR-308751",
+      "fieldName": "identifier",
+      "extractedValue": "XR-308751",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-brightpath-vet-ownership",
+      "applicationId": "app-brightpath-vet",
+      "documentId": "doc-brightpath-vet",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Brightpath Veterinary Clinic claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-ironleaf-mill-identifier",
+      "applicationId": "app-ironleaf-mill",
+      "documentId": "doc-ironleaf-mill",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: CN-774196",
+      "fieldName": "identifier",
+      "extractedValue": "CN-774196",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-ironleaf-mill-ownership",
+      "applicationId": "app-ironleaf-mill",
+      "documentId": "doc-ironleaf-mill",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Ironleaf Millworks claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-riverbend-glass-identifier",
+      "applicationId": "app-riverbend-glass",
+      "documentId": "doc-riverbend-glass",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: GF-229480",
+      "fieldName": "identifier",
+      "extractedValue": "GF-229480",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-riverbend-glass-ownership",
+      "applicationId": "app-riverbend-glass",
+      "documentId": "doc-riverbend-glass",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Riverbend Glassworks claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-plainfield-ag-identifier",
+      "applicationId": "app-plainfield-ag",
+      "documentId": "doc-plainfield-ag",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: GD-851327",
+      "fieldName": "identifier",
+      "extractedValue": "GD-851327",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-plainfield-ag-ownership",
+      "applicationId": "app-plainfield-ag",
+      "documentId": "doc-plainfield-ag",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Plainfield Ag Supply claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-pinnacle-auto-identifier",
+      "applicationId": "app-pinnacle-auto",
+      "documentId": "doc-pinnacle-auto",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: FR-046582",
+      "fieldName": "identifier",
+      "extractedValue": "FR-046582",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-pinnacle-auto-ownership",
+      "applicationId": "app-pinnacle-auto",
+      "documentId": "doc-pinnacle-auto",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Pinnacle Auto Body claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-sable-thread-identifier",
+      "applicationId": "app-sable-thread",
+      "documentId": "doc-sable-thread",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 9",
+      "excerpt": "Equipment serial number: EM-513069",
+      "fieldName": "identifier",
+      "extractedValue": "EM-513069",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
+    },
+    {
+      "id": "ev-sable-thread-ownership",
+      "applicationId": "app-sable-thread",
+      "documentId": "doc-sable-thread",
+      "documentVersion": 1,
+      "pageNumber": 1,
+      "locator": "page 1 line 12",
+      "excerpt": "Sable Thread Apparel claims sole and exclusive ownership of the listed equipment.",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "pdf_text",
+      "createdAt": "2026-11-08T16:00:00.000Z"
     }
   ],
   "collateral": [
@@ -986,6 +1496,156 @@
       ],
       "ownershipEvidenceIds": [
         "ev-group-b-ownership"
+      ]
+    },
+    {
+      "id": "asset-summit-hearth",
+      "applicationId": "app-summit-hearth",
+      "assetType": "demo_equipment",
+      "identifier": "OV-482917",
+      "description": "Commercial deck oven",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-summit-hearth-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-summit-hearth-ownership"
+      ]
+    },
+    {
+      "id": "asset-cove-dental",
+      "applicationId": "app-cove-dental",
+      "assetType": "demo_equipment",
+      "identifier": "IM-173640",
+      "description": "Panoramic dental imaging unit",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-cove-dental-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-cove-dental-ownership"
+      ]
+    },
+    {
+      "id": "asset-copperline-print",
+      "applicationId": "app-copperline-print",
+      "assetType": "demo_equipment",
+      "identifier": "PR-905218",
+      "description": "Two-color offset printing press",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-copperline-print-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-copperline-print-ownership"
+      ]
+    },
+    {
+      "id": "asset-mesa-cold",
+      "applicationId": "app-mesa-cold",
+      "assetType": "demo_equipment",
+      "identifier": "RF-661034",
+      "description": "Walk-in refrigeration rack system",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-mesa-cold-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-mesa-cold-ownership"
+      ]
+    },
+    {
+      "id": "asset-brightpath-vet",
+      "applicationId": "app-brightpath-vet",
+      "assetType": "demo_equipment",
+      "identifier": "XR-308751",
+      "description": "Digital veterinary radiography panel",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-brightpath-vet-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-brightpath-vet-ownership"
+      ]
+    },
+    {
+      "id": "asset-ironleaf-mill",
+      "applicationId": "app-ironleaf-mill",
+      "assetType": "demo_equipment",
+      "identifier": "CN-774196",
+      "description": "Three-axis CNC wood router",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-ironleaf-mill-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-ironleaf-mill-ownership"
+      ]
+    },
+    {
+      "id": "asset-riverbend-glass",
+      "applicationId": "app-riverbend-glass",
+      "assetType": "demo_equipment",
+      "identifier": "GF-229480",
+      "description": "Architectural glass tempering furnace",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-riverbend-glass-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-riverbend-glass-ownership"
+      ]
+    },
+    {
+      "id": "asset-plainfield-ag",
+      "applicationId": "app-plainfield-ag",
+      "assetType": "demo_equipment",
+      "identifier": "GD-851327",
+      "description": "Continuous-flow grain dryer",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-plainfield-ag-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-plainfield-ag-ownership"
+      ]
+    },
+    {
+      "id": "asset-pinnacle-auto",
+      "applicationId": "app-pinnacle-auto",
+      "assetType": "demo_equipment",
+      "identifier": "FR-046582",
+      "description": "Vehicle frame alignment rack",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-pinnacle-auto-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-pinnacle-auto-ownership"
+      ]
+    },
+    {
+      "id": "asset-sable-thread",
+      "applicationId": "app-sable-thread",
+      "assetType": "demo_equipment",
+      "identifier": "EM-513069",
+      "description": "Multi-head industrial embroidery line",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-sable-thread-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-sable-thread-ownership"
       ]
     }
   ],

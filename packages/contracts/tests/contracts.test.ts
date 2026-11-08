@@ -4,7 +4,7 @@ import { checkCollateralConflicts } from '@loanwick/analysis';
 import { application, fixture, review } from '../../../tests/helpers.js';
 
 describe('runtime boundaries', () => {
-  it('accepts the canonical eight-application snapshot', () => expect(InvestigationSnapshotSchema.parse(fixture()).applications).toHaveLength(8));
+  it('accepts the canonical eighteen-application snapshot', () => expect(InvestigationSnapshotSchema.parse(fixture()).applications).toHaveLength(18));
   it.each([-1, 0.1, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, '100'])('rejects invalid integer cents %s', value => expect(CentsSchema.safeParse(value).success).toBe(false));
   it('accepts zero without treating missing cents as zero', () => {
     expect(CentsSchema.parse(0)).toBe(0);

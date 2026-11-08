@@ -52,10 +52,10 @@ async function add(adapter: FixtureAdapter, body: unknown = response, sha = file
 describe('verified contract uploads', () => {
   test('appear on Applications as a reviewing case with open concerns and a succeeded investigation', async () => {
     const adapter = new FixtureAdapter(); const before = summarizePortfolio(portfolio(adapter));
-    expect(before.count).toBe(8);
+    expect(before.count).toBe(18);
     expect(await add(adapter)).toEqual({ applicationId });
     const items = portfolio(adapter); const item = items.find(i => i.application.id === applicationId)!;
-    expect(items).toHaveLength(9);
+    expect(items).toHaveLength(19);
     expect(item.application).toMatchObject({ businessName: 'Northwind Demo Logistics', amountCents: 9_500_000, currency: 'USD', stage: 'reviewing' });
     expect(item.openFindingCount).toBe(1); expect(item.lastInvestigationStatus).toBe('succeeded');
     const after = summarizePortfolio(items);
@@ -84,19 +84,19 @@ describe('verified contract uploads', () => {
     const adapter = new FixtureAdapter(); await add(adapter);
     await add(adapter, { ...response, extracted: { ...response.extracted, amountCents: 9_900_000 } });
     const items = portfolio(adapter);
-    expect(items).toHaveLength(9); expect(items.find(i => i.application.id === applicationId)?.application.amountCents).toBe(9_900_000);
+    expect(items).toHaveLength(19); expect(items.find(i => i.application.id === applicationId)?.application.amountCents).toBe(9_900_000);
     const view = staff(adapter);
     expect(view.findings).toHaveLength(1); expect(view.investigations).toHaveLength(1); expect(view.toolEvents).toHaveLength(3); expect(view.documents).toHaveLength(3);
   });
   test('survives a reload of saved demo state and is removed by reset', async () => {
     const storage = memoryStorage(); const adapter = new FixtureAdapter(storage); await add(adapter);
     const restored = new FixtureAdapter(storage);
-    expect(restored.startupNotice).toBeUndefined(); expect(portfolio(restored)).toHaveLength(9); expect(staff(restored).findings).toHaveLength(1);
+    expect(restored.startupNotice).toBeUndefined(); expect(portfolio(restored)).toHaveLength(19); expect(staff(restored).findings).toHaveLength(1);
     restored.reset();
-    expect(portfolio(restored)).toHaveLength(8);
+    expect(portfolio(restored)).toHaveLength(18);
     let code = ''; restored.subscribeCase(applicationId, () => { throw Error('Reset kept the upload'); }, e => { code = e.code; })();
     expect(code).toBe('NOT_FOUND_OR_FORBIDDEN');
-    expect(portfolio(new FixtureAdapter(storage))).toHaveLength(8);
+    expect(portfolio(new FixtureAdapter(storage))).toHaveLength(18);
   });
   test('reports no concerns as a reviewing case with zero open findings', async () => {
     const adapter = new FixtureAdapter();
@@ -112,7 +112,7 @@ describe('verified contract uploads', () => {
     adapter.selectIdentity('reviewer', 'app-excavator-a');
     expect((await adapter.addVerifiedUpload(response, fileSha256)).ok).toBe(false);
     adapter.selectIdentity('officer', 'app-excavator-a');
-    expect(portfolio(adapter)).toHaveLength(8);
+    expect(portfolio(adapter)).toHaveLength(18);
   });
   test('switches to a synthetic borrower for the uploaded case', async () => {
     const adapter = new FixtureAdapter(); await add(adapter);
