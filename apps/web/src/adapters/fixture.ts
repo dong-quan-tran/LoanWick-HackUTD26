@@ -1,11 +1,11 @@
 // Development-only simulator. Never imported by the live entry point.
 import { z } from 'zod';
 import {
-  AuditEventSchema, BorrowerCaseViewSchema, BorrowerResponseSchema, ClarificationRequestSchema,
-  DemoReleaseSchema, FindingSchema, InvestigationJobSchema, InvestigationSnapshotSchema,
+  ApplicationSchema, AuditEventSchema, BorrowerCaseViewSchema, BorrowerResponseSchema, CentsSchema, ClarificationRequestSchema,
+  DemoReleaseSchema, DocumentMetadataSchema, EvidenceSchema, FindingSchema, IdSchema, InvestigationJobSchema, InvestigationSnapshotSchema,
   PaymentInstructionSchema, StaffCaseViewSchema, ToolEventSchema,
 } from '@loanwick/contracts';
-import { analyzeSnapshot, captureSourceRevisions, getChangedSourceIds, getPolicyReadiness, REVIEW_REVISION_MAP } from '@loanwick/analysis';
+import { analyzeSnapshot, captureSourceRevisions, COLLATERAL_RULE_VERSION, getChangedSourceIds, getPolicyReadiness, GROUP_RULE_VERSION, normalizeIdentifier, REVIEW_REVISION_MAP } from '@loanwick/analysis';
 import type { Application, CaseAdapter, CheckType, DomainError, Finding, OperationResult, SourceRevision, User } from '@loanwick/contracts/domain';
 import baseline from '../../../../fixtures/applications/demo.json';
 import manifest from '../../../../fixtures/manifest.json';
@@ -14,6 +14,27 @@ import type { FrontendAdapter, SessionState } from './types';
 import { prioritizeBorrowerApplications } from './types';
 
 const sourceFiles = import.meta.glob('../../../../fixtures/documents/*.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const loanFiles = import.meta.glob('../../../../fixtures/database/application-*.txt', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const RelatedApplicationSchema = ApplicationSchema.pick({ id: true, businessName: true, amountCents: true, currency: true });
+// Loans the verification service compared against are not fixture applications, so they cannot enter the validated snapshot.
+const UploadRecordSchema = z.strictObject({
+  applicationId: IdSchema, relatedApplications: z.array(RelatedApplicationSchema).max(1_000),
+  documents: z.array(DocumentMetadataSchema).max(1_000), evidence: z.array(EvidenceSchema).max(1_000),
+});
+const findingShape = FindingSchema.shape;
+const VerifiedUploadSchema = z.object({
+  applicationId: IdSchema, filename: z.string().min(1).max(200), executionMode: z.enum(['live', 'fixture']), model: z.string().min(1).max(200),
+  extracted: z.object({ businessName: z.string().nullable(), amountCents: CentsSchema.nullable(), currency: z.string().nullable(), identifier: z.string().nullable(), exclusiveOwnershipClaim: z.boolean() }),
+  comparedWith: z.array(z.unknown()).max(1_000), tools: z.array(z.object({ name: ToolEventSchema.shape.toolName, status: ToolEventSchema.shape.status })).max(100),
+  findings: z.array(z.object({
+    id: findingShape.deduplicationKey, findingType: findingShape.findingType, severity: findingShape.severity, title: findingShape.title, explanation: findingShape.explanation,
+    uncertainty: findingShape.uncertainty, suggestedNextStep: findingShape.suggestedNextStep, applicationIds: findingShape.applicationIds, evidenceIds: findingShape.evidenceIds, facts: findingShape.facts,
+  })).max(100),
+  case: z.object({
+    application: z.object({ id: IdSchema, businessName: ApplicationSchema.shape.businessName }), relatedApplications: z.array(RelatedApplicationSchema).max(1_000),
+    evidence: z.array(EvidenceSchema).max(1_000), documents: z.array(DocumentMetadataSchema.pick({ id: true, applicationId: true, displayFilename: true, version: true })).max(1_000),
+  }),
+});
 const StateSchema = z.strictObject({
   version: z.literal(1), snapshot: InvestigationSnapshotSchema,
   findings: z.array(FindingSchema), jobs: z.array(InvestigationJobSchema), events: z.array(ToolEventSchema),
@@ -21,12 +42,14 @@ const StateSchema = z.strictObject({
   audit: z.array(AuditEventSchema), releases: z.array(DemoReleaseSchema), payments: z.array(PaymentInstructionSchema),
   sources: z.record(z.string(), z.string()),
   corrections: z.record(z.string(), z.string()).default({}),
+  uploads: z.array(UploadRecordSchema).default([]),
 });
 type State = z.infer<typeof StateSchema>;
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const STORAGE_KEY = 'loanwick.fixture.v1';
 const now = () => new Date().toISOString();
 const id = () => crypto.randomUUID();
+const sha256 = async (raw: string) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)))].map(x => x.toString(16).padStart(2, '0')).join('');
 const fail = (code: DomainError['code'], message: string): never => { throw Object.assign(new Error(message), { code }); };
 const requireText = (value: string, label: string, max = 1600) => {
   if (!value.trim() || value.length > max) fail('INVALID_INPUT', `${label} is required and must be at most ${max} characters.`);
@@ -43,7 +66,7 @@ function seed(): State {
   })));
   const sources = Object.fromEntries(snapshot.documents.map(doc => [doc.id, Object.entries(sourceFiles).find(([path]) => path.endsWith(`/${doc.displayFilename}`))?.[1] ?? '']));
   for (const item of paymentSeed) sources[item.document.id] = item.source;
-  return { version: 1, snapshot, findings, sources, corrections: {}, jobs: [], events: [], requests: [], responses: [], audit: [], releases: [], payments: paymentSeed.map(item => PaymentInstructionSchema.parse(item.payment)) };
+  return { version: 1, snapshot, findings, sources, corrections: {}, uploads: [], jobs: [], events: [], requests: [], responses: [], audit: [], releases: [], payments: paymentSeed.map(item => PaymentInstructionSchema.parse(item.payment)) };
 }
 
 export class FixtureAdapter implements FrontendAdapter {
@@ -77,7 +100,8 @@ export class FixtureAdapter implements FrontendAdapter {
   subscribeSession = (cb: (s: SessionState) => void) => this.watch(() => cb(this.session()));
   selectIdentity(role: 'officer' | 'borrower' | 'reviewer', applicationId: string) {
     const app = this.app(applicationId);
-    this.user = structuredClone(manifest.identities.find(u => role === 'borrower' ? u.id === app.borrowerUserId : u.role === role) as User);
+    this.user = structuredClone(manifest.identities.find(u => role === 'borrower' ? u.id === app.borrowerUserId : u.role === role) as User | undefined)
+      ?? { id: app.borrowerUserId, identity: `SYNTH-IDENTITY-${app.id}`, role: 'borrower', organizationId: app.organizationId, displayName: `${app.businessName} borrower`, active: true };
     try { this.storage?.setItem('loanwick.fixture.identity.v1', this.user.id); } catch { /* In-memory identity still works. */ }
     this.emit();
   }
@@ -122,8 +146,9 @@ export class FixtureAdapter implements FrontendAdapter {
     const relatedIds = new Set([...findings.flatMap(f => f.applicationIds), ...relationships.flatMap(r => [r.leftApplicationId, r.rightApplicationId])]);
     const visible = new Set([app.id, ...relatedIds]);
     const payment = this.state.payments.filter(p => p.applicationId === app.id).at(-1);
+    const upload = this.state.uploads.find(u => u.applicationId === app.id);
     return StaffCaseViewSchema.parse({
-      application: app, documents: this.state.snapshot.documents.filter(d => visible.has(d.applicationId)), evidence: this.state.snapshot.evidence.filter(e => visible.has(e.applicationId)),
+      application: app, documents: [...this.state.snapshot.documents.filter(d => visible.has(d.applicationId)), ...upload?.documents ?? []], evidence: [...this.state.snapshot.evidence.filter(e => visible.has(e.applicationId)), ...upload?.evidence ?? []],
       collateral: this.state.snapshot.collateral.filter(c => c.applicationId === app.id), findings, relationships,
       investigations: this.state.jobs.filter(j => j.applicationId === app.id).map(({ id, applicationId, runKey, status, executionMode, modelId, errorCode, startedAt, completedAt, capturedRevisions }) => ({ id, applicationId, runKey, status, executionMode, modelId, errorCode, startedAt, completedAt, capturedRevisions })),
       toolEvents: this.state.events.filter(e => this.state.jobs.some(j => j.id === e.investigationJobId && j.applicationId === app.id)),
@@ -131,7 +156,7 @@ export class FixtureAdapter implements FrontendAdapter {
       reviews: this.state.snapshot.reviews.filter(r => r.applicationId === app.id), auditEvents: this.state.audit.filter(a => a.applicationId === app.id),
       readiness: this.readiness(app), release: this.state.releases.find(r => r.applicationId === app.id) ?? null,
       paymentSummary: payment ? { id: payment.id, applicationId: app.id, version: payment.version, maskedDisplay: payment.maskedDisplay, beneficiaryName: payment.beneficiaryName, evidenceIds: payment.evidenceIds } : null,
-      relatedApplications: this.state.snapshot.applications.filter(a => a.id !== app.id && relatedIds.has(a.id)).map(({ id, businessName, amountCents, currency }) => ({ id, businessName, amountCents, currency })),
+      relatedApplications: [...this.state.snapshot.applications.filter(a => a.id !== app.id && relatedIds.has(a.id)).map(({ id, businessName, amountCents, currency }) => ({ id, businessName, amountCents, currency })), ...upload?.relatedApplications ?? []],
       findingCurrentness: Object.fromEntries(findings.map(f => [f.id, f.observedRevisions.every(r => {
         const source = this.app(r.applicationId); return r.applicationRevision === source.applicationRevision && r.collateralRevision === source.collateralRevision && r.paymentRevision === source.paymentRevision;
       })])),
@@ -262,6 +287,57 @@ export class FixtureAdapter implements FrontendAdapter {
     const release = { id: id(), applicationId: app.id, idempotencyKey: input.idempotencyKey, releasedBy: this.user.id, releasedAt: now(), syntheticAmountCents: app.amountCents };
     this.state.releases.push(release); app.stage = 'released_demo'; this.audit(app.id, 'simulated_release', 'SIMULATED RELEASE - NO MONEY MOVED'); return release;
   });
+  addVerifiedUpload(response: unknown, fileSha256: string) {
+    const correlationId = id();
+    return this.operation(correlationId, async () => {
+      if (this.failure === 'offline') fail('INVALID_STATE', 'Disconnected. Retry the connection before continuing.');
+      if (this.user.role !== 'officer') fail('UNAUTHORIZED', 'Only a loan officer can add a verified contract.');
+      const upload = VerifiedUploadSchema.safeParse(response).data ?? fail('INVALID_INPUT', 'The verification result could not be added to Applications.');
+      const applicationId = upload.applicationId;
+      if (!/^[a-f0-9]{64}$/.test(fileSha256) || applicationId !== `upload-${fileSha256.slice(0, 12)}` || upload.case.application.id !== applicationId) fail('INVALID_INPUT', 'The verification result does not match the uploaded contract.');
+      const prior = this.state.snapshot.applications.find(a => a.id === applicationId); if (prior) this.editable(prior);
+      const actorId = this.user.id; const createdAt = now();
+      const related = (await Promise.all(upload.case.documents.filter(d => d.applicationId !== applicationId).map(async d => {
+        const raw = Object.entries(loanFiles).find(([path]) => path.endsWith(`/${d.displayFilename}`))?.[1]?.replace(/\r\n/g, '\n');
+        return raw === undefined ? [] : [{ raw, document: { ...d, type: 'collateral_schedule', sha256: await sha256(raw), extractionStatus: 'succeeded' as const, createdAt, uploadedBy: 'borrower-demo' } }];
+      }))).flat();
+      if (actorId !== this.user.id) fail('UNAUTHORIZED', 'The session changed before the verified contract was added.');
+      const next = structuredClone(this.state); const s = next.snapshot;
+      const replacedJobs = new Set(next.jobs.filter(j => j.applicationId === applicationId).map(j => j.id));
+      const others = <T extends { applicationId: string }>(items: T[]) => items.filter(item => item.applicationId !== applicationId);
+      s.applications = s.applications.filter(a => a.id !== applicationId); s.documents = others(s.documents); s.evidence = others(s.evidence); s.collateral = others(s.collateral); s.reviews = others(s.reviews);
+      s.relationships = s.relationships.filter(r => r.leftApplicationId !== applicationId && r.rightApplicationId !== applicationId);
+      Object.assign(next, { findings: others(next.findings), jobs: others(next.jobs), events: next.events.filter(e => !replacedJobs.has(e.investigationJobId)), requests: others(next.requests), responses: others(next.responses), releases: others(next.releases), payments: others(next.payments), uploads: others(next.uploads) });
+      const own = upload.case.documents.find(d => d.applicationId === applicationId); const currency = upload.extracted.currency?.toUpperCase() ?? '';
+      s.applications.push({ id: applicationId, borrowerUserId: `user-${applicationId}`, organizationId: this.user.organizationId, businessName: upload.case.application.businessName, amountCents: upload.extracted.amountCents ?? 0,
+        currency: /^[A-Z]{3}$/.test(currency) ? currency : 'USD', stage: 'reviewing', applicationRevision: 1, collateralRevision: 1, paymentRevision: 1, createdAt, updatedAt: createdAt });
+      s.documents.push({ id: own?.id ?? `doc-${applicationId}`, applicationId, type: 'collateral_schedule', version: own?.version ?? 1, sha256: fileSha256, displayFilename: own?.displayFilename ?? upload.filename, extractionStatus: 'succeeded', createdAt, uploadedBy: actorId });
+      const ownEvidence = upload.case.evidence.filter(e => e.applicationId === applicationId); s.evidence.push(...ownEvidence);
+      const identifier = ownEvidence.find(e => e.fieldName === 'identifier'); const ownership = ownEvidence.find(e => e.fieldName === 'exclusiveOwnershipClaim');
+      if (upload.extracted.identifier && identifier) s.collateral.push({ id: `asset-${applicationId}`, applicationId, assetType: 'equipment', identifier: upload.extracted.identifier, description: 'Equipment listed in the uploaded contract',
+        exclusiveOwnershipClaim: ownership ? upload.extracted.exclusiveOwnershipClaim : null, active: true, evidenceIds: [identifier.id], ownershipEvidenceIds: ownership ? [ownership.id] : [] });
+      const job = { id: id(), applicationId, capturedRevisions: captureSourceRevisions(s.applications), status: 'succeeded' as const, runKey: correlationId, executionMode: upload.executionMode,
+        claimedBy: null, claimToken: null, leaseExpiresAt: null, startedAt: createdAt, completedAt: createdAt, modelId: upload.executionMode === 'live' ? upload.model : null, errorCode: null };
+      next.jobs.push(job);
+      const tools = [...upload.tools.map(tool => ({ toolName: tool.name, status: tool.status, safeOutputSummary: 'Reported by the verification service.' })),
+        { toolName: 'compareUploadedContract', status: 'succeeded' as const, safeOutputSummary: `Compared with ${upload.comparedWith.length} loans on file; ${upload.findings.length} concern${upload.findings.length === 1 ? '' : 's'} returned. This is not a safety guarantee.` }];
+      next.events.push(...tools.map((tool, index) => ({ ...tool, id: id(), investigationJobId: job.id, sequence: index + 1, safeInputSummary: upload.filename, durationMs: 0, createdAt })));
+      const observedRevisions = captureSourceRevisions(s.applications.filter(a => a.id === applicationId));
+      const normalized = normalizeIdentifier(upload.extracted.identifier);
+      next.findings.push(...upload.findings.map(f => ({
+        id: id(), applicationId, investigationJobId: job.id, status: 'open' as const, createdAt, updatedAt: createdAt, findingType: f.findingType, severity: f.severity,
+        evidenceState: f.findingType === 'collateral_conflict' ? 'contradicted' as const : f.findingType === 'group_review_required' ? 'supported' as const : 'unknown' as const,
+        title: f.title, explanation: f.explanation, uncertainty: f.uncertainty, suggestedNextStep: f.suggestedNextStep, applicationIds: f.applicationIds, evidenceIds: f.evidenceIds, observedRevisions,
+        ruleVersion: f.findingType === 'group_review_required' ? GROUP_RULE_VERSION : COLLATERAL_RULE_VERSION, deduplicationKey: f.id,
+        facts: f.findingType === 'group_review_required' || f.facts.normalizedIdentifier || normalized.state !== 'valid' ? f.facts : { ...f.facts, normalizedIdentifier: normalized.normalized, assetType: f.facts.assetType ?? 'equipment' },
+      })));
+      next.uploads.push({ applicationId, relatedApplications: upload.case.relatedApplications, documents: related.map(item => item.document), evidence: upload.case.evidence.filter(e => e.applicationId !== applicationId) });
+      for (const item of related) next.sources[item.document.id] = item.raw;
+      next.audit.push({ id: id(), applicationId, actorId, action: 'contract_verified', safeDetails: `${upload.filename} was read and compared with ${upload.comparedWith.length} loans on file by the ${upload.executionMode} verification service.`, createdAt });
+      this.state = StateSchema.safeParse(next).data ?? fail('INVALID_INPUT', 'The verification result could not be added to Applications.');
+      return { applicationId };
+    });
+  }
   private async addDocument(app: Application, filename: string, content: Record<string, unknown>, type: string, fieldName: string, value: string) {
     const actorId = this.user.id;
     const raw = JSON.stringify(content, null, 2) + '\n';
@@ -292,10 +368,14 @@ export class FixtureAdapter implements FrontendAdapter {
     this.change(app, 'collateral'); this.audit(app.id, 'synthetic_correction_selected', documentId); this.emit(); return documentId;
   }
   async source(documentId: string, version: number) {
-    const document = this.state.snapshot.documents.find(d => d.id === documentId && d.version === version) ?? fail('NOT_FOUND_OR_FORBIDDEN', 'This source version is unavailable.');
-    if (this.user.role === 'borrower') this.authorize(document.applicationId, ['borrower']);
+    const matches = (d: { id: string; version: number }) => d.id === documentId && d.version === version;
+    const owned = this.state.snapshot.documents.find(matches);
+    const upload = owned ? undefined : this.state.uploads.find(u => u.documents.some(matches));
+    const document = owned ?? upload?.documents.find(matches) ?? fail('NOT_FOUND_OR_FORBIDDEN', 'This source version is unavailable.');
+    if (upload) this.authorize(upload.applicationId, ['officer', 'reviewer']);
+    else if (this.user.role === 'borrower') this.authorize(document.applicationId, ['borrower']);
     else this.authorize(document.applicationId, ['officer', 'reviewer']);
-    const raw = this.state.sources[document.id] ?? fail('NOT_FOUND_OR_FORBIDDEN', 'Source text is unavailable.');
+    const raw = this.state.sources[document.id] ?? fail('NOT_FOUND_OR_FORBIDDEN', this.state.uploads.some(u => u.applicationId === document.applicationId) ? 'This demo does not keep the uploaded file. Use “View original wording” to see the cited text.' : 'Source text is unavailable.');
     const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
     const hash = [...new Uint8Array(bytes)].map(x => x.toString(16).padStart(2, '0')).join('');
     if (hash !== document.sha256) fail('INVALID_EVIDENCE', 'This stored source does not match its document hash. Reset the synthetic demo.');

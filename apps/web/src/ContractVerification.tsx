@@ -387,6 +387,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
         const read = [body.extracted?.businessName, body.extracted?.identifier && `serial ${body.extracted.identifier}`].filter(Boolean).join(' · ');
         setServiceResult(toServiceResult(body));
         setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: 'Contract read.', detail: read || undefined, state: 'done' }, { id: 'compare', text: `Compared with ${body.comparedWith?.length ?? 0} loans on file.`, state: 'done' }, { id: 'finding', text: finding ? friendlyFinding(finding, body.case ?? null).title : 'No other loan on file claims this equipment', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
+        const added = await adapter.addVerifiedUpload?.(body, info.sha256); if (generation.current !== activeGeneration || !added) return; if (added.ok) setMessages(current => [...current, { id: 'added', text: 'Added to Applications for review.', state: 'done' }]); else setError(added.error.message);
         return;
       }
       if (adapter.mode === 'fixture') {

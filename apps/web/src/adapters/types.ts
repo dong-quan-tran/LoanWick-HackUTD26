@@ -1,4 +1,4 @@
-import type { BorrowerCaseView, CaseAdapter, DomainError, Unsubscribe, User } from '@loanwick/contracts/domain';
+import type { BorrowerCaseView, CaseAdapter, DomainError, OperationResult, Unsubscribe, User } from '@loanwick/contracts/domain';
 export type BorrowerApplicationSummary = BorrowerCaseView['application'] & { pendingRequestCount: number };
 export const prioritizeBorrowerApplications = (items: BorrowerApplicationSummary[]) => items.sort((a, b) => b.pendingRequestCount - a.pendingRequestCount || a.businessName.localeCompare(b.businessName) || a.id.localeCompare(b.id));
 export interface SessionState {
@@ -21,6 +21,7 @@ export interface FrontendAdapter extends CaseAdapter {
   canAttachSyntheticCorrection?(requestId: string): boolean;
   uploadDocument?: ((requestId: string, file: File) => Promise<string>) | undefined;
   uploadContract?: ((applicationId: string, file: File) => Promise<string>) | undefined;
+  addVerifiedUpload?(response: unknown, sha256: string): Promise<OperationResult<{ applicationId: string }>>;
   contractUploadNeedsReconciliation?(applicationId: string): boolean;
   reconcileContractUpload?(applicationId: string): Promise<string | null>;
   uploadNeedsReconciliation?(requestId: string): boolean;
