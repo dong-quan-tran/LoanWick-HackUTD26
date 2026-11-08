@@ -4,6 +4,8 @@ import { test } from 'node:test'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { Identity } from 'spacetimedb'
 import { DbConnection } from '../bindings'
+import { createUploadCapability } from '../transport/capability'
+import { startUploadTestServer } from './upload-https'
 
 const endpoint = process.env.LOANWICK_DB_URL ?? 'http://127.0.0.1:4310'
 const database = process.env.LOANWICK_DB_NAME ?? 'loanwick-dev'
@@ -18,7 +20,7 @@ const case7 = 'demo-case-7'
 const case8 = 'demo-case-8'
 
 const staffViews = ['staff_applications', 'staff_documents', 'staff_evidence', 'staff_jobs', 'staff_findings', 'staff_tool_events',
-  'staff_clarifications', 'staff_responses', 'staff_reviews', 'staff_readiness', 'staff_releases', 'staff_audit_events']
+  'staff_clarifications', 'staff_responses', 'staff_reviews', 'staff_readiness', 'staff_releases', 'staff_audit_events', 'my_upload_grants']
 const borrowerViews = ['borrower_applications', 'borrower_clarifications', 'borrower_documents', 'borrower_own_responses',
   'my_upload_grants', 'staff_applications', 'staff_findings', 'staff_evidence']
 const workerViews = ['worker_available_jobs', 'worker_snapshots', 'worker_job_outcomes', 'worker_upload_grants', 'staff_evidence']
@@ -59,6 +61,14 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
   const ops = officer.client.reducers
   const review = reviewer.client.reducers
   const borrower = borrowerA.client.reducers
+  const issueUpload = async (client: DbConnection, scope: Omit<Parameters<DbConnection['reducers']['authorizeUpload']>[0], 'secretHash'>,
+    issued?: Awaited<ReturnType<typeof createUploadCapability>>) => {
+    const capability = issued ?? await createUploadCapability()
+    await client.reducers.authorizeUpload({ ...scope, secretHash: capability.secretHash })
+    const grant = await eventually(() => [...client.db.myUploadGrants.iter()].find(row => row.secretHash === capability.secretHash),
+      'server-generated upload grant')
+    return { ...grant, secret: capability.secret }
+  }
   const jobRow = (key: string) => [...officer.client.db.staffJobs.iter()].find(job => job.runKey === key)
   const releaseRow = (id: string) => [...reviewer.client.db.staffReleases.iter()].find(row => row.applicationId === id)
   const checkRow = (id: string) => [...reviewer.client.db.staffReadiness.iter()].find(row => row.applicationId === id)
@@ -208,16 +218,24 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     const accepted = await eventually(() => outcome(workerA.client, rerun.id), 'deduplicated worker outcome')
     assert.deepEqual(accepted.acceptedFindingIds, [findingId])
     await assert.rejects(borrowerB.client.reducers.submitBorrowerResponse({ requestId, message: 'Unauthorized', documentIds: [] }), /NOT_FOUND_OR_FORBIDDEN/)
-    const upload = { grantId: 'demo-grant-1', applicationId: case1, requestId, workerUserId: 'worker-a', documentType: 'collateral_schedule' }
-    await assert.rejects(borrowerB.client.reducers.authorizeUpload(upload), /NOT_FOUND_OR_FORBIDDEN/)
-    await borrower.authorizeUpload(upload)
+    const upload = { applicationId: case1, requestId, workerUserId: 'worker-a', documentType: 'collateral_schedule', maxBytes: 1024 }
+    const capability = await createUploadCapability()
+    await assert.rejects(borrowerB.client.reducers.authorizeUpload({ ...upload, secretHash: capability.secretHash }), /NOT_FOUND_OR_FORBIDDEN/)
+    const grant = await issueUpload(borrowerA.client, upload, capability)
     const excerpt = 'Northline Foods removed forklift FL-004821 from its proposed collateral.'
-    const attachment = { grantId: upload.grantId, documentId: 'demo-doc-correction', replacesDocumentId: 'demo-doc-1',
+    const claim = { grantId: grant.id, applicationId: case1, requestId, documentType: upload.documentType,
+      claimId: 'correction-claim', byteLength: Buffer.byteLength(excerpt) }
+    const attachment = { grantId: claim.grantId, claimId: claim.claimId, byteLength: claim.byteLength,
+      documentId: 'demo-doc-correction', replacesDocumentId: 'demo-doc-1',
       sha256: createHash('sha256').update(excerpt).digest('hex'), displayFilename: 'synthetic-correction.txt',
       storageKey: 'demo-correction', extractionStatus: 'extracted',
       evidence: [{ id: 'demo-evidence-correction', excerpt, extractionMethod: 'fixture', locator: 'line 1',
         fieldName: undefined, fieldValue: undefined, pageNumber: undefined }] }
     await assert.rejects(workerB.client.reducers.attachDocument(attachment), /NOT_FOUND_OR_FORBIDDEN/)
+    await assert.rejects(workerA.client.reducers.attachDocument(attachment), /INVALID_STATE/)
+    await workerA.client.reducers.claimUpload(claim)
+    await assert.rejects(workerA.client.reducers.attachDocument({ ...attachment, claimId: 'another-claim' }), /INVALID_STATE/)
+    await assert.rejects(workerA.client.reducers.attachDocument({ ...attachment, byteLength: claim.byteLength + 1 }), /INVALID_STATE/)
     await workerA.client.reducers.attachDocument(attachment)
     await assert.rejects(workerA.client.reducers.attachDocument(attachment), /INVALID_STATE/)
     await borrower.submitBorrowerResponse({ requestId, message: 'We removed the forklift from the schedule.', documentIds: [attachment.documentId] })
@@ -335,11 +353,15 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await assert.rejects(approvePayment(1, ['demo-evidence-3']), /INVALID_EVIDENCE/)
     await allReviews(case3, 'demo-evidence-3')
     await eventually(() => checkRow(case3)?.canRelease === true, 'shared address does not block case 3')
-    await ops.authorizeUpload({ grantId: 'new-payment-grant', applicationId: case3, workerUserId: 'worker-a',
-      documentType: 'payment_instructions' })
+    const grant = await issueUpload(officer.client, { applicationId: case3, workerUserId: 'worker-a',
+      documentType: 'payment_instructions', maxBytes: 1024 })
     const excerpt = 'Synthetic payment account token: demo_replacement.'
     const newEvidence = 'new-payment-evidence'
-    await workerA.client.reducers.attachDocument({ grantId: 'new-payment-grant', documentId: 'new-payment-doc',
+    const claim = { grantId: grant.id, applicationId: case3, documentType: grant.documentType,
+      claimId: 'payment-claim', byteLength: Buffer.byteLength(excerpt) }
+    await workerA.client.reducers.claimUpload(claim)
+    await workerA.client.reducers.attachDocument({ grantId: claim.grantId, claimId: claim.claimId, byteLength: claim.byteLength,
+      documentId: 'new-payment-doc',
       sha256: createHash('sha256').update(excerpt).digest('hex'), displayFilename: 'payment.txt',
       storageKey: 'demo-payment', extractionStatus: 'extracted', evidence: [{ id: newEvidence, excerpt,
         fieldName: 'syntheticAccountToken', fieldValue: 'demo_replacement', extractionMethod: 'fixture', locator: 'line 1', pageNumber: undefined }] })
@@ -390,5 +412,76 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
       assert.match(String(edit.reason), /ALREADY_RELEASED/)
       await eventually(() => releaseRow(case8), 'one racing release')
     }
+  })
+
+  await suite.test('B2 HTTPS proves grant possession before accepting a bounded, single-use upload', async uploadTest => {
+    const payload = Buffer.from('Synthetic upload')
+    let stored = 0
+    const post = await startUploadTestServer(uploadTest, workerA.client, async input => {
+      stored++
+      assert.equal(input.applicationId, case4)
+      assert.deepEqual(input.bytes, payload)
+      assert.equal(input.sha256, createHash('sha256').update(payload).digest('hex'))
+      return { displayFilename: 'upload.txt', storageKey: input.documentId, extractionStatus: 'unsupported', evidence: [] }
+    })
+    const scope = { applicationId: case4, workerUserId: 'worker-a', documentType: 'supporting_document', maxBytes: payload.length }
+    const grant = await issueUpload(officer.client, scope)
+    assert.match(grant.id, /^[0-9a-f-]{36}$/)
+    assert.ok(!('secret' in [...officer.client.db.myUploadGrants.iter()].find(row => row.id === grant.id)!))
+    const onWorker = (id: string) => [...workerA.client.db.workerUploadGrants.iter()].find(row => row.id === id)
+    await eventually(() => onWorker(grant.id), 'assigned worker sees grant')
+    assert.ok(![...workerB.client.db.workerUploadGrants.iter()].some(row => row.id === grant.id))
+    const headers = (id: string, secret: string) => ({
+      'x-upload-grant': id, 'x-upload-secret': secret, 'x-application-id': case4, 'x-document-type': scope.documentType,
+    })
+    const valid = headers(grant.id, grant.secret)
+    const preflight = await post({ origin: 'https://loanwick.test', 'access-control-request-method': 'POST' },
+      Buffer.alloc(0), 'OPTIONS')
+    assert.equal(preflight.status, 204)
+    assert.equal(preflight.allowedOrigin, 'https://loanwick.test')
+    const denied = async (overrides: Record<string, string | number>, status = 403) => {
+      const result = await post({ ...valid, ...overrides }, payload)
+      assert.equal(result.status, status)
+      assert.equal(result.continued, false)
+    }
+    await denied({ 'x-upload-secret': (await createUploadCapability()).secret })
+    await denied({ 'x-application-id': case7 })
+    await denied({ 'x-request-id': 'foreign-request' })
+    await denied({ 'x-document-type': 'payment_instructions' })
+    await denied({ authorization: 'Bearer example-token' })
+    await denied({ origin: 'https://other.test' })
+    await denied({ 'content-length': payload.length + 1 }, 413)
+
+    const expired = await issueUpload(officer.client, { ...scope, ttlSeconds: 1 })
+    await delay(1100)
+    await denied(headers(expired.id, expired.secret))
+    const revoked = await issueUpload(officer.client, scope)
+    await assert.rejects(borrower.revokeUpload({ grantId: revoked.id }), /NOT_FOUND_OR_FORBIDDEN/)
+    await ops.revokeUpload({ grantId: revoked.id })
+    await denied(headers(revoked.id, revoked.secret))
+    const claim = { grantId: grant.id, claimId: 'manual-claim', applicationId: case4, documentType: scope.documentType, byteLength: payload.length }
+    await assert.rejects(workerA.client.reducers.claimUpload({ ...claim, applicationId: case7 }), /NOT_FOUND_OR_FORBIDDEN/)
+    await assert.rejects(workerB.client.reducers.claimUpload(claim), /NOT_FOUND_OR_FORBIDDEN/)
+    await assert.rejects(workerA.client.reducers.claimUpload({ ...claim, byteLength: payload.length + 1 }), /INVALID_INPUT/)
+    await assert.rejects(workerA.client.reducers.claimUpload({ ...claim, grantId: expired.id }), /INVALID_STATE/)
+    await assert.rejects(workerA.client.reducers.claimUpload({ ...claim, grantId: revoked.id }), /INVALID_STATE/)
+    const inFlight = await issueUpload(officer.client, scope)
+    await workerA.client.reducers.claimUpload({ ...claim, grantId: inFlight.id })
+    await ops.revokeUpload({ grantId: inFlight.id })
+    await assert.rejects(workerA.client.reducers.attachDocument({ grantId: inFlight.id, claimId: claim.claimId,
+      byteLength: payload.length, documentId: 'revoked-in-flight', sha256: createHash('sha256').update(payload).digest('hex'),
+      displayFilename: 'upload.txt', storageKey: 'revoked-in-flight', extractionStatus: 'unsupported', evidence: [] }), /INVALID_STATE/)
+    assert.equal(stored, 0)
+    const browserHeaders = { ...valid, origin: 'https://loanwick.test' }
+    const [left, right] = await Promise.all([post(browserHeaders, payload), post(browserHeaders, payload)])
+    assert.deepEqual([left.status, right.status].sort(), [201, 403])
+    const successful = [left, right].find(result => result.status === 201)!
+    assert.equal(successful.continued, true)
+    assert.equal(successful.allowedOrigin, 'https://loanwick.test')
+    assert.equal([left, right].find(result => result.status === 403)?.continued, false)
+    assert.equal(stored, 1)
+    const receipt = await eventually(() => onWorker(grant.id)?.status === 'attached' && onWorker(grant.id), 'attached grant receipt')
+    assert.equal(receipt.attachedDocumentId, JSON.parse(successful.body).documentId)
+    await denied({})
   })
 })

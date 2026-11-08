@@ -110,6 +110,9 @@ export const uploadGrants = table({ name: 'upload_grants' }, {
   id: id(), applicationId: indexedId(), requestId: t.option(t.string()), uploaderId: indexedId(),
   workerIdentity: t.identity().index('btree'), documentType: t.string(),
   applicationRevision: t.u32(), expiresAt: t.timestamp(), used: t.bool(),
+  uploaderIdentity: t.option(t.identity()), secretHash: t.option(t.string()), maxBytes: t.option(t.u32()),
+  claim: t.option(t.object('UploadClaim', { id: t.string(), byteLength: t.u32() })),
+  revokedAt: t.option(t.timestamp()), attachedDocumentId: t.option(t.string()),
 })
 
 export const reviewRecords = table({ name: 'review_records' }, {

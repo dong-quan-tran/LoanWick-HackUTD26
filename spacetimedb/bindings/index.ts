@@ -40,6 +40,7 @@ import AuthorizeUploadReducer from "./authorize_upload_reducer";
 import CancelInvestigationReducer from "./cancel_investigation_reducer";
 import ChangePaymentInstructionsReducer from "./change_payment_instructions_reducer";
 import ClaimInvestigationReducer from "./claim_investigation_reducer";
+import ClaimUploadReducer from "./claim_upload_reducer";
 import CompleteInvestigationReducer from "./complete_investigation_reducer";
 import CreateApplicationReducer from "./create_application_reducer";
 import CreateClarificationDraftReducer from "./create_clarification_draft_reducer";
@@ -53,6 +54,7 @@ import RecordToolEventReducer from "./record_tool_event_reducer";
 import RenewInvestigationReducer from "./renew_investigation_reducer";
 import RequestInvestigationReducer from "./request_investigation_reducer";
 import ReviewMatchCandidateReducer from "./review_match_candidate_reducer";
+import RevokeUploadReducer from "./revoke_upload_reducer";
 import SeedDemoReducer from "./seed_demo_reducer";
 import SendClarificationReducer from "./send_clarification_reducer";
 import SimulateReleaseReducer from "./simulate_release_reducer";
@@ -285,6 +287,7 @@ const reducersSchema = __reducers(
   __reducerSchema("cancel_investigation", CancelInvestigationReducer),
   __reducerSchema("change_payment_instructions", ChangePaymentInstructionsReducer),
   __reducerSchema("claim_investigation", ClaimInvestigationReducer),
+  __reducerSchema("claim_upload", ClaimUploadReducer),
   __reducerSchema("complete_investigation", CompleteInvestigationReducer),
   __reducerSchema("create_application", CreateApplicationReducer),
   __reducerSchema("create_clarification_draft", CreateClarificationDraftReducer),
@@ -298,6 +301,7 @@ const reducersSchema = __reducers(
   __reducerSchema("renew_investigation", RenewInvestigationReducer),
   __reducerSchema("request_investigation", RequestInvestigationReducer),
   __reducerSchema("review_match_candidate", ReviewMatchCandidateReducer),
+  __reducerSchema("revoke_upload", RevokeUploadReducer),
   __reducerSchema("seed_demo", SeedDemoReducer),
   __reducerSchema("send_clarification", SendClarificationReducer),
   __reducerSchema("simulate_release", SimulateReleaseReducer),

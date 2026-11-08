@@ -18,4 +18,8 @@ export default __t.row({
   documentType: __t.string().name("document_type"),
   applicationRevision: __t.u32().name("application_revision"),
   expiresAt: __t.timestamp().name("expires_at"),
+  secretHash: __t.string().name("secret_hash"),
+  maxBytes: __t.u32().name("max_bytes"),
+  status: __t.string(),
+  attachedDocumentId: __t.option(__t.string()).name("attached_document_id"),
 });

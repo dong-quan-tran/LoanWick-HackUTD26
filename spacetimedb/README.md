@@ -4,7 +4,7 @@ This module owns loan cases, evidence metadata, investigation leases, clarificat
 
 ## Run locally
 
-Use Node.js 24 and SpacetimeDB CLI and standalone server 2.14.0. These commands run from the repository root.
+Use Node.js 24 and SpacetimeDB CLI and standalone server 2.14.0. The HTTPS integration test uses OpenSSL to generate a temporary loopback certificate. It detects the Git for Windows copy or accepts its path in `LOANWICK_OPENSSL`. These commands run from the repository root.
 
 ```sh
 npm ci --prefix spacetimedb
@@ -36,7 +36,7 @@ Use `DbConnection.builder().withUri(endpoint).withDatabaseName(database).withTok
 | Client | Authorized views |
 | --- | --- |
 | All roles | `my_user` |
-| Officer and reviewer | `staff_applications`, `staff_documents`, `staff_evidence`, `staff_collateral`, `staff_entities`, `staff_match_candidates`, `staff_payments`, `staff_jobs`, `staff_tool_events`, `staff_findings`, `staff_clarifications`, `staff_responses`, `staff_reviews`, `staff_readiness`, `staff_releases`, `staff_audit_events` |
+| Officer and reviewer | `staff_applications`, `staff_documents`, `staff_evidence`, `staff_collateral`, `staff_entities`, `staff_match_candidates`, `staff_payments`, `staff_jobs`, `staff_tool_events`, `staff_findings`, `staff_clarifications`, `staff_responses`, `staff_reviews`, `staff_readiness`, `staff_releases`, `staff_audit_events`. Officers also use `my_upload_grants`. |
 | Borrower | `borrower_applications`, `borrower_documents`, `borrower_clarifications`, `borrower_own_responses`, `my_upload_grants` |
 | Worker | `worker_available_jobs`, `worker_snapshots`, `worker_job_outcomes`, `worker_upload_grants` |
 
@@ -48,7 +48,11 @@ Wait for the terminal row in `worker_job_outcomes` for the job ID and claim epoc
 
 When a successful rerun returns the same unresolved finding key on the same case, it refreshes the existing finding ID and retains its human status and clarification links. Prior content is captured in a `finding_refreshed` audit event. Omitted findings stay open until a human resolves them.
 
-For document transport, the uploader calls `authorizeUpload` with the case, request when applicable, document type, and worker ID. Check the grant through the uploader's authorized session before accepting bytes. The assigned worker calls `attachDocument` with the same grant. The reducer rechecks identity, application revision, expiry, request state, and document version. The worker owns file bytes, extraction, and storage, while the database owns the authorized metadata and evidence.
+For document transport, call `createUploadCapability()` from [transport/capability.ts](transport/capability.ts). It generates 32 random bytes and returns lowercase hex for the secret and its SHA-256 digest. Call `authorizeUpload` over the uploader's SpacetimeDB connection with `secretHash`, `applicationId`, optional `requestId`, `documentType`, `workerUserId`, and `maxBytes` (at most 10 MiB). The TTL defaults to five minutes and can be shortened with `ttlSeconds`. Subscribe to `my_upload_grants` and match the digest to obtain the server-generated grant ID.
+
+Send the raw file as an HTTPS `POST /documents/upload` with a known content length. Include `X-Upload-Grant`, `X-Upload-Secret`, `X-Application-Id`, `X-Document-Type`, and `X-Request-Id` when applicable. Browser clients can pass a File or Blob as the body and let the browser set its length. Keep the secret out of URLs, SpacetimeDB calls, and logs. The request carries no user SpacetimeDB token. An uploader can call `revokeUpload` before attachment commits.
+
+The worker uses its own SpacetimeDB identity and subscribes to `worker_upload_grants`. [transport/upload.ts](transport/upload.ts) exposes `createUploadServer` with TLS options and a storage/extraction callback. Configure `allowedOrigin` for a browser app on a separate origin. The HTTPS handler verifies the digest and scope, then calls `claimUpload` before reading the bounded body or sending `100 Continue`. `attachDocument` rechecks the worker, uploader, claim, byte count, expiry, revocation, case revision, and request. The same transaction records the document and consumes the grant. A claim is single use even if the connection fails. The uploader can check `attachedDocumentId` in the grant view after a lost response and obtain a fresh grant for a new attempt. Storage callbacks should stage files by the generated document ID and clean up unreferenced staged objects.
 
 The reviewer submits the exact observed revision to `recordReview`. Collateral review follows `collateralRevision`, payment verification follows `paymentRevision`, and document consistency follows `applicationRevision`. Attaching a payment document advances both the payment and application revisions and retires earlier payment documents. The reviewer calls `changePaymentInstructions` to select the instruction for the new evidence. To approve payment, cite evidence linked to that instruction from a current payment document whose `syntheticAccountToken` field matches the selected account token.
 

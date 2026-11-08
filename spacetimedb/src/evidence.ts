@@ -3,50 +3,91 @@ import {
   actor, audit, caseFor, changeRevisions, deadline, documentTypes, requireCondition, requireDistinct,
   requireEditable, requireId, requireText, validateEvidence,
 } from './domain'
-import { db, evidenceInputFields } from './schema'
+import { db, evidenceInputFields, type User, type WriteContext } from './schema'
+
+const maxUploadBytes = 10 * 1024 * 1024
+
+function checkUploadScope(ctx: WriteContext, uploader: User, applicationId: string, requestId: string | undefined, documentType: string) {
+  const application = caseFor(ctx.db, uploader, applicationId)
+  requireEditable(application)
+  if (requestId !== undefined || uploader.role === 'borrower') {
+    const request = requestId !== undefined ? ctx.db.clarificationRequests.id.find(requestId) : undefined
+    requireCondition(request?.applicationId === application.id && request.state === 'sent' &&
+      request.requestedDocumentType === documentType, 'NOT_FOUND_OR_FORBIDDEN')
+  }
+  return application
+}
 
 export const authorizeUpload = db.reducer({
-  grantId: t.string(), applicationId: t.string(), requestId: t.option(t.string()), workerUserId: t.string(), documentType: t.string(),
+  secretHash: t.string(), applicationId: t.string(), requestId: t.option(t.string()), workerUserId: t.string(),
+  documentType: t.string(), maxBytes: t.u32(), ttlSeconds: t.option(t.u32()),
 }, (ctx, args) => {
   const user = actor(ctx, 'officer', 'borrower')
-  const application = caseFor(ctx.db, user, args.applicationId)
-  requireEditable(application)
-  requireId(args.grantId)
-  requireCondition(documentTypes.some(type => type === args.documentType) && !ctx.db.uploadGrants.id.find(args.grantId), 'INVALID_INPUT')
+  const application = checkUploadScope(ctx, user, args.applicationId, args.requestId, args.documentType)
+  const ttlSeconds = args.ttlSeconds ?? 300
+  requireCondition(/^[0-9a-f]{64}$/.test(args.secretHash) && args.maxBytes > 0 && args.maxBytes <= maxUploadBytes &&
+    ttlSeconds >= 1 && ttlSeconds <= 300 && documentTypes.some(type => type === args.documentType), 'INVALID_INPUT')
+  requireCondition(![...ctx.db.uploadGrants.uploaderId.filter(user.id)].some(grant => grant.secretHash === args.secretHash), 'INVALID_INPUT')
   const worker = ctx.db.users.id.find(args.workerUserId)
   requireCondition(worker?.active && worker.role === 'worker' && worker.organizationId === user.organizationId, 'NOT_FOUND_OR_FORBIDDEN')
-  if (args.requestId !== undefined || user.role === 'borrower') {
-    const request = args.requestId !== undefined ? ctx.db.clarificationRequests.id.find(args.requestId) : undefined
-    requireCondition(request?.applicationId === application.id && request.state === 'sent' &&
-      request.requestedDocumentType === args.documentType, 'NOT_FOUND_OR_FORBIDDEN')
-  }
+  const id = ctx.newUuidV7().toString()
   ctx.db.uploadGrants.insert({
-    id: args.grantId, applicationId: application.id, requestId: args.requestId, uploaderId: user.id,
+    id, applicationId: application.id, requestId: args.requestId, uploaderId: user.id, uploaderIdentity: ctx.sender,
     workerIdentity: worker.identity, documentType: args.documentType, applicationRevision: application.applicationRevision,
-    expiresAt: deadline(ctx, 300), used: false,
+    secretHash: args.secretHash, maxBytes: args.maxBytes, expiresAt: deadline(ctx, ttlSeconds), used: false,
+    claim: undefined, revokedAt: undefined, attachedDocumentId: undefined,
   })
-  audit(ctx, application.id, user.id, 'upload_authorized', args.grantId)
+  audit(ctx, application.id, user.id, 'upload_authorized', id)
 })
 
-export const attachDocument = db.reducer({
-  grantId: t.string(), documentId: t.string(), replacesDocumentId: t.option(t.string()), sha256: t.string(),
-  displayFilename: t.string(), storageKey: t.string(), extractionStatus: t.string(),
-  evidence: t.array(t.object('EvidenceInput', evidenceInputFields)),
-}, (ctx, args) => {
+export const revokeUpload = db.reducer({ grantId: t.string() }, (ctx, { grantId }) => {
+  const uploader = actor(ctx, 'officer', 'borrower')
+  const grant = ctx.db.uploadGrants.id.find(grantId)
+  requireCondition(grant && grant.uploaderIdentity?.isEqual(ctx.sender), 'NOT_FOUND_OR_FORBIDDEN')
+  requireCondition(!grant.used, 'INVALID_STATE')
+  if (grant.revokedAt) return
+  ctx.db.uploadGrants.id.update({ ...grant, revokedAt: ctx.timestamp })
+  audit(ctx, grant.applicationId, uploader.id, 'upload_revoked', grant.id)
+})
+
+function grantForWorker(ctx: WriteContext, grantId: string) {
   const worker = actor(ctx, 'worker')
-  const grant = ctx.db.uploadGrants.id.find(args.grantId)
+  const grant = ctx.db.uploadGrants.id.find(grantId)
   requireCondition(grant && grant.workerIdentity.isEqual(ctx.sender), 'NOT_FOUND_OR_FORBIDDEN')
-  requireCondition(!grant.used && grant.expiresAt.microsSinceUnixEpoch > ctx.timestamp.microsSinceUnixEpoch, 'INVALID_STATE')
+  requireCondition(grant.secretHash && grant.maxBytes && !grant.used && !grant.revokedAt &&
+    grant.expiresAt.microsSinceUnixEpoch > ctx.timestamp.microsSinceUnixEpoch, 'INVALID_STATE')
   const application = caseFor(ctx.db, worker, grant.applicationId)
   requireEditable(application)
   requireCondition(application.applicationRevision === grant.applicationRevision, 'STALE_RESULTS')
   const uploader = ctx.db.users.id.find(grant.uploaderId)
-  requireCondition(uploader?.active && ['borrower', 'officer'].includes(uploader.role), 'NOT_FOUND_OR_FORBIDDEN')
-  caseFor(ctx.db, uploader, application.id)
-  if (grant.requestId !== undefined) {
-    const request = ctx.db.clarificationRequests.id.find(grant.requestId)
-    requireCondition(request?.applicationId === application.id && request.state === 'sent', 'INVALID_STATE')
-  }
+  requireCondition(uploader?.active && grant.uploaderIdentity?.isEqual(uploader.identity) &&
+    ['borrower', 'officer'].includes(uploader.role), 'NOT_FOUND_OR_FORBIDDEN')
+  checkUploadScope(ctx, uploader, application.id, grant.requestId, grant.documentType)
+  return { worker, grant, application, uploader, maxBytes: grant.maxBytes }
+}
+
+export const claimUpload = db.reducer({
+  grantId: t.string(), claimId: t.string(), applicationId: t.string(), requestId: t.option(t.string()),
+  documentType: t.string(), byteLength: t.u32(),
+}, (ctx, args) => {
+  const { worker, grant, maxBytes } = grantForWorker(ctx, args.grantId)
+  requireCondition(grant.applicationId === args.applicationId && grant.requestId === args.requestId &&
+    grant.documentType === args.documentType, 'NOT_FOUND_OR_FORBIDDEN')
+  requireId(args.claimId)
+  requireCondition(!grant.claim, 'INVALID_STATE')
+  requireCondition(args.byteLength > 0 && args.byteLength <= maxBytes, 'INVALID_INPUT')
+  ctx.db.uploadGrants.id.update({ ...grant, claim: { id: args.claimId, byteLength: args.byteLength } })
+  audit(ctx, grant.applicationId, worker.id, 'upload_claimed', grant.id)
+})
+
+export const attachDocument = db.reducer({
+  grantId: t.string(), claimId: t.string(), byteLength: t.u32(), documentId: t.string(),
+  replacesDocumentId: t.option(t.string()), sha256: t.string(),
+  displayFilename: t.string(), storageKey: t.string(), extractionStatus: t.string(),
+  evidence: t.array(t.object('EvidenceInput', evidenceInputFields)),
+}, (ctx, args) => {
+  const { worker, grant, application, uploader } = grantForWorker(ctx, args.grantId)
+  requireCondition(grant.claim?.id === args.claimId && grant.claim.byteLength === args.byteLength, 'INVALID_STATE')
   requireId(args.documentId)
   requireId(args.storageKey)
   requireText(args.displayFilename, 140)
@@ -92,7 +133,7 @@ export const attachDocument = db.reducer({
     requireCondition((item.pageNumber === undefined || item.pageNumber > 0) && !ctx.db.evidence.id.find(item.id), 'INVALID_INPUT')
     ctx.db.evidence.insert({ ...item, applicationId: application.id, documentId: args.documentId, documentVersion: version, createdAt: ctx.timestamp })
   }
-  ctx.db.uploadGrants.id.update({ ...grant, used: true })
+  ctx.db.uploadGrants.id.update({ ...grant, used: true, attachedDocumentId: args.documentId })
   const scope = grant.documentType === 'collateral_schedule' ? 'collateral'
     : grant.documentType === 'payment_instructions' ? 'payment' : 'other'
   changeRevisions(ctx, application, scope)

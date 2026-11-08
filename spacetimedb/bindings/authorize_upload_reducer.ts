@@ -11,9 +11,11 @@ import {
 } from "spacetimedb";
 
 export default {
-  grantId: __t.string(),
+  secretHash: __t.string(),
   applicationId: __t.string(),
   requestId: __t.option(__t.string()),
   workerUserId: __t.string(),
   documentType: __t.string(),
+  maxBytes: __t.u32(),
+  ttlSeconds: __t.option(__t.u32()),
 };

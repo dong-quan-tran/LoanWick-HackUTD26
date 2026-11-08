@@ -16,6 +16,8 @@ import {
 
 export default {
   grantId: __t.string(),
+  claimId: __t.string(),
+  byteLength: __t.u32(),
   documentId: __t.string(),
   replacesDocumentId: __t.option(__t.string()),
   sha256: __t.string(),
