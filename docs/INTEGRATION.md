@@ -105,3 +105,7 @@ The database worker projection currently limits related-case evidence to linked 
 ## Real database test update
 
 The separate `1-analysis-database-test` branch now exercises shared checks against database commit `0bc9396`. The existing database suite (12 tests), bridge suite (8 tests), and shared checks (92 tests) pass locally. See DATABASE-TESTS.md. Database source and generated bindings were not edited. The worker projection is handled by a separate adapter and minimal analysis-input schema; missing seed evidence remains explicit. Frontend/live model checks remain pending.
+
+## Seed alignment completed
+
+The integration branch now seeds explicit ownership evidence and source-backed amount/currency fields. Fresh demo cases produce both expected findings immediately; no test-only uploads are required. The source manifest, generator, hash/locator checks, and live suites are documented in DATABASE-TESTS.md. Schema/reducer signatures and generated bindings are unchanged. Run npm run test:database:local for the complete disposable-server check. Upload transport remains with its owner; the user confirmed frontend/worker branches are still being built.

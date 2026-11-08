@@ -33,7 +33,7 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     });
   }
   const [officer, reviewer, worker] = await Promise.all([
-    connect('officer', ['staff_applications', 'staff_jobs', 'staff_findings', 'staff_documents', 'staff_readiness', 'staff_match_candidates']),
+    connect('officer', ['staff_applications', 'staff_jobs', 'staff_findings', 'staff_documents', 'staff_evidence', 'staff_readiness', 'staff_match_candidates']),
     connect('reviewer', ['staff_applications', 'staff_readiness']),
     connect('worker', ['worker_snapshots', 'worker_job_outcomes']),
   ]);
@@ -64,14 +64,42 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     return evidence.map(e => e.id);
   }
   let acceptedHigh: string;
-  await suite.test('seeded worker rows validate without invented metadata; missing ownership stays unknown', async () => {
+  let acceptedGroup: string;
+  await suite.test('every seeded document hash and evidence excerpt matches a canonical source', async () => {
+    const manifest = JSON.parse(readFileSync(new URL('../../fixtures/database/manifest.json', import.meta.url), 'utf8')) as { cases: { number: number; sourcePath: string; paymentSourcePath: string }[]; untrustedPath: string };
+    const documents = await eventually(() => { const rows = [...officer.db.staffDocuments.iter()]; return rows.length === 17 ? rows : undefined; }, 'all seed documents');
+    const sources = new Map<string, string>();
+    for (const entry of manifest.cases) {
+      sources.set(`demo-doc-${entry.number}`, readFileSync(new URL('../../' + entry.sourcePath, import.meta.url), 'utf8'));
+      sources.set(`demo-payment-doc-${entry.number}`, readFileSync(new URL('../../' + entry.paymentSourcePath, import.meta.url), 'utf8'));
+    }
+    sources.set('demo-doc-untrusted-text', readFileSync(new URL('../../' + manifest.untrustedPath, import.meta.url), 'utf8'));
+    for (const document of documents) {
+      const source = sources.get(document.id); assert.ok(source, 'Canonical source exists');
+      assert.equal(document.sha256, createHash('sha256').update(source).digest('hex'));
+      assert.match(source, /SYNTHETIC DEMO DOCUMENT/);
+    }
+    const evidence = [...officer.db.staffEvidence.iter()];
+    assert.equal(evidence.length, 23);
+    for (const item of evidence) {
+      const source = sources.get(item.documentId); assert.ok(source, `Source document ${item.id}`); assert.ok(source.includes(item.excerpt), `Source excerpt ${item.id}`);
+      assert.equal(item.pageNumber, undefined);
+      assert.match(item.locator ?? '', /^line [1-9][0-9]*$/);
+      const line = source.split('\n')[Number(item.locator!.slice(5)) - 1];
+      assert.ok(line?.includes(item.excerpt), `Source locator ${item.id}`);
+      if (item.fieldName === 'exclusiveOwnershipClaim') { assert.equal(item.fieldValue, 'true'); assert.match(item.excerpt, /claims exclusive ownership/); }
+      if (item.fieldName === 'amountCents' || item.fieldName === 'currency') assert.ok(item.excerpt.includes(item.fieldValue!));
+    }
+  });
+  await suite.test('fresh seed produces a supported ownership conflict without extra uploads', async () => {
     const claimed = await claim('demo-case-1', 'analysis-seed');
     AnalysisSnapshotSchema.parse(claimed.snapshot);
     assert.equal('borrowerUserId' in claimed.snapshot.applications[0], false);
     const findings = checkCollateralConflicts(claimed.snapshot);
-    assert.equal(findings.length, 1); assert.equal(findings[0].evidenceState, 'unknown');
+    assert.equal(findings.length, 1); assert.equal(findings[0].evidenceState, 'contradicted'); assert.equal(findings[0].severity, 'high');
     const terminal = await finish(claimed, findings);
     assert.equal(terminal.status, 'succeeded'); assert.equal(terminal.acceptedFindingIds.length, 1);
+    acceptedHigh = terminal.acceptedFindingIds[0];
   });
   await suite.test('real ownership evidence produces a stored high conflict through the shared check', async () => {
     for (const n of [1, 2]) {
@@ -85,7 +113,7 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     const findings = checkCollateralConflicts(claimed.snapshot);
     assert.equal(findings.length, 1); assert.equal(findings[0].severity, 'high'); assert.equal(findings[0].evidenceIds.length, 4);
     const terminal = await finish(claimed, findings); assert.equal(terminal.status, 'succeeded');
-    acceptedHigh = terminal.acceptedFindingIds[0];
+    assert.deepEqual(terminal.acceptedFindingIds, [acceptedHigh]);
     const stored = await eventually(() => [...officer.db.staffFindings.iter()].find(f => f.id === acceptedHigh), 'persisted high finding');
     assert.equal(stored.type, 'collateral_conflict'); assert.equal(stored.isCurrent, true);
     assert.deepEqual([...stored.evidenceIds].sort(), [...findings[0].evidenceIds].sort());
@@ -108,11 +136,13 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     if (current) assert.throws(() => toAnalysisSnapshot(current, { assetTypeNamespace: 'legacy_equipment' }), /stale/);
     assert.equal([...officer.db.staffFindings.iter()].filter(f => f.type === 'collateral_conflict').length, 1);
   });
-  await suite.test('group check reports missing amount evidence instead of inventing support', async () => {
-    const claimed = await claim('demo-case-5', 'analysis-group-incomplete');
-    assert.throws(() => checkGroupThreshold(claimed.snapshot), /Missing amount\/currency evidence/);
-    await worker.reducers.failInvestigation({ jobId: claimed.raw.id, claimEpoch: claimed.raw.claimEpoch, errorCode: 'WORKER_ERROR' });
-    assert.equal((await eventually(() => outcome(claimed.raw.id), 'group failure')).status, 'failed');
+  await suite.test('fresh seed produces the confirmed-group finding without extra uploads', async () => {
+    const claimed = await claim('demo-case-5', 'analysis-group-seeded');
+    const findings = checkGroupThreshold(claimed.snapshot);
+    assert.equal(findings.length, 1); assert.equal(findings[0].facts.totalCents, 115_000_000);
+    const terminal = await finish(claimed, findings);
+    assert.equal(terminal.status, 'succeeded'); assert.equal(terminal.acceptedFindingIds.length, 1);
+    acceptedGroup = terminal.acceptedFindingIds[0];
   });
   await suite.test('authorized amount evidence enables a real stored confirmed-group finding', async () => {
     for (const n of [5, 6]) {
@@ -126,6 +156,7 @@ test('shared analysis against a real database', { timeout: 60_000 }, async suite
     const findings = checkGroupThreshold(claimed.snapshot);
     assert.equal(findings.length, 1); assert.equal(findings[0].facts.totalCents, 115_000_000);
     const terminal = await finish(claimed, findings); assert.equal(terminal.status, 'succeeded'); assert.equal(terminal.acceptedFindingIds.length, 1);
+    assert.deepEqual(terminal.acceptedFindingIds, [acceptedGroup]);
     const stored = await eventually(() => [...officer.db.staffFindings.iter()].find(f => f.id === terminal.acceptedFindingIds[0]), 'group finding');
     assert.equal(stored.type, 'group_review_required'); assert.match(stored.explanation, /115000000/);
   });

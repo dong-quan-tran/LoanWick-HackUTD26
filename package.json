@@ -16,8 +16,11 @@
     "test": "npm run build && vitest run",
     "evaluate": "npm run build && node scripts/evaluate.mjs",
     "fixtures:views": "npm run build && node scripts/export-demo-views.mjs",
-    "check": "npm run typecheck && npm test && npm run evaluate",
-    "test:database": "npm run build && node scripts/test-database.mjs"
+    "check": "npm run typecheck && npm test && npm run evaluate && npm run fixtures:database:check",
+    "test:database": "npm run build && node scripts/test-database.mjs",
+    "fixtures:database": "node scripts/generate-database-seed.mjs",
+    "fixtures:database:check": "node scripts/generate-database-seed.mjs --check",
+    "test:database:local": "npm run build && node scripts/test-database-local.mjs"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

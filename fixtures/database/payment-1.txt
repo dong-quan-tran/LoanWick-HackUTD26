@@ -1,0 +1,2 @@
+Synthetic payment account token: demo_account_1.
+SYNTHETIC DEMO DOCUMENT

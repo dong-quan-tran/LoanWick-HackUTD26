@@ -22,6 +22,8 @@ PowerShell users can use `npm.cmd` if local execution policy blocks npm.ps1.
 | npm test | Build and run Vitest regression/fixture checks |
 | npm run evaluate | Compare deterministic outputs with independent expected fixtures and verify source hashes/excerpts |
 | npm run fixtures:views | Regenerate explicitly synthetic staff/borrower view samples |
+| npm run test:database:local | Start a disposable server, run both live suites, and stop the server |
+| npm run fixtures:database | Regenerate the source-backed database seed |
 | npm run test:database | Run the real analysis/database bridge against a ready loopback server |
 | npm run check | Typecheck, tests, and evaluation |
 

@@ -1,6 +1,7 @@
 import { t } from 'spacetimedb/server'
 import { audit, requireCondition, requireId, requireText, roles } from './domain'
 import { db, type WriteContext } from './schema'
+import { demoFixtures as fixtures, paymentHashes, untrustedHash } from './demo-fixtures'
 
 export const init = db.init(ctx => {
   ctx.db.admins.insert({ identity: ctx.sender })
@@ -28,29 +29,6 @@ export const assignDemoUser = db.reducer({
   }
 })
 
-// Each hash is for the UTF-8 source excerpt with no trailing newline.
-const fixtures = [
-  ['Northline Foods', 'Northline Foods claims exclusive ownership of forklift FL-004821.', 'f907cfe0113e2748f2f39eec679fb87ad0b1c8247adbfcefa47600dd32b5373f'],
-  ['Pineworks Supply', 'Pineworks Supply claims exclusive ownership of forklift FL-004821.', 'b62745e5ebeb018155b6046b1ed166a3a940f26e1cf727af5a7b77f1743edadb'],
-  ['Lakefront Fabrication', 'Lakefront Fabrication rents Suite 200 at 80 Demo Parkway.', '537096427ab68f1818ae9af552ef5581dcc48df28b9eeebfda18cf413935d39c'],
-  ['Lakefront Fabricators', 'Lakefront Fabricators rents Suite 200 at 80 Demo Parkway.', 'c663231ce95dcecd426a7924c68883ef34a51217b241769256138467438faf51'],
-  ['Cedar Service Group', 'Cedar Service Group is the registered parent of Cedar Equipment.', 'c6b472f9cdfd465c69ca7ae643bcadf1354d58784c96e4bae12d8af3dae4cf3d'],
-  ['Cedar Equipment', 'Cedar Equipment is a subsidiary of Cedar Service Group.', 'b2e726658831ada8916e414b1ddda8ebd48c435beb051c460301a70629187bbe'],
-  ['Orchard Packaging', 'Orchard Packaging lists a press without a serial number.', 'a216330f9e886cafd8faee63fa51649b9a657e7bd9fe88d7f4e52b8eb7a2ac3b'],
-  ['Harbor Produce', 'Harbor Produce pledges refrigerated trailer RT-009113.', '8fcf8c6956de19c01796053f8c2a38b7af6032afb35d8eb6631ba37314b51e09'],
-] as const
-
-const paymentHashes = [
-  '0ca7fbde2acc0a93fca36082e40e6085ac7f19a84c7c4bbbecdf821353065397',
-  'dd03359922ba2d4b8636dc42161aefac353e1af1d14a8154d7ae4f5e5ae7ac91',
-  '19c0b1ebb2770a6a8ef8f410ff730df86734f35560bbcf36221de949a6532d31',
-  '66ce619cb0cadd8c5957848b186303f7fe7510a82599af579b062842f9f2e47c',
-  '9f899ba440f8b679442a7bf17a70d583985019f658c0f642dc2fd614c680db75',
-  '78e0596072e703151af7f6f988303006daffa67cdb9e0bc178c6cbca926b9d37',
-  'c20ff8e2b3d6ec0b2d929e4e7af96c039311931527eabdd220737d5fdabb336e',
-  'f9ccece09ca35a1b9ac9a749fc8c34118f9757a9b79686eb5472e046f9a45487',
-]
-
 export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.string(), borrowerBId: t.string() }, (ctx, args) => {
   requireAdmin(ctx)
   requireCondition(args.borrowerAId !== args.borrowerBId, 'INVALID_INPUT')
@@ -59,7 +37,7 @@ export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.
     const user = ctx.db.users.id.find(id)
     requireCondition(user?.active && user.role === 'borrower' && user.organizationId === args.organizationId, 'INVALID_INPUT')
   }
-  for (const [index, [businessName, excerpt, sha256]] of fixtures.entries()) {
+  for (const [index, { businessName, excerpt, sha256, amountCents, fields }] of fixtures.entries()) {
     const number = index + 1
     const id = `demo-case-${number}`
     const borrowerUserId = number % 2 === 1 ? args.borrowerAId : args.borrowerBId
@@ -74,7 +52,7 @@ export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.
     const collateralDocument = Boolean(asset) || number === 7
     ctx.db.applications.insert({
       id, borrowerUserId, organizationId: args.organizationId, businessName,
-      amountCents: number === 5 ? 60_000_000n : number === 6 ? 55_000_000n : 15_000_000n + BigInt(number) * 100_000n,
+      amountCents: BigInt(amountCents),
       currency: 'USD', stage: 'submitted', applicationRevision: 1, collateralRevision: collateralDocument ? 1 : 0,
       paymentRevision: 1, createdAt: ctx.timestamp, updatedAt: ctx.timestamp,
     })
@@ -87,14 +65,23 @@ export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.
       id: evidenceId, applicationId: id, documentId, documentVersion: 1, excerpt, fieldName: asset ? 'equipment_identifier' : undefined,
       fieldValue: asset, extractionMethod: 'fixture', pageNumber: undefined, locator: 'line 1', createdAt: ctx.timestamp,
     })
+    const fieldEvidenceIds = fields.map(field => {
+      const id = `demo-${field.suffix}-evidence-${number}`
+      ctx.db.evidence.insert({
+        id, applicationId: `demo-case-${number}`, documentId, documentVersion: 1,
+        excerpt: field.excerpt, fieldName: field.fieldName, fieldValue: field.fieldValue,
+        extractionMethod: 'fixture', pageNumber: undefined, locator: field.locator, createdAt: ctx.timestamp,
+      })
+      return id
+    })
     if (asset) ctx.db.collateral.insert({
       id: `demo-collateral-${number}`, applicationId: id, identifier: asset, normalizedIdentifier: asset,
-      description: 'Synthetic equipment', active: true, exclusiveOwnershipClaim: number <= 2, evidenceIds: [evidenceId],
+      description: 'Synthetic equipment', active: true, exclusiveOwnershipClaim: number <= 2, evidenceIds: [evidenceId, ...fieldEvidenceIds],
     })
     ctx.db.entityRecords.insert({
       id: `demo-entity-${number}`, applicationId: id, name: businessName, normalizedName: businessName.toLowerCase(),
       externalIdentifier: `DEMO-BUSINESS-${number}`, address: [3, 4].includes(number) ? 'Suite 200, 80 Demo Parkway' : undefined,
-      evidenceIds: [evidenceId],
+      evidenceIds: [evidenceId, ...fieldEvidenceIds],
     })
     const paymentDocumentId = `demo-payment-doc-${number}`
     const paymentEvidenceId = `demo-payment-evidence-${number}`
@@ -135,7 +122,7 @@ export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.
   if (seedUntrustedText) {
     ctx.db.documents.insert({
       id: injectionId, applicationId: 'demo-case-7', type: 'supporting_document', version: 1,
-      sha256: 'b2eb1c0d322b9d3d4d76d78f6b27ced174f5829a37d2b57e85a8561a30c1d66d',
+      sha256: untrustedHash,
       displayFilename: 'synthetic-untrusted-text.txt', extractionStatus: 'extracted', uploadedBy: args.borrowerAId,
       requestId: undefined, storageKey: 'demo-inline-untrusted', current: true, createdAt: ctx.timestamp,
     })

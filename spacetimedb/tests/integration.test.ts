@@ -146,7 +146,7 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     assert.equal(claims.filter(claim => claim.status === 'fulfilled').length, 1)
     const worker = contenders[claims.findIndex(claim => claim.status === 'fulfilled')]
     const snapshot = await eventually(() => [...worker.client.db.workerSnapshots.iter()].find(row => row.id === job.id), 'claimed job snapshot')
-    assert.deepEqual(snapshot.evidence.map(item => item.id).sort(), ['demo-evidence-1', 'demo-evidence-2', 'demo-payment-evidence-1'])
+    assert.deepEqual(snapshot.evidence.map(item => item.id).sort(), ['demo-evidence-1', 'demo-evidence-2', 'demo-ownership-evidence-1', 'demo-ownership-evidence-2', 'demo-payment-evidence-1'])
     assert.equal([...worker.client.db.staffEvidence.iter()].length, 0)
     const toolEvent = { jobId: job.id, claimEpoch: snapshot.claimEpoch, toolName: 'collateral_check', status: 'succeeded',
       inputSummary: '2 synthetic claims', outputSummary: '1 shared equipment identifier', durationMs: 1 }
@@ -272,7 +272,7 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await workerA.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 1 })
     const first = await eventually(() => [...workerA.client.db.workerSnapshots.iter()].find(row => row.id === job.id), 'first lease')
     assert.deepEqual(first.sources.map(source => source.applicationId), [case6])
-    assert.deepEqual(first.relationships.flatMap(edge => edge.evidenceIds).sort(), ['demo-evidence-5', 'demo-evidence-6'])
+    assert.deepEqual(first.relationships.flatMap(edge => edge.evidenceIds).sort(), ['demo-amount-evidence-5', 'demo-amount-evidence-6', 'demo-currency-evidence-5', 'demo-currency-evidence-6', 'demo-evidence-5', 'demo-evidence-6'])
     await eventually(() => jobRow('related-revision')?.status === 'queued', 'scheduler requeues expired lease')
     await eventually(() => ![...workerA.client.db.workerSnapshots.iter()].some(row => row.id === job.id), 'expired worker loses snapshot')
     await workerB.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })

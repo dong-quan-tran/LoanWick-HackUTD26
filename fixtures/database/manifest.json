@@ -1,0 +1,78 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "number": 1,
+      "businessName": "Northline Foods",
+      "amountCents": 15100000,
+      "identifier": "FL-004821",
+      "exclusiveOwnershipClaim": true,
+      "sourcePath": "fixtures/database/application-1.txt",
+      "paymentSourcePath": "fixtures/database/payment-1.txt"
+    },
+    {
+      "number": 2,
+      "businessName": "Pineworks Supply",
+      "amountCents": 15200000,
+      "identifier": "FL-004821",
+      "exclusiveOwnershipClaim": true,
+      "sourcePath": "fixtures/database/application-2.txt",
+      "paymentSourcePath": "fixtures/database/payment-2.txt"
+    },
+    {
+      "number": 3,
+      "businessName": "Lakefront Fabrication",
+      "amountCents": 15300000,
+      "identifier": null,
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-3.txt",
+      "paymentSourcePath": "fixtures/database/payment-3.txt"
+    },
+    {
+      "number": 4,
+      "businessName": "Lakefront Fabricators",
+      "amountCents": 15400000,
+      "identifier": null,
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-4.txt",
+      "paymentSourcePath": "fixtures/database/payment-4.txt"
+    },
+    {
+      "number": 5,
+      "businessName": "Cedar Service Group",
+      "amountCents": 60000000,
+      "identifier": null,
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-5.txt",
+      "paymentSourcePath": "fixtures/database/payment-5.txt"
+    },
+    {
+      "number": 6,
+      "businessName": "Cedar Equipment",
+      "amountCents": 55000000,
+      "identifier": null,
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-6.txt",
+      "paymentSourcePath": "fixtures/database/payment-6.txt"
+    },
+    {
+      "number": 7,
+      "businessName": "Orchard Packaging",
+      "amountCents": 15700000,
+      "identifier": null,
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-7.txt",
+      "paymentSourcePath": "fixtures/database/payment-7.txt"
+    },
+    {
+      "number": 8,
+      "businessName": "Harbor Produce",
+      "amountCents": 15800000,
+      "identifier": "RT-009113",
+      "exclusiveOwnershipClaim": false,
+      "sourcePath": "fixtures/database/application-8.txt",
+      "paymentSourcePath": "fixtures/database/payment-8.txt"
+    }
+  ],
+  "untrustedPath": "fixtures/database/untrusted.txt"
+}
