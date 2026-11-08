@@ -1,0 +1,314 @@
+[
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Cedar Demo Excavation\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0001\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-excavator-a",
+      "applicationId": "app-excavator-a",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "568ac976d2825527658705253526670626704770a6e365fb2fbf84e3ee475f9f",
+      "displayFilename": "app-excavator-a-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-excavator-a",
+      "applicationId": "app-excavator-a",
+      "documentId": "web-demo-payment-app-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0001\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0001",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-excavator-a",
+      "applicationId": "app-excavator-a",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0001",
+      "maskedDisplay": "**** 0001",
+      "beneficiaryName": "Cedar Demo Excavation",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-excavator-a"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Granite Demo Equipment\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0002\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-excavator-b",
+      "applicationId": "app-excavator-b",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "33fa8abcc6db853eaf2deb01866c1b30bbd785b3fb07aafd36a6623809ba3394",
+      "displayFilename": "app-excavator-b-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-excavator-b",
+      "applicationId": "app-excavator-b",
+      "documentId": "web-demo-payment-app-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0002\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0002",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-excavator-b",
+      "applicationId": "app-excavator-b",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0002",
+      "maskedDisplay": "**** 0002",
+      "beneficiaryName": "Granite Demo Equipment",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-excavator-b"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Juniper Demo Design\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0003\",\n  \"paymentVersion\": 2\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-office-a",
+      "applicationId": "app-office-a",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "853160b228697c740cfde17998eb1c09696343753ed7b12d2cf7a8c9490987f5",
+      "displayFilename": "app-office-a-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-office-a",
+      "applicationId": "app-office-a",
+      "documentId": "web-demo-payment-app-office-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0003\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0003",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-office-a",
+      "applicationId": "app-office-a",
+      "version": 2,
+      "syntheticAccountToken": "SYNTH-INITIAL-0003",
+      "maskedDisplay": "**** 0003",
+      "beneficiaryName": "Juniper Demo Design",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-office-a"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Willow Demo Studio\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0004\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-office-b",
+      "applicationId": "app-office-b",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "839465e8b03bf11772177e523571ddb3ef4f51d0b3b73b536a2594ee7c87a007",
+      "displayFilename": "app-office-b-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-office-b",
+      "applicationId": "app-office-b",
+      "documentId": "web-demo-payment-app-office-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0004\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0004",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-office-b",
+      "applicationId": "app-office-b",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0004",
+      "maskedDisplay": "**** 0004",
+      "beneficiaryName": "Willow Demo Studio",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-office-b"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Maple Demo Services\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0005\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-similar-a",
+      "applicationId": "app-similar-a",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "64a39ee9ec3ae03609666ea4cecbc4c8a48d6e066a3070a97f09caef2517961b",
+      "displayFilename": "app-similar-a-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-similar-a",
+      "applicationId": "app-similar-a",
+      "documentId": "web-demo-payment-app-similar-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0005\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0005",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-similar-a",
+      "applicationId": "app-similar-a",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0005",
+      "maskedDisplay": "**** 0005",
+      "beneficiaryName": "Maple Demo Services",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-similar-a"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Maple Demo Service\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0006\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-similar-b",
+      "applicationId": "app-similar-b",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "08da29fe83e1e1a2345e5732cfe0235b2e995890072062d8e282a27939bce6bd",
+      "displayFilename": "app-similar-b-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-similar-b",
+      "applicationId": "app-similar-b",
+      "documentId": "web-demo-payment-app-similar-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0006\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0006",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-similar-b",
+      "applicationId": "app-similar-b",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0006",
+      "maskedDisplay": "**** 0006",
+      "beneficiaryName": "Maple Demo Service",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-similar-b"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Harbor Demo Fabrication\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0007\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-group-a",
+      "applicationId": "app-group-a",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "3d11c3c64c681e52cd839598a6d0aa1987723d5c6aa1600b6f513eb2802bc06a",
+      "displayFilename": "app-group-a-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-group-a",
+      "applicationId": "app-group-a",
+      "documentId": "web-demo-payment-app-group-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0007\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0007",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-group-a",
+      "applicationId": "app-group-a",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0007",
+      "maskedDisplay": "**** 0007",
+      "beneficiaryName": "Harbor Demo Fabrication",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-group-a"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  },
+  {
+    "source": "{\n  \"label\": \"SYNTHETIC DEMO DOCUMENT\",\n  \"beneficiaryName\": \"Harbor Demo Distribution\",\n  \"syntheticAccountToken\": \"SYNTH-INITIAL-0008\",\n  \"paymentVersion\": 1\n}\n",
+    "document": {
+      "id": "web-demo-payment-app-group-b",
+      "applicationId": "app-group-b",
+      "type": "payment_instruction",
+      "version": 1,
+      "sha256": "d7ed974379abc98cc9305306bdb7e5ac2cf4afeda554dd245a0366c1dbb5f2a4",
+      "displayFilename": "app-group-b-payment.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-reviewer"
+    },
+    "evidence": {
+      "id": "web-demo-payment-evidence-app-group-b",
+      "applicationId": "app-group-b",
+      "documentId": "web-demo-payment-app-group-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticAccountToken",
+      "excerpt": "\"syntheticAccountToken\": \"SYNTH-INITIAL-0008\"",
+      "fieldName": "syntheticAccountToken",
+      "extractedValue": "SYNTH-INITIAL-0008",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    "payment": {
+      "id": "web-demo-instruction-app-group-b",
+      "applicationId": "app-group-b",
+      "version": 1,
+      "syntheticAccountToken": "SYNTH-INITIAL-0008",
+      "maskedDisplay": "**** 0008",
+      "beneficiaryName": "Harbor Demo Distribution",
+      "evidenceIds": [
+        "web-demo-payment-evidence-app-group-b"
+      ],
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  }
+]

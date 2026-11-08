@@ -1,0 +1,30 @@
+name: Frontend browser checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:web
+      - run: npm run build:live --workspace @loanwick/web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e --workspace @loanwick/web
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: frontend-browser-evidence
+          path: |
+            .impeccable/review/
+            apps/web/test-results/
+          include-hidden-files: true

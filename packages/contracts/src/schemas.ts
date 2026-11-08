@@ -29,7 +29,7 @@ export const EvidenceSchema = z.strictObject({
   id: IdSchema, applicationId: IdSchema, documentId: IdSchema, documentVersion: z.number().int().positive(),
   pageNumber: z.number().int().positive().nullable(), locator: text.nullable(), excerpt: text,
   fieldName: text.nullable(), extractedValue: z.string().max(8_000).nullable(),
-  extractionMethod: z.enum(['structured', 'csv', 'pdf_text', 'manual']), createdAt: UtcTimestampSchema,
+  extractionMethod: z.enum(['structured', 'csv', 'pdf_text', 'manual', 'fixture']), createdAt: UtcTimestampSchema,
 }).superRefine((e, ctx) => {
   if (e.extractionMethod !== 'pdf_text' && e.pageNumber !== null) ctx.addIssue({ code: 'custom', message: 'Only PDF evidence may use pageNumber', path: ['pageNumber'] });
   if (e.pageNumber === null && e.locator === null) ctx.addIssue({ code: 'custom', message: 'Evidence needs an actual source locator' });
@@ -94,6 +94,17 @@ export const FindingSchema = z.strictObject({
   if (!parsed.success) for (const issue of parsed.error.issues) ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path });
   if (!value.applicationIds.includes(applicationId)) ctx.addIssue({ code: 'custom', message: 'Finding owner must be one of its source applications' });
 }) satisfies z.ZodType<D.Finding>;
+export const PresentedFindingSchema = z.strictObject({
+  ...checkShape, facts: checkShape.facts.optional(), id: IdSchema, applicationId: IdSchema,
+  investigationJobId: IdSchema.nullable(), status: z.enum(FINDING_STATUSES), createdAt: UtcTimestampSchema, updatedAt: UtcTimestampSchema,
+}).superRefine((value, ctx) => {
+  if (!value.applicationIds.includes(value.applicationId)) ctx.addIssue({ code: 'custom', message: 'Finding owner must be a source application' });
+  if (value.facts !== undefined) {
+    const parsed = FindingSchema.safeParse(value);
+    if (!parsed.success) for (const issue of parsed.error.issues) ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path });
+  }
+}) satisfies z.ZodType<D.PresentedFinding>;
+export const StaffInvestigationJobSchema = InvestigationJobSchema.pick({ id: true, applicationId: true, runKey: true, status: true, executionMode: true, modelId: true, startedAt: true, completedAt: true }).extend({ errorCode: z.string().min(1).max(128).nullable(), capturedRevisions: z.array(SourceRevisionSchema).optional(), claimedBy: IdSchema.nullable().optional(), leaseExpiresAt: UtcTimestampSchema.nullable().optional() });
 export const ClarificationRequestSchema = z.strictObject({
   id: IdSchema, applicationId: IdSchema, findingId: IdSchema, borrowerSafeMessage: text, requestedDocumentType: text.nullable(),
   state: z.enum(['draft', 'sent', 'answered', 'closed']), draftedBy: IdSchema, sentBy: IdSchema.nullable(), createdAt: UtcTimestampSchema,
@@ -115,7 +126,7 @@ export const VerificationStateSchema = z.strictObject({
 }) satisfies z.ZodType<D.VerificationState>;
 const readinessShape = {
   eligibleByPolicy: z.boolean(), reasons: z.array(z.strictObject({
-    code: z.enum(['INVALID_STAGE', 'REVIEW_PENDING', 'STALE_REVIEW', 'REVIEW_REQUIRED', 'BLOCKING_FINDINGS', 'ALREADY_RELEASED']), checkType: z.enum(CHECK_TYPES).nullable(),
+    code: z.enum(['INVALID_STAGE', 'INVALID_STATE', 'MISSING_REVIEW', 'REVIEW_PENDING', 'STALE_REVIEW', 'REVIEW_REQUIRED', 'BLOCKING_FINDINGS', 'ALREADY_RELEASED', 'INVESTIGATION_MISSING', 'INVESTIGATION_STALE', 'INVESTIGATION_PENDING', 'CLARIFICATION_PENDING', 'PAYMENT_EVIDENCE_REQUIRED']), checkType: z.enum(CHECK_TYPES).nullable(),
   })).max(100),
   checks: z.strictObject({ collateral_review: VerificationStateSchema, document_consistency_review: VerificationStateSchema, payment_verification: VerificationStateSchema }),
 };
@@ -131,16 +142,21 @@ const borrowerApplicationSchema = ApplicationSchema.pick({ id: true, businessNam
 const borrowerRequestSchema = ClarificationRequestSchema.pick({ id: true, applicationId: true, borrowerSafeMessage: true, requestedDocumentType: true, state: true, createdAt: true });
 export const BorrowerCaseViewSchema = z.strictObject({
   application: borrowerApplicationSchema, requests: z.array(borrowerRequestSchema).max(1_000), responses: z.array(BorrowerResponseSchema).max(1_000),
+  documents: z.array(DocumentMetadataSchema.extend({ requestId: IdSchema.nullable().optional() })).max(1_000).optional(),
 }).superRefine((view, ctx) => {
   const requests = new Set(view.requests.map(r => r.id));
-  if (view.requests.some(r => r.applicationId !== view.application.id || r.state === 'draft') || view.responses.some(r => r.applicationId !== view.application.id || !requests.has(r.requestId))) ctx.addIssue({ code: 'custom', message: 'Borrower projection contains foreign or unsent data' });
+  if (view.requests.some(r => r.applicationId !== view.application.id || r.state === 'draft') || view.responses.some(r => r.applicationId !== view.application.id || !requests.has(r.requestId)) || view.documents?.some(d => d.applicationId !== view.application.id || (d.requestId && !requests.has(d.requestId)))) ctx.addIssue({ code: 'custom', message: 'Borrower projection contains foreign or unsent data' });
 }) satisfies z.ZodType<D.BorrowerCaseView>;
 export const StaffCaseViewSchema = z.strictObject({
-  application: ApplicationSchema, documents: z.array(DocumentMetadataSchema).max(10_000), evidence: z.array(EvidenceSchema).max(20_000), collateral: z.array(CollateralSchema).max(10_000),
-  findings: z.array(FindingSchema).max(1_000), relationships: z.array(ApplicationRelationshipSchema).max(10_000),
-  investigations: z.array(InvestigationJobSchema.omit({ claimToken: true })).max(1_000), toolEvents: z.array(ToolEventSchema).max(10_000),
+  application: ApplicationSchema, documents: z.array(DocumentMetadataSchema).max(10_000), evidence: z.array(EvidenceSchema).max(20_000), collateral: z.array(CollateralSchema.partial({ assetType: true, ownershipEvidenceIds: true })).max(10_000),
+  findings: z.array(PresentedFindingSchema).max(1_000), relationships: z.array(ApplicationRelationshipSchema).max(10_000),
+  investigations: z.array(StaffInvestigationJobSchema).max(1_000), toolEvents: z.array(ToolEventSchema).max(10_000),
   clarificationRequests: z.array(ClarificationRequestSchema).max(1_000), responses: z.array(BorrowerResponseSchema).max(1_000),
   reviews: z.array(ReviewRecordSchema).max(10_000), auditEvents: z.array(AuditEventSchema).max(10_000), readiness: ReleaseReadinessSchema, release: DemoReleaseSchema.nullable(),
+  paymentSummary: PaymentInstructionSchema.pick({ id: true, applicationId: true, version: true, maskedDisplay: true, beneficiaryName: true, evidenceIds: true }).nullable().optional(),
+  relatedApplications: z.array(ApplicationSchema.pick({ id: true, businessName: true, amountCents: true, currency: true })).max(1_000).optional(),
+  findingCurrentness: z.record(z.string(), z.boolean()).optional(),
+  currentDocumentIds: z.array(IdSchema).optional(),
 }) satisfies z.ZodType<D.StaffCaseView>;
 export const ToolArgumentsSchemas = {
   get_application_summary: z.strictObject({ applicationId: IdSchema }),

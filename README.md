@@ -2,7 +2,11 @@
 
 LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
-This branch implements Person 4's shared foundation: TypeScript contracts/runtime schemas, pure deterministic checks, eight application fixtures, source-backed evidence, sample frontend projections, regression tests, and a fixture evaluator. The database, web app, live model worker, and their integration are separate teammates' work and are not implemented or verified here.
+This branch includes Person 4's shared foundation and Person 1's frontend: TypeScript contracts/runtime schemas, deterministic checks, eight canonical applications, source-backed evidence, and a complete synthetic officer/borrower/reviewer demo. A live database adapter is implemented against Person 2's generated bindings; actual database, worker, document-intake, and authenticated browser integration remain unverified here.
+
+## Frontend
+
+Run `npm ci`, then `npm run dev:web`, and open http://127.0.0.1:5173. The complete fixture demo includes evidence comparison, clarification, borrower response, human review, stale payment checks, and one simulated release. Read the [frontend handoff](docs/FRONTEND.md) for the exact sequence, test commands, live connection setup, and remaining integration gates.
 
 ## Local setup
 
@@ -51,6 +55,6 @@ Use `@loanwick/contracts/domain` for SDK-independent types/constants without loa
 - [Limitations](docs/LIMITATIONS.md)
 - [Original four-person assignments](docs/team-plans/00-START-HERE.md)
 
-No web/worker/database startup commands are advertised until their owners implement and verify them. Database identity bootstrap, private file storage, and NVIDIA secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
+The frontend startup commands are documented above. Worker/database startup remains owned by those components. Database identity bootstrap, private file storage, and model-provider secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
 
 Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON uses LF line endings so document hashes stay stable across platforms. CI covers these shared packages, not the unfinished database/browser/model integration.
