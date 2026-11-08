@@ -52,3 +52,5 @@ Use `@loanwick/contracts/domain` for SDK-independent types/constants without loa
 - [Original four-person assignments](docs/team-plans/00-START-HERE.md)
 
 No web/worker/database startup commands are advertised until their owners implement and verify them. Database identity bootstrap, private file storage, and NVIDIA secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
+
+Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON uses LF line endings so document hashes stay stable across platforms. CI covers these shared packages, not the unfinished database/browser/model integration.

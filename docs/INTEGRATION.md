@@ -10,7 +10,7 @@ From a checkout containing this change: npm ci, then npm run build. Workspace pa
 | Person 2 | contracts/domain, shared enums/revision map, fixtures/applications/demo.json, fixtures/manifest.json | Pin toolchain, map records to schema, seed identities safely, authorized case read and investigation operations |
 | Person 3 | InvestigationSnapshotSchema, ToolArgumentsSchemas, AnalysisToolResultSchema, analysis helpers, fixture sources | Live provider/tool smoke test, then claim a real job and call the helpers |
 
-Person 4 does not currently have any web/database/worker implementation to integrate. The last fetched main included the plans and renamed repository link only. Recheck team branches before implementing interfaces that may have changed since this snapshot.
+Main still contains the plans only. A database implementation is now available on origin/1-loanwick-database; it has been inspected but not merged or tested here. Its generated bindings remain owned by Person 2. Recheck branches before integrating.
 
 ## Person 1 details
 
@@ -82,4 +82,22 @@ No database/browser/model integration is marked done by these package tests. Do 
 
 ## Communication
 
-This environment lacks GitHub CLI. Signal was read via authenticated read-only GitHub API instead; it contained no additional component assignments/contract decisions at initial inspection. No team messages have been posted. Share this handoff with the team or explicitly authorize posting it to the signal log.
+This environment lacks GitHub CLI. Signal was read via authenticated read-only GitHub API instead; it contained no additional component assignments/contract decisions at initial inspection. The user authorized publishing this foundation and sharing the handoff. Use the PR and signal handoff for the current shared interfaces.
+
+## Database branch mapping to resolve
+
+The inspected database branch uses SDK-native fields. Keep conversion in adapters; do not edit generated bindings.
+
+| Database | Shared contract | Action |
+| --- | --- | --- |
+| amountCents: bigint, SDK timestamps | safe integer cents, UTC strings | Range-check before converting money; convert timestamps explicitly |
+| evidence.fieldValue | evidence.extractedValue | Rename at the boundary |
+| source.revisions nested | flat SourceRevision | Flatten/map explicitly |
+| collateral has no assetType/ownershipEvidenceIds and no nullable ownership | namespaced assets and separate ownership evidence | Agree with Person 2 on real fields or a documented extraction adapter; never invent ownership evidence |
+| job claimEpoch | claimToken-based logical job | Use the actual epoch lease protocol; settle the logical job interface before worker integration |
+| tool status started; summaries max 280 | running; summaries max 2000 | Map status and enforce the smaller write limit |
+| finding.type and relatedApplicationIds | findingType and applicationIds | Convert owner/related IDs; preserve source facts separately if storage lacks them |
+| review superseded flag | ordered review sequence | Agree on authoritative history mapping; never revive an older pass |
+| readiness also blocks pending jobs/clarifications | pure policy currently covers checks/findings/stage/releases | Treat server readiness as authoritative; extend shared input rules before claiming full parity |
+
+The database worker projection currently limits related-case evidence to linked collateral/entities. Above-threshold group output also needs amount/currency evidence for every counted case; request an authorized projection change rather than fetching unrelated private documents. The database normalizes identifiers independently; align its policy with the shared hyphen/namespace rules before using its candidate scope.
