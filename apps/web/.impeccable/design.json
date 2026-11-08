@@ -1,0 +1,682 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-08T06:05:20.427101+00:00",
+  "title": "Design System: LoanWick",
+  "extensions": {
+    "colorMeta": {
+      "rail": {
+        "role": "primary",
+        "displayName": "Rail",
+        "canonical": "#123c3b",
+        "tonalRamp": [
+          "oklch(15% 0.0137 192.94)",
+          "oklch(26% 0.0275 192.94)",
+          "oklch(38% 0.0389 192.94)",
+          "oklch(50% 0.0458 192.94)",
+          "oklch(62% 0.0458 192.94)",
+          "oklch(74% 0.0366 192.94)",
+          "oklch(86% 0.0206 192.94)",
+          "oklch(95% 0.0069 192.94)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Accent",
+        "canonical": "#11695d",
+        "tonalRamp": [
+          "oklch(15% 0.0239 180.88)",
+          "oklch(26% 0.0479 180.88)",
+          "oklch(38% 0.0678 180.88)",
+          "oklch(50% 0.0798 180.88)",
+          "oklch(62% 0.0798 180.88)",
+          "oklch(74% 0.0638 180.88)",
+          "oklch(86% 0.0359 180.88)",
+          "oklch(95% 0.0120 180.88)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus",
+        "canonical": "#138574",
+        "tonalRamp": [
+          "oklch(15% 0.0291 179.17)",
+          "oklch(26% 0.0582 179.17)",
+          "oklch(38% 0.0825 179.17)",
+          "oklch(50% 0.0970 179.17)",
+          "oklch(62% 0.0970 179.17)",
+          "oklch(74% 0.0776 179.17)",
+          "oklch(86% 0.0437 179.17)",
+          "oklch(95% 0.0146 179.17)"
+        ]
+      },
+      "navigation-hover": {
+        "role": "primary",
+        "displayName": "Navigation Hover",
+        "canonical": "#1f4b47",
+        "tonalRamp": [
+          "oklch(15% 0.0147 187.37)",
+          "oklch(26% 0.0295 187.37)",
+          "oklch(38% 0.0417 187.37)",
+          "oklch(50% 0.0491 187.37)",
+          "oklch(62% 0.0491 187.37)",
+          "oklch(74% 0.0393 187.37)",
+          "oklch(86% 0.0221 187.37)",
+          "oklch(95% 0.0074 187.37)"
+        ]
+      },
+      "navigation-current": {
+        "role": "primary",
+        "displayName": "Navigation Current",
+        "canonical": "#2a5750",
+        "tonalRamp": [
+          "oklch(15% 0.0154 182.45)",
+          "oklch(26% 0.0308 182.45)",
+          "oklch(38% 0.0436 182.45)",
+          "oklch(50% 0.0513 182.45)",
+          "oklch(62% 0.0513 182.45)",
+          "oklch(74% 0.0411 182.45)",
+          "oklch(86% 0.0231 182.45)",
+          "oklch(95% 0.0077 182.45)"
+        ]
+      },
+      "navigation-text": {
+        "role": "neutral",
+        "displayName": "Navigation Text",
+        "canonical": "#c0d6cd",
+        "tonalRamp": [
+          "oklch(15% 0.0080 169.19)",
+          "oklch(26% 0.0160 169.19)",
+          "oklch(38% 0.0226 169.19)",
+          "oklch(50% 0.0266 169.19)",
+          "oklch(62% 0.0266 169.19)",
+          "oklch(74% 0.0213 169.19)",
+          "oklch(86% 0.0120 169.19)",
+          "oklch(95% 0.0040 169.19)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "canonical": "#fff",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(26% 0.0000 89.88)",
+          "oklch(38% 0.0000 89.88)",
+          "oklch(50% 0.0000 89.88)",
+          "oklch(62% 0.0000 89.88)",
+          "oklch(74% 0.0000 89.88)",
+          "oklch(86% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "workspace": {
+        "role": "neutral",
+        "displayName": "Workspace",
+        "canonical": "#f3f6f5",
+        "tonalRamp": [
+          "oklch(15% 0.0010 174.48)",
+          "oklch(26% 0.0021 174.48)",
+          "oklch(38% 0.0029 174.48)",
+          "oklch(50% 0.0034 174.48)",
+          "oklch(62% 0.0034 174.48)",
+          "oklch(74% 0.0028 174.48)",
+          "oklch(86% 0.0015 174.48)",
+          "oklch(95% 0.0005 174.48)"
+        ]
+      },
+      "body-ink": {
+        "role": "neutral",
+        "displayName": "Body Ink",
+        "canonical": "#233a39",
+        "tonalRamp": [
+          "oklch(15% 0.0087 192.36)",
+          "oklch(26% 0.0174 192.36)",
+          "oklch(38% 0.0246 192.36)",
+          "oklch(50% 0.0289 192.36)",
+          "oklch(62% 0.0289 192.36)",
+          "oklch(74% 0.0231 192.36)",
+          "oklch(86% 0.0130 192.36)",
+          "oklch(95% 0.0043 192.36)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#223b39",
+        "tonalRamp": [
+          "oklch(15% 0.0094 189.32)",
+          "oklch(26% 0.0187 189.32)",
+          "oklch(38% 0.0265 189.32)",
+          "oklch(50% 0.0312 189.32)",
+          "oklch(62% 0.0312 189.32)",
+          "oklch(74% 0.0250 189.32)",
+          "oklch(86% 0.0141 189.32)",
+          "oklch(95% 0.0047 189.32)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#52665c",
+        "tonalRamp": [
+          "oklch(15% 0.0087 163.49)",
+          "oklch(26% 0.0173 163.49)",
+          "oklch(38% 0.0246 163.49)",
+          "oklch(50% 0.0289 163.49)",
+          "oklch(62% 0.0289 163.49)",
+          "oklch(74% 0.0231 163.49)",
+          "oklch(86% 0.0130 163.49)",
+          "oklch(95% 0.0043 163.49)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#dce4e1",
+        "tonalRamp": [
+          "oklch(15% 0.0028 171.78)",
+          "oklch(26% 0.0057 171.78)",
+          "oklch(38% 0.0081 171.78)",
+          "oklch(50% 0.0095 171.78)",
+          "oklch(62% 0.0095 171.78)",
+          "oklch(74% 0.0076 171.78)",
+          "oklch(86% 0.0043 171.78)",
+          "oklch(95% 0.0014 171.78)"
+        ]
+      },
+      "control-line": {
+        "role": "neutral",
+        "displayName": "Control Line",
+        "canonical": "#cbd8d3",
+        "tonalRamp": [
+          "oklch(15% 0.0047 170.99)",
+          "oklch(26% 0.0094 170.99)",
+          "oklch(38% 0.0132 170.99)",
+          "oklch(50% 0.0156 170.99)",
+          "oklch(62% 0.0156 170.99)",
+          "oklch(74% 0.0125 170.99)",
+          "oklch(86% 0.0070 170.99)",
+          "oklch(95% 0.0023 170.99)"
+        ]
+      },
+      "input-line": {
+        "role": "neutral",
+        "displayName": "Input Line",
+        "canonical": "#c8d5cf",
+        "tonalRamp": [
+          "oklch(15% 0.0049 166.66)",
+          "oklch(26% 0.0098 166.66)",
+          "oklch(38% 0.0138 166.66)",
+          "oklch(50% 0.0163 166.66)",
+          "oklch(62% 0.0163 166.66)",
+          "oklch(74% 0.0130 166.66)",
+          "oklch(86% 0.0073 166.66)",
+          "oklch(95% 0.0024 166.66)"
+        ]
+      },
+      "button-hover": {
+        "role": "neutral",
+        "displayName": "Button Hover",
+        "canonical": "#eaf2ee",
+        "tonalRamp": [
+          "oklch(15% 0.0030 164.87)",
+          "oklch(26% 0.0060 164.87)",
+          "oklch(38% 0.0085 164.87)",
+          "oklch(50% 0.0100 164.87)",
+          "oklch(62% 0.0100 164.87)",
+          "oklch(74% 0.0080 164.87)",
+          "oklch(86% 0.0045 164.87)",
+          "oklch(95% 0.0015 164.87)"
+        ]
+      },
+      "button-active": {
+        "role": "neutral",
+        "displayName": "Button Active",
+        "canonical": "#dcebe4",
+        "tonalRamp": [
+          "oklch(15% 0.0055 166.36)",
+          "oklch(26% 0.0111 166.36)",
+          "oklch(38% 0.0157 166.36)",
+          "oklch(50% 0.0185 166.36)",
+          "oklch(62% 0.0185 166.36)",
+          "oklch(74% 0.0148 166.36)",
+          "oklch(86% 0.0083 166.36)",
+          "oklch(95% 0.0028 166.36)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Primary Hover",
+        "canonical": "#0e554b",
+        "tonalRamp": [
+          "oklch(15% 0.0204 180.73)",
+          "oklch(26% 0.0409 180.73)",
+          "oklch(38% 0.0579 180.73)",
+          "oklch(50% 0.0681 180.73)",
+          "oklch(62% 0.0681 180.73)",
+          "oklch(74% 0.0545 180.73)",
+          "oklch(86% 0.0307 180.73)",
+          "oklch(95% 0.0102 180.73)"
+        ]
+      },
+      "primary-active": {
+        "role": "primary",
+        "displayName": "Primary Active",
+        "canonical": "#093f38",
+        "tonalRamp": [
+          "oklch(15% 0.0165 181.98)",
+          "oklch(26% 0.0329 181.98)",
+          "oklch(38% 0.0466 181.98)",
+          "oklch(50% 0.0548 181.98)",
+          "oklch(62% 0.0548 181.98)",
+          "oklch(74% 0.0439 181.98)",
+          "oklch(86% 0.0247 181.98)",
+          "oklch(95% 0.0082 181.98)"
+        ]
+      },
+      "disabled-background": {
+        "role": "neutral",
+        "displayName": "Disabled Background",
+        "canonical": "#edf1ef",
+        "tonalRamp": [
+          "oklch(15% 0.0015 165.01)",
+          "oklch(26% 0.0030 165.01)",
+          "oklch(38% 0.0043 165.01)",
+          "oklch(50% 0.0050 165.01)",
+          "oklch(62% 0.0050 165.01)",
+          "oklch(74% 0.0040 165.01)",
+          "oklch(86% 0.0023 165.01)",
+          "oklch(95% 0.0008 165.01)"
+        ]
+      },
+      "disabled-ink": {
+        "role": "neutral",
+        "displayName": "Disabled Ink",
+        "canonical": "#647268",
+        "tonalRamp": [
+          "oklch(15% 0.0068 154.48)",
+          "oklch(26% 0.0137 154.48)",
+          "oklch(38% 0.0194 154.48)",
+          "oklch(50% 0.0228 154.48)",
+          "oklch(62% 0.0228 154.48)",
+          "oklch(74% 0.0182 154.48)",
+          "oklch(86% 0.0103 154.48)",
+          "oklch(95% 0.0034 154.48)"
+        ]
+      },
+      "disabled-line": {
+        "role": "neutral",
+        "displayName": "Disabled Line",
+        "canonical": "#dce3df",
+        "tonalRamp": [
+          "oklch(15% 0.0028 161.33)",
+          "oklch(26% 0.0055 161.33)",
+          "oklch(38% 0.0078 161.33)",
+          "oklch(50% 0.0092 161.33)",
+          "oklch(62% 0.0092 161.33)",
+          "oklch(74% 0.0074 161.33)",
+          "oklch(86% 0.0042 161.33)",
+          "oklch(95% 0.0014 161.33)"
+        ]
+      },
+      "status-neutral-background": {
+        "role": "neutral",
+        "displayName": "Status Neutral Background",
+        "canonical": "#edf1ed",
+        "tonalRamp": [
+          "oklch(15% 0.0020 145.52)",
+          "oklch(26% 0.0041 145.52)",
+          "oklch(38% 0.0058 145.52)",
+          "oklch(50% 0.0068 145.52)",
+          "oklch(62% 0.0068 145.52)",
+          "oklch(74% 0.0054 145.52)",
+          "oklch(86% 0.0031 145.52)",
+          "oklch(95% 0.0010 145.52)"
+        ]
+      },
+      "status-neutral-ink": {
+        "role": "neutral",
+        "displayName": "Status Neutral Ink",
+        "canonical": "#526358",
+        "tonalRamp": [
+          "oklch(15% 0.0081 156.86)",
+          "oklch(26% 0.0163 156.86)",
+          "oklch(38% 0.0231 156.86)",
+          "oklch(50% 0.0271 156.86)",
+          "oklch(62% 0.0271 156.86)",
+          "oklch(74% 0.0217 156.86)",
+          "oklch(86% 0.0122 156.86)",
+          "oklch(95% 0.0041 156.86)"
+        ]
+      },
+      "concern-background": {
+        "role": "tertiary",
+        "displayName": "Concern Background",
+        "canonical": "#fbece7",
+        "tonalRamp": [
+          "oklch(15% 0.0053 39.40)",
+          "oklch(26% 0.0106 39.40)",
+          "oklch(38% 0.0150 39.40)",
+          "oklch(50% 0.0177 39.40)",
+          "oklch(62% 0.0177 39.40)",
+          "oklch(74% 0.0141 39.40)",
+          "oklch(86% 0.0080 39.40)",
+          "oklch(95% 0.0027 39.40)"
+        ]
+      },
+      "concern-ink": {
+        "role": "tertiary",
+        "displayName": "Concern Ink",
+        "canonical": "#973c28",
+        "tonalRamp": [
+          "oklch(15% 0.0381 33.94)",
+          "oklch(26% 0.0762 33.94)",
+          "oklch(38% 0.1080 33.94)",
+          "oklch(50% 0.1270 33.94)",
+          "oklch(62% 0.1270 33.94)",
+          "oklch(74% 0.1016 33.94)",
+          "oklch(86% 0.0572 33.94)",
+          "oklch(95% 0.0191 33.94)"
+        ]
+      },
+      "pending-background": {
+        "role": "tertiary",
+        "displayName": "Pending Background",
+        "canonical": "#fbf1d9",
+        "tonalRamp": [
+          "oklch(15% 0.0100 88.06)",
+          "oklch(26% 0.0200 88.06)",
+          "oklch(38% 0.0283 88.06)",
+          "oklch(50% 0.0333 88.06)",
+          "oklch(62% 0.0333 88.06)",
+          "oklch(74% 0.0266 88.06)",
+          "oklch(86% 0.0150 88.06)",
+          "oklch(95% 0.0050 88.06)"
+        ]
+      },
+      "pending-ink": {
+        "role": "tertiary",
+        "displayName": "Pending Ink",
+        "canonical": "#846116",
+        "tonalRamp": [
+          "oklch(15% 0.0294 81.35)",
+          "oklch(26% 0.0587 81.35)",
+          "oklch(38% 0.0832 81.35)",
+          "oklch(50% 0.0978 81.35)",
+          "oklch(62% 0.0978 81.35)",
+          "oklch(74% 0.0783 81.35)",
+          "oklch(86% 0.0440 81.35)",
+          "oklch(95% 0.0147 81.35)"
+        ]
+      },
+      "current-background": {
+        "role": "tertiary",
+        "displayName": "Current Background",
+        "canonical": "#e3f1e6",
+        "tonalRamp": [
+          "oklch(15% 0.0062 152.18)",
+          "oklch(26% 0.0125 152.18)",
+          "oklch(38% 0.0177 152.18)",
+          "oklch(50% 0.0208 152.18)",
+          "oklch(62% 0.0208 152.18)",
+          "oklch(74% 0.0166 152.18)",
+          "oklch(86% 0.0094 152.18)",
+          "oklch(95% 0.0031 152.18)"
+        ]
+      },
+      "current-ink": {
+        "role": "tertiary",
+        "displayName": "Current Ink",
+        "canonical": "#286548",
+        "tonalRamp": [
+          "oklch(15% 0.0239 160.09)",
+          "oklch(26% 0.0478 160.09)",
+          "oklch(38% 0.0677 160.09)",
+          "oklch(50% 0.0796 160.09)",
+          "oklch(62% 0.0796 160.09)",
+          "oklch(74% 0.0637 160.09)",
+          "oklch(86% 0.0358 160.09)",
+          "oklch(95% 0.0119 160.09)"
+        ]
+      },
+      "activity-background": {
+        "role": "tertiary",
+        "displayName": "Activity Background",
+        "canonical": "#e9eff7",
+        "tonalRamp": [
+          "oklch(15% 0.0038 255.51)",
+          "oklch(26% 0.0075 255.51)",
+          "oklch(38% 0.0107 255.51)",
+          "oklch(50% 0.0125 255.51)",
+          "oklch(62% 0.0125 255.51)",
+          "oklch(74% 0.0100 255.51)",
+          "oklch(86% 0.0056 255.51)",
+          "oklch(95% 0.0019 255.51)"
+        ]
+      },
+      "activity-ink": {
+        "role": "tertiary",
+        "displayName": "Activity Ink",
+        "canonical": "#3e5e85",
+        "tonalRamp": [
+          "oklch(15% 0.0222 254.02)",
+          "oklch(26% 0.0443 254.02)",
+          "oklch(38% 0.0628 254.02)",
+          "oklch(50% 0.0739 254.02)",
+          "oklch(62% 0.0739 254.02)",
+          "oklch(74% 0.0591 254.02)",
+          "oklch(86% 0.0332 254.02)",
+          "oklch(95% 0.0111 254.02)"
+        ]
+      },
+      "evidence-highlight": {
+        "role": "secondary",
+        "displayName": "Evidence Highlight",
+        "canonical": "#fcf0c9",
+        "tonalRamp": [
+          "oklch(15% 0.0157 92.93)",
+          "oklch(26% 0.0314 92.93)",
+          "oklch(38% 0.0444 92.93)",
+          "oklch(50% 0.0523 92.93)",
+          "oklch(62% 0.0523 92.93)",
+          "oklch(74% 0.0418 92.93)",
+          "oklch(86% 0.0235 92.93)",
+          "oklch(95% 0.0078 92.93)"
+        ]
+      },
+      "evidence-highlight-ink": {
+        "role": "secondary",
+        "displayName": "Evidence Highlight Ink",
+        "canonical": "#5c4a21",
+        "tonalRamp": [
+          "oklch(15% 0.0188 85.74)",
+          "oklch(26% 0.0377 85.74)",
+          "oklch(38% 0.0534 85.74)",
+          "oklch(50% 0.0628 85.74)",
+          "oklch(62% 0.0628 85.74)",
+          "oklch(74% 0.0502 85.74)",
+          "oklch(86% 0.0283 85.74)",
+          "oklch(95% 0.0094 85.74)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Operational page heading; no decorative display role."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings, with compact panel variants."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Base application reading text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Mixed-case field labels."
+      },
+      "metadata": {
+        "displayName": "Metadata",
+        "purpose": "Compact filenames, versions, status and timestamps."
+      },
+      "source": {
+        "displayName": "Source",
+        "purpose": "Whitespace-preserving source excerpts."
+      }
+    },
+    "shadows": [
+      {
+        "name": "source-dialog",
+        "value": "0 15px 65px #123c3b30",
+        "purpose": "Only the modal source reader has substantial elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-color-transition",
+        "value": "background-color 160ms ease-out, border-color 160ms ease-out",
+        "purpose": "Button background and border feedback; removed for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1250px"
+      },
+      {
+        "name": "narrow-desktop",
+        "value": "1050px"
+      },
+      {
+        "name": "mobile",
+        "value": "700px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard enabled action alongside the disabled state.",
+      "html": "<div class=\"ds-actions\"><button class=\"ds-primary\">Request clarification<svg width=\"16\" height=\"16\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 11h14m-5-5 5 5-5 5\"/></svg></button><button class=\"ds-primary\" disabled>Send response</button></div>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-primary:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-primary:active{background:#dcebe4;}.ds-primary:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-primary:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}.ds-actions{display:flex;flex-wrap:wrap;gap:10px;}.ds-primary{background:var(--accent, #11695d);border-color:var(--accent, #11695d);color:#fff;}.ds-primary:hover{background:#0e554b;border-color:#0e554b;color:#fff;}.ds-primary:active{background:#093f38;}.ds-primary:disabled,.ds-primary:disabled:hover,.ds-primary:disabled:active{background:#edf1ef;color:#647268;border-color:#dce3df;cursor:not-allowed;}@media(prefers-reduced-motion:reduce){.ds-actions,.ds-primary{transition-duration:0ms;animation:none;}}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined action for a human decision.",
+      "html": "<button class=\"ds-secondary\">Record a decision</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-secondary:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-secondary:active{background:#dcebe4;}.ds-secondary:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-secondary:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}@media(prefers-reduced-motion:reduce){.ds-secondary{transition-duration:0ms;animation:none;}}"
+    },
+    {
+      "name": "Text action",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Low-emphasis link to the required checks.",
+      "html": "<button class=\"ds-text\">View checks<svg width=\"16\" height=\"16\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 11h14m-5-5 5 5-5 5\"/></svg></button>",
+      "css": ".ds-text{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-text:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-text:active{background:#dcebe4;}.ds-text:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-text:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}.ds-text{background:transparent;border:0;min-height:30px;padding:5px 0 5px 12px;color:#345a48;font-size:11px;margin-left:auto;}.ds-text:hover{background:transparent;color:#103e2d;}@media(prefers-reduced-motion:reduce){.ds-text{transition-duration:0ms;animation:none;}}"
+    },
+    {
+      "name": "Response field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Visible label with native multiline editing; larger mobile input text.",
+      "html": "<label class=\"ds-label\">Your response<textarea class=\"ds-field\" rows=\"4\" placeholder=\"Explain the information in your application and what has changed.\"></textarea></label>",
+      "css": ".ds-label{display:flex;flex-direction:column;gap:7px;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-size:12px;font-weight:600;}.ds-field{font:inherit;color:var(--ink, #223b39);background:#fff;border:1px solid #c8d5cf;border-radius:5px;min-height:40px;padding:9px 11px;max-width:100%;resize:vertical;line-height:1.6;caret-color:var(--accent, #11695d);}.ds-field::placeholder{color:#64756e;opacity:1;}.ds-field:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-field:disabled{background:#f3f5f3;color:#63716a;}@media(max-width:700px){.ds-label{font-size:13px;}.ds-field{font-size:16px;}}"
+    },
+    {
+      "name": "Rail navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Teal navigation with a visible current-page state.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Application navigation\"><a class=\"ds-nav-link\" href=\"#applications\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6V4h6l2 2h8v12H3z\"/></svg>Applications</a><a class=\"ds-nav-link\" href=\"#workspace\" aria-current=\"page\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6V4h6l2 2h8v12H3z\"/></svg>Case workspace</a></nav>",
+      "css": ".ds-nav{background:var(--rail, #123c3b);padding:20px;display:flex;flex-direction:column;gap:7px;font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;}.ds-nav-link{color:#c0d6cd;display:flex;align-items:center;gap:12px;text-decoration:none;padding:11px 12px;border-radius:6px;font-size:13px;}.ds-nav-link:hover{color:#fff;background:#1f4b47;}.ds-nav-link[aria-current=\"page\"]{background:#2a5750;color:#fff;}.ds-nav-link:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}"
+    },
+    {
+      "name": "Status badges",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Written states with paired background and ink colors.",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge ds-concern\">High priority</span><span class=\"ds-badge ds-pending\">Stale</span><span class=\"ds-badge ds-current\">Current</span><span class=\"ds-badge ds-activity\">Reviewing</span><span class=\"ds-badge\">Open</span></div>",
+      "css": ".ds-badges{display:flex;flex-wrap:wrap;gap:8px;}.ds-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;min-height:22px;font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-size:11px;line-height:1.4;border-radius:4px;white-space:nowrap;color:#526358;background:#edf1ed;font-weight:550;}.ds-concern{color:#973c28;background:#fbece7;}.ds-pending{color:#846116;background:#fbf1d9;}.ds-current{color:#286548;background:#e3f1e6;}.ds-activity{color:#3e5e85;background:#e9eff7;}"
+    },
+    {
+      "name": "General surface",
+      "kind": "card",
+      "refersTo": "surface",
+      "description": "Flat bordered container with a divided header.",
+      "html": "<section class=\"ds-surface\"><header class=\"ds-surface-header\"><h2 class=\"ds-surface-title\">Your documents</h2></header><div class=\"ds-surface-body\">Supporting documents appear here.</div></section>",
+      "css": ".ds-surface{background:#fff;border:1px solid var(--line, #dce4e1);border-radius:7px;min-width:0;overflow:hidden;color:#233a39;font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;}.ds-surface-header{padding:19px 22px;border-bottom:1px solid var(--line, #dce4e1);}.ds-surface-title{margin:0;font-size:14px;font-weight:650;line-height:1.4;letter-spacing:-.015em;}.ds-surface-body{padding:22px;font-size:13px;line-height:1.55;}@media(max-width:700px){.ds-surface-header{padding:17px;}.ds-surface-body{padding:18px;}}"
+    },
+    {
+      "name": "Source evidence panel",
+      "kind": "custom",
+      "refersTo": "evidence-panel",
+      "description": "Versioned source excerpt with a marked value and locator; sample content is from the synthetic fixture.",
+      "html": "<section class=\"ds-evidence\"><header class=\"ds-evidence-header\"><span>This application</span><span>Version 1</span></header><h3 class=\"ds-evidence-title\">Cedar Demo Excavation</h3><p class=\"ds-filename\">excavator-a.json</p><div class=\"ds-excerpts\"><div class=\"ds-excerpt\"><span>Identifier</span><pre class=\"ds-source\"><mark class=\"ds-mark\">\"identifier\": \"EX-0042\"</mark></pre><small>$.collateral.identifier</small></div></div><button class=\"ds-source-button\">Open source document<svg width=\"16\" height=\"16\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 11h14m-5-5 5 5-5 5\"/></svg></button></section>",
+      "css": ".ds-evidence{background:#fff;border:1px solid var(--line, #dce4e1);border-radius:6px;overflow:hidden;min-width:0;color:#233a39;font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;}.ds-evidence-header{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:14px 18px 12px;color:var(--muted, #52665c);font-size:11px;}.ds-evidence-title{margin:0 18px 7px;font-size:12px;font-weight:650;line-height:1.5;}.ds-filename{font-size:11px;color:var(--muted, #52665c);padding:0 18px 18px;margin:0;overflow-wrap:anywhere;}.ds-excerpts{padding:0 18px;}.ds-excerpt{padding:14px 0;border-top:1px solid #e9eee8;font-size:11px;color:var(--muted, #52665c);}.ds-source{white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;line-height:2;margin:8px 0;}.ds-mark{background:#fcf0c9;color:#5c4a21;padding:3px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}.ds-excerpt small{font-size:11px;line-height:1.6;overflow-wrap:anywhere;}.ds-source-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-source-button:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-source-button:active{background:#dcebe4;}.ds-source-button:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-source-button:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}.ds-source-button{width:100%;border:0;border-top:1px solid #e2e9e1;border-radius:0;justify-content:space-between;font-size:11px;font-weight:550;padding:12px 18px;color:#38604a;}@media(max-width:700px){.ds-evidence-title{font-size:14px;}.ds-source{font-size:12px;}}@media(prefers-reduced-motion:reduce){.ds-evidence,.ds-evidence-header,.ds-evidence-title,.ds-excerpt,.ds-excerpts,.ds-filename,.ds-mark,.ds-source,.ds-source-button{transition-duration:0ms;animation:none;}}"
+    },
+    {
+      "name": "Selected finding",
+      "kind": "custom",
+      "refersTo": "finding",
+      "description": "Full-width finding button with selected fill and border.",
+      "html": "<button class=\"ds-finding\"><span class=\"ds-finding-meta\"><span class=\"ds-finding-badge\">High priority</span><span>4 sources</span></span><strong class=\"ds-finding-title\">Conflicting exclusive equipment ownership claims</strong><small class=\"ds-finding-id\">EX-0042</small></button>",
+      "css": ".ds-finding{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-finding:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-finding:active{background:#dcebe4;}.ds-finding:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-finding:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}.ds-finding{text-align:left;display:block;padding:17px 16px 13px;border-color:#88ae9b;background:#f9fcf8;width:100%;margin-bottom:12px;}.ds-finding:hover{background:#f7faf7;}.ds-finding-meta{display:flex;justify-content:space-between;align-items:center;gap:7px;color:var(--muted, #52665c);font-size:11px;font-weight:400;}.ds-finding-title{display:block;font-size:13px;font-weight:600;line-height:1.6;margin:13px 0 8px;}.ds-finding-id{color:#5e7363;font-size:11px;font-weight:500;}@media(prefers-reduced-motion:reduce){.ds-finding,.ds-finding-id,.ds-finding-meta,.ds-finding-title{transition-duration:0ms;animation:none;}}.ds-finding-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px;min-height:22px;font-size:11px;line-height:1.4;border-radius:4px;white-space:nowrap;color:#973c28;background:#fbece7;font-weight:550;}"
+    },
+    {
+      "name": "Source dialog surface",
+      "kind": "custom",
+      "refersTo": "source-dialog",
+      "description": "Open native dialog preview; application opens it modally and uses its backdrop.",
+      "html": "<dialog open class=\"ds-dialog\" aria-labelledby=\"ds-source-heading\"><div class=\"ds-dialog-heading\"><h2 id=\"ds-source-heading\" class=\"ds-dialog-title\">excavator-a.json</h2><button class=\"ds-dialog-close\" type=\"button\" aria-label=\"Close source document\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"m5 5 12 12 M17 5 5 17\"/></svg></button></div><pre class=\"ds-dialog-source\">\"identifier\": \"EX-0042\"</pre></dialog>",
+      "css": ".ds-dialog{position:relative;margin:0;border:0;border-radius:10px;padding:26px;max-width:min(900px, calc(100vw - 32px));max-height:calc(100vh - 50px);color:var(--ink, #223b39);background:#fff;font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;box-shadow:0 15px 65px #123c3b30;}.ds-dialog::backdrop{background:#102b2870;}.ds-dialog-heading{display:flex;align-items:start;justify-content:space-between;gap:20px;}.ds-dialog-title{margin:0;font-size:17px;line-height:1.4;font-weight:650;letter-spacing:-.015em;}.ds-dialog-source{background:#f2f6ef;padding:20px;margin-top:23px;white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.8;}.ds-dialog-close{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cbd8d3;border-radius:6px;padding:9px 14px;min-height:40px;background:#fff;color:var(--ink, #223b39);font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background-color 160ms ease-out,border-color 160ms ease-out;}.ds-dialog-close:hover{background:#eaf2ee;border-color:#aabeb5;}.ds-dialog-close:active{background:#dcebe4;}.ds-dialog-close:focus-visible{outline:3px solid var(--focus, #138574);outline-offset:3px;}.ds-dialog-close:disabled{color:#74807c;background:#edf1ef;border-color:#dce3df;cursor:not-allowed;}@media(prefers-reduced-motion:reduce){.ds-dialog,.ds-dialog-close,.ds-dialog-heading,.ds-dialog-source,.ds-dialog-title{transition-duration:0ms;animation:none;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Evidence Workspace",
+    "overview": "LoanWick is a concise, straightforward operating interface. Light evidence panels sit within cool neutral work areas; a deep teal rail provides a stable navigation anchor. Compact system typography keeps document comparisons and human actions legible without adding a promotional layer.\n\nThe signature is paired real-source highlights with filenames, document versions, and locators kept close to the excerpts. Desktop staff can compare records side by side, while the borrower gets a single-column request and response view. This records the implemented fixture interface; live integration remains explicitly unverified.",
+    "keyCharacteristics": [
+      "Light, flat evidence surfaces and a deep teal navigation rail.",
+      "Compact system text with tabular money and revision values.",
+      "Paired source excerpts, literal status labels, and visible next actions.",
+      "Desktop staff density and native mobile borrower controls."
+    ],
+    "rules": [
+      {
+        "name": "The Literal Status Rule",
+        "body": "Pair semantic color with a written status; a concern is an item for human investigation, never a visual fraud verdict.",
+        "section": "colors"
+      },
+      {
+        "name": "The Comparable Numbers Rule",
+        "body": "Use tabular numerals for amounts, case metadata, facts, and revision summaries.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Evidence Rule",
+        "body": "Keep ordinary evidence surfaces shadow-free; preserve modal depth for the source reader.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preserve the deep teal navigation anchor and light evidence surfaces.",
+      "Do keep filenames, versions, locators, and highlights beside the source text they describe.",
+      "Do pair status colors with literal text and retain visible keyboard focus.",
+      "Do use tabular numerals for comparable money and revision values.",
+      "Do keep mobile borrower fields legible and submission controls easy to reach.",
+      "Do display fixture, connection, synthetic-data, and failure feedback honestly."
+    ],
+    "donts": [
+      "Don't add decorative imagery or ornamental dashboard metrics to the operating workspace.",
+      "Don't use a concern color or label to imply a confirmed fraud verdict.",
+      "Don't add shadows to ordinary evidence panels or replace rectangular controls with pills.",
+      "Don't make disabled primary actions look enabled when hovered or pressed.",
+      "Don't present fixture behavior as proof of live integration."
+    ]
+  }
+}

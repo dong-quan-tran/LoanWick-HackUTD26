@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 node_modules/
 dist/
+dist-live/
 *.tsbuildinfo
 .env
 .env.*
@@ -11,3 +12,4 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.impeccable/review/

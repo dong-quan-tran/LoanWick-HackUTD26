@@ -8,7 +8,7 @@ export const EVIDENCE_STATES = ['supported', 'contradicted', 'unknown'] as const
 export const MATCH_DECISIONS = ['candidate', 'confirmed_same_entity', 'confirmed_related', 'rejected'] as const;
 export const CHECK_STATUSES = ['pending', 'passed', 'needs_review', 'stale'] as const;
 export const CHECK_TYPES = ['collateral_review', 'document_consistency_review', 'payment_verification'] as const;
-export const ERROR_CODES = ['UNAUTHORIZED', 'NOT_FOUND_OR_FORBIDDEN', 'INVALID_INPUT', 'INVALID_STATE', 'LEASE_LOST', 'STALE_RESULTS', 'STALE_REVIEW', 'BLOCKING_FINDINGS', 'ALREADY_RELEASED', 'MODEL_UNAVAILABLE', 'EXTRACTION_UNSUPPORTED'] as const;
+export const ERROR_CODES = ['UNAUTHORIZED', 'NOT_FOUND_OR_FORBIDDEN', 'INVALID_INPUT', 'INVALID_STATE', 'INVALID_EVIDENCE', 'LEASE_LOST', 'STALE_RESULTS', 'STALE_REVIEW', 'BLOCKING_FINDINGS', 'ALREADY_RELEASED', 'MODEL_UNAVAILABLE', 'MODEL_TIMEOUT', 'INVALID_MODEL_OUTPUT', 'WORKER_ERROR', 'EXTRACTION_UNSUPPORTED', 'INVESTIGATION_MISSING', 'INVESTIGATION_STALE', 'INVESTIGATION_PENDING', 'CLARIFICATION_PENDING'] as const;
 export type ApplicationStage = typeof APPLICATION_STAGES[number];
 export type ActorRole = typeof ACTOR_ROLES[number];
 export type FindingStatus = typeof FINDING_STATUSES[number];
@@ -125,13 +125,16 @@ export interface VerificationState {
 }
 export interface PolicyReadiness {
   eligibleByPolicy: boolean;
-  reasons: Array<{ code: 'INVALID_STAGE' | 'REVIEW_PENDING' | 'STALE_REVIEW' | 'REVIEW_REQUIRED' | 'BLOCKING_FINDINGS' | 'ALREADY_RELEASED'; checkType: CheckType | null }>;
+  reasons: Array<{ code: 'INVALID_STAGE' | 'INVALID_STATE' | 'MISSING_REVIEW' | 'REVIEW_PENDING' | 'STALE_REVIEW' | 'REVIEW_REQUIRED' | 'BLOCKING_FINDINGS' | 'ALREADY_RELEASED' | 'INVESTIGATION_MISSING' | 'INVESTIGATION_STALE' | 'INVESTIGATION_PENDING' | 'CLARIFICATION_PENDING' | 'PAYMENT_EVIDENCE_REQUIRED'; checkType: CheckType | null }>;
   checks: Record<CheckType, VerificationState>;
 }
 export interface ReleaseReadiness extends PolicyReadiness {
   canRelease: boolean; // Server adds authenticated actor/organization authorization.
 }
-export type StaffInvestigationJob = Omit<InvestigationJob, 'claimToken'>;
+export type StaffInvestigationJob = Pick<InvestigationJob, 'id' | 'applicationId' | 'runKey' | 'status' | 'executionMode' | 'modelId' | 'startedAt' | 'completedAt'> & { errorCode: string | null; capturedRevisions?: SourceRevision[] | undefined; claimedBy?: string | null | undefined; leaseExpiresAt?: string | null | undefined };
+// Stored server findings may lack worker-only structured facts. Do not invent them at a presentation boundary.
+export type PresentedFinding = Omit<Finding, 'facts'> & { facts?: Finding['facts'] | undefined };
+export type PresentedCollateral = Omit<Collateral, 'assetType' | 'ownershipEvidenceIds'> & { assetType?: string | undefined; ownershipEvidenceIds?: string[] | undefined };
 export interface ClarificationDraft {
   applicationId: string; findingId: string; borrowerSafeMessage: string; requestedDocumentType: string | null;
 }
@@ -141,15 +144,21 @@ export interface AnalysisToolResult {
 }
 export interface StaffCaseView {
   application: Application; documents: DocumentMetadata[]; evidence: Evidence[];
-  collateral: Collateral[]; findings: Finding[]; relationships: ApplicationRelationship[];
+  collateral: PresentedCollateral[]; findings: PresentedFinding[]; relationships: ApplicationRelationship[];
   investigations: StaffInvestigationJob[]; toolEvents: ToolEvent[];
   clarificationRequests: ClarificationRequest[]; responses: BorrowerResponse[];
   reviews: ReviewRecord[]; auditEvents: AuditEvent[]; readiness: ReleaseReadiness; release: DemoRelease | null;
+  paymentSummary?: Pick<PaymentInstruction, 'id' | 'applicationId' | 'version' | 'maskedDisplay' | 'beneficiaryName' | 'evidenceIds'> | null | undefined;
+  relatedApplications?: Array<Pick<Application, 'id' | 'businessName' | 'amountCents' | 'currency'>> | undefined;
+  findingCurrentness?: Record<string, boolean> | undefined;
+  currentDocumentIds?: string[] | undefined;
 }
 export type BorrowerRequest = Pick<ClarificationRequest, 'id' | 'applicationId' | 'borrowerSafeMessage' | 'requestedDocumentType' | 'state' | 'createdAt'>;
+export type BorrowerDocument = DocumentMetadata & { requestId?: string | null | undefined };
 export interface BorrowerCaseView {
   application: Pick<Application, 'id' | 'businessName' | 'amountCents' | 'currency' | 'stage'>;
   requests: BorrowerRequest[]; responses: BorrowerResponse[];
+  documents?: BorrowerDocument[] | undefined;
 }
 export interface DomainError { code: typeof ERROR_CODES[number]; message: string; correlationId: string }
 export type OperationResult<T> = { ok: true; value: T; correlationId: string } | { ok: false; error: DomainError };
@@ -166,10 +175,11 @@ export interface CaseAdapter {
   subscribeBorrowerCase(applicationId: string, onValue: (value: BorrowerCaseView) => void, onError: (error: DomainError) => void): Unsubscribe;
   requestInvestigation(input: { applicationId: string; executionMode: ExecutionMode; correlationId: string }): Promise<OperationResult<{ jobId: string }>>;
   createClarificationDraft(input: ClarificationDraft & { correlationId: string }): Promise<OperationResult<{ requestId: string }>>;
+  updateClarificationDraft?(input: { requestId: string; borrowerSafeMessage: string; requestedDocumentType: string | null; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   sendClarification(input: { requestId: string; borrowerSafeMessage: string; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   submitBorrowerResponse(input: { requestId: string; message: string; documentIds: string[]; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   decideFinding(input: { findingId: string; decision: 'resolved' | 'escalate' | 'reopen'; rationale: string; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
-  recordReview(input: { applicationId: string; checkType: CheckType; observedRelevantRevision: number; rationale: string; evidenceIds: string[]; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
+  recordReview(input: { applicationId: string; checkType: CheckType; observedRelevantRevision: number; rationale: string; evidenceIds: string[]; status?: 'passed' | 'needs_review'; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   changePaymentInstructions(input: { applicationId: string; observedPaymentRevision: number; syntheticAccountToken: string; beneficiaryName: string; evidenceIds: string[]; correlationId: string }): Promise<OperationResult<MutationReceipt>>;
   simulateRelease(input: { applicationId: string; idempotencyKey: string; correlationId: string }): Promise<OperationResult<DemoRelease>>;
 }
