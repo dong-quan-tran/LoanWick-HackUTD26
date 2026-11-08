@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "test:integration": "tsx --test tests/integration.test.ts"
+    "typecheck": "tsc --project tsconfig.check.json",
+    "test:integration": "tsx --test tests/integration.test.ts",
+    "test:local": "tsx scripts/local.ts test",
+    "demo:local": "tsx scripts/local.ts demo"
   },
   "dependencies": {
     "spacetimedb": "2.14.0"

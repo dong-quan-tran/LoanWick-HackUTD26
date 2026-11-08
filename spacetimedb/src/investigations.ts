@@ -53,13 +53,15 @@ export function jobCollateral(store: ReadableDb, applicationId: string, sourceId
   return claims.filter(claim => identifiers.has(claim.normalizedIdentifier))
 }
 
-export function jobEvidence(store: ReadableDb, applicationId: string, sourceId: string) {
+export function jobEvidence(store: ReadableDb, applicationId: string, sourceId: string, scope: ReadonlySet<string>) {
   const candidates = Array.from(store.evidence.applicationId.filter(sourceId))
     .filter(item => store.documents.id.find(item.documentId)?.current)
   if (applicationId === sourceId) return candidates
   const ids = new Set(jobCollateral(store, applicationId, sourceId).flatMap(claim => claim.evidenceIds))
   for (const edge of confirmedNeighbors(store, sourceId)) {
-    const entity = store.entityRecords.id.find(edge.leftApplicationId === sourceId ? edge.leftEntityId : edge.rightEntityId)
+    const isLeft = edge.leftApplicationId === sourceId
+    if (!scope.has(isLeft ? edge.rightApplicationId : edge.leftApplicationId)) continue
+    const entity = store.entityRecords.id.find(isLeft ? edge.leftEntityId : edge.rightEntityId)
     for (const evidenceId of entity?.evidenceIds ?? []) ids.add(evidenceId)
   }
   return candidates.filter(item => ids.has(item.id))
@@ -213,7 +215,7 @@ export const completeInvestigation = db.reducer({
   if (modelId !== undefined) requireText(modelId, 120)
   requireDistinct(args.findings.map(finding => finding.deduplicationKey), 20)
   const scope = new Set([application.id, ...job.sources.map(source => source.applicationId)])
-  const visibleEvidence = new Set([...scope].flatMap(id => jobEvidence(ctx.db, application.id, id).map(item => item.id)))
+  const visibleEvidence = new Set([...scope].flatMap(id => jobEvidence(ctx.db, application.id, id, scope).map(item => item.id)))
   for (const finding of args.findings) {
     requireId(finding.type)
     requireText(finding.title, 140)

@@ -401,6 +401,17 @@ export const ScopedApplication = __t.object("ScopedApplication", {
 });
 export type ScopedApplication = __Infer<typeof ScopedApplication>;
 
+export const ScopedRelationship = __t.object("ScopedRelationship", {
+  id: __t.string(),
+  leftApplicationId: __t.string(),
+  rightApplicationId: __t.string(),
+  leftEntityId: __t.string(),
+  rightEntityId: __t.string(),
+  decision: __t.string(),
+  evidenceIds: __t.array(__t.string()),
+});
+export type ScopedRelationship = __Infer<typeof ScopedRelationship>;
+
 export const SessionUser = __t.object("SessionUser", {
   id: __t.string(),
   organizationId: __t.string(),
@@ -544,7 +555,7 @@ export const WorkerSnapshot = __t.object("WorkerSnapshot", {
     return __t.array(Collateral);
   },
   get relationships() {
-    return __t.array(MatchCandidates);
+    return __t.array(ScopedRelationship);
   },
   get payment() {
     return __t.option(PaymentSummary);

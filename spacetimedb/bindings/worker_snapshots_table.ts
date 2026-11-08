@@ -12,12 +12,12 @@ import {
 import {
   Evidence,
   Collateral,
-  MatchCandidates,
   RevisionVector,
   SourceRevision,
   DocumentSummary,
   PaymentSummary,
   ScopedApplication,
+  ScopedRelationship,
 } from "./types";
 
 
@@ -48,7 +48,7 @@ export default __t.row({
     return __t.array(Collateral);
   },
   get relationships() {
-    return __t.array(MatchCandidates);
+    return __t.array(ScopedRelationship);
   },
   get payment() {
     return __t.option(PaymentSummary);

@@ -137,12 +137,16 @@ const scopedApplication = t.object('ScopedApplication', {
   id: t.string(), businessName: t.string(), amountCents: t.u64(), currency: t.string(), stage: t.string(),
   revisions: revisionVector,
 })
+const scopedRelationship = t.object('ScopedRelationship', {
+  id: t.string(), leftApplicationId: t.string(), rightApplicationId: t.string(), leftEntityId: t.string(),
+  rightEntityId: t.string(), decision: t.string(), evidenceIds: t.array(t.string()),
+})
 const workerSnapshot = t.row('WorkerSnapshot', {
   id: t.string().primaryKey(), applicationId: t.string(), revisions: revisionVector, sources: t.array(sourceRevision),
   claimEpoch: t.u32(), leaseExpiresAt: t.timestamp(), executionMode: t.string(), modelId: t.option(t.string()),
   inputsCurrent: t.bool(), applications: t.array(scopedApplication), documents: t.array(safeDocument),
   evidence: t.array(evidence.rowType), collateral: t.array(collateral.rowType),
-  relationships: t.array(matchCandidates.rowType), payment: t.option(paymentSummary),
+  relationships: t.array(scopedRelationship), payment: t.option(paymentSummary),
 })
 export const workerSnapshots = db.view({ name: 'worker_snapshots', public: true }, t.array(workerSnapshot), ctx => {
   return workerJobs(ctx).flatMap(job => {
@@ -153,8 +157,9 @@ export const workerSnapshots = db.view({ name: 'worker_snapshots', public: true 
     const inputsCurrent = Boolean(main && main.organizationId === job.organizationId && sourcesMatch(ctx.db, main, job))
     const scopedIds = new Set(scope.map(source => source.applicationId))
     const payment = inputsCurrent ? ctx.db.paymentInstructions.id.find(`${job.applicationId}/${job.revisions.paymentRevision}`) : null
-    const visibleEvidence = inputsCurrent ? scope.flatMap(({ applicationId }) => jobEvidence(ctx.db, job.applicationId, applicationId)) : []
+    const visibleEvidence = inputsCurrent ? scope.flatMap(({ applicationId }) => jobEvidence(ctx.db, job.applicationId, applicationId, scopedIds)) : []
     const visibleDocs = new Set(visibleEvidence.map(item => item.documentId))
+    const visibleEvidenceIds = new Set(visibleEvidence.map(item => item.id))
     return [{
       id: job.id, applicationId: job.applicationId, revisions: job.revisions, sources: job.sources,
       claimEpoch: job.claimEpoch, leaseExpiresAt: job.leaseExpiresAt, executionMode: job.executionMode, modelId: job.modelId,
@@ -169,7 +174,12 @@ export const workerSnapshots = db.view({ name: 'worker_snapshots', public: true 
       evidence: visibleEvidence,
       collateral: inputsCurrent ? scope.flatMap(({ applicationId }) => jobCollateral(ctx.db, job.applicationId, applicationId)) : [],
       relationships: inputsCurrent ? scope.flatMap(({ applicationId }) => [...ctx.db.matchCandidates.leftApplicationId.filter(applicationId)]
-        .filter(edge => edge.decision.startsWith('confirmed_') && scopedIds.has(edge.rightApplicationId))) : [],
+        .filter(edge => edge.decision.startsWith('confirmed_') && scopedIds.has(edge.rightApplicationId))
+        .map(({ id, leftApplicationId, rightApplicationId, leftEntityId, rightEntityId, decision }) => {
+          const evidenceIds = [...new Set([leftEntityId, rightEntityId].flatMap(entityId =>
+            ctx.db.entityRecords.id.find(entityId)?.evidenceIds ?? []))].filter(evidenceId => visibleEvidenceIds.has(evidenceId))
+          return { id, leftApplicationId, rightApplicationId, leftEntityId, rightEntityId, decision, evidenceIds }
+        })) : [],
       payment: payment ? {
         id: payment.id, applicationId: payment.applicationId, version: payment.version, maskedDisplay: payment.maskedDisplay,
         beneficiaryName: payment.beneficiaryName, evidenceIds: payment.evidenceIds, createdAt: payment.createdAt,

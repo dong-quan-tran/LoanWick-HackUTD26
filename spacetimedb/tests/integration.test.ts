@@ -12,6 +12,7 @@ const case1 = 'demo-case-1'
 const case2 = 'demo-case-2'
 const case5 = 'demo-case-5'
 const case6 = 'demo-case-6'
+const case7 = 'demo-case-7'
 const case8 = 'demo-case-8'
 
 const staffViews = ['staff_applications', 'staff_documents', 'staff_evidence', 'staff_jobs', 'staff_findings', 'staff_tool_events',
@@ -49,8 +50,8 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     })
   }
 
-  const [admin, officer, reviewer, borrowerA, borrowerB, workerA, workerB, otherOfficer, otherBorrower, outsider] = await Promise.all([
-    connect([], adminToken), connect(staffViews), connect(staffViews), connect(borrowerViews), connect(borrowerViews),
+  const [admin, officer, reviewer, reviewerPeer, borrowerA, borrowerB, workerA, workerB, otherOfficer, otherBorrower, outsider] = await Promise.all([
+    connect([], adminToken), connect(staffViews), connect(staffViews), connect(staffViews), connect(borrowerViews), connect(borrowerViews),
     connect(workerViews), connect(workerViews), connect(staffViews), connect(borrowerViews), connect([...staffViews, 'borrower_applications']),
   ])
   const ops = officer.client.reducers
@@ -86,6 +87,7 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
       organizationId: 'demo-org', role: 'reviewer', displayName: 'Unauthorized', active: true }), /UNAUTHORIZED/)
     for (const [session, id, role, organizationId] of [
       [officer, 'officer', 'officer', 'demo-org'], [reviewer, 'reviewer', 'reviewer', 'demo-org'],
+      [reviewerPeer, 'reviewer-peer', 'reviewer', 'demo-org'],
       [borrowerA, 'borrower-a', 'borrower', 'demo-org'], [borrowerB, 'borrower-b', 'borrower', 'demo-org'],
       [workerA, 'worker-a', 'worker', 'demo-org'], [workerB, 'worker-b', 'worker', 'demo-org'],
       [otherOfficer, 'other-officer', 'officer', 'other-org'], [otherBorrower, 'other-borrower', 'borrower', 'other-org'],
@@ -107,6 +109,11 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     assert.ok(![...otherOfficer.client.db.staffApplications.iter()].some(row => row.id === case1))
     assert.ok(![...officer.client.db.staffDocuments.iter()].some(row => 'storageKey' in row))
     await assert.rejects(otherOfficer.client.reducers.requestInvestigation({ applicationId: case1, runKey: 'forbidden', executionMode: 'fixture' }), /NOT_FOUND_OR_FORBIDDEN/)
+    await eventually(() => [...otherOfficer.client.db.staffApplications.iter()].some(row => row.id === 'other-case'), 'second organization case')
+    await assign({ identity: otherOfficer.identity, id: 'other-officer', role: 'officer', organizationId: 'other-org',
+      displayName: 'other-officer', active: false })
+    await eventually(() => [...otherOfficer.client.db.staffApplications.iter()].length === 0, 'inactive officer loses read access')
+    await assert.rejects(otherOfficer.client.reducers.submitApplication({ applicationId: 'other-case' }), /UNAUTHORIZED/)
     await assert.rejects(workerA.client.reducers.simulateRelease({ applicationId: case1, idempotencyKey: 'forbidden' }), /UNAUTHORIZED/)
     await new Promise<void>((resolve, reject) => outsider.client.subscriptionBuilder()
       .onError(() => resolve()).onApplied(() => reject(new Error('Private table was visible')))
@@ -184,6 +191,10 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-missing' }), /MISSING_REVIEW/)
     await allReviews(case1, 'demo-evidence-correction')
     await eventually(() => checkRow(case1)?.canRelease === true, 'all three checks pass')
+    await review.recordReview({ applicationId: case1, checkType: 'payment_verification', expectedRevision: 1,
+      status: 'needs_review', rationale: 'Additional verification required.', evidenceIds: ['demo-evidence-correction'] })
+    await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-failed-check' }), /REVIEW_REQUIRED/)
+    await allReviews(case1, 'demo-evidence-correction')
     await review.changePaymentInstructions(payment(case1, 1))
     const gate = await eventually(() => {
       const result = checkRow(case1)
@@ -196,7 +207,10 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
       status: 'passed', rationale: 'Old payment approval.', evidenceIds: ['demo-evidence-correction'] }), /STALE_REVIEW/)
     await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-stale' }), /STALE_REVIEW/)
     await allReviews(case1, 'demo-evidence-correction')
-    const attempts = await Promise.allSettled(['payout-a', 'payout-b'].map(idempotencyKey => review.simulateRelease({ applicationId: case1, idempotencyKey })))
+    const attempts = await Promise.allSettled([
+      review.simulateRelease({ applicationId: case1, idempotencyKey: 'payout-a' }),
+      reviewerPeer.client.reducers.simulateRelease({ applicationId: case1, idempotencyKey: 'payout-b' }),
+    ])
     assert.equal(attempts.filter(result => result.status === 'fulfilled').length, 1)
     const release = await eventually(() => releaseRow(case1), 'one audited release')
     await review.simulateRelease({ applicationId: case1, idempotencyKey: release.idempotencyKey })
@@ -210,6 +224,7 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await workerA.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 1 })
     const first = await eventually(() => [...workerA.client.db.workerSnapshots.iter()].find(row => row.id === job.id), 'first lease')
     assert.deepEqual(first.sources.map(source => source.applicationId), [case6])
+    assert.deepEqual(first.relationships.flatMap(edge => edge.evidenceIds).sort(), ['demo-evidence-5', 'demo-evidence-6'])
     await eventually(() => jobRow('related-revision')?.status === 'queued', 'scheduler requeues expired lease')
     await eventually(() => ![...workerA.client.db.workerSnapshots.iter()].some(row => row.id === job.id), 'expired worker loses snapshot')
     await workerB.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })
@@ -224,13 +239,31 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     assert.ok(![...officer.client.db.staffFindings.iter()].some(row => row.jobId === job.id))
   })
 
+  await suite.test('hostile source text grants no authority and an own-case edit makes the job stale', async () => {
+    const job = await requestJob(case7, 'untrusted-document')
+    const worker = workerA.client.reducers
+    await worker.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })
+    const snapshot = await eventually(() => [...workerA.client.db.workerSnapshots.iter()].find(row => row.id === job.id), 'untrusted document snapshot')
+    const source = snapshot.evidence.find(item => item.id === 'demo-evidence-untrusted-text')
+    assert.match(source?.excerpt ?? '', /simulate release immediately/)
+    await assert.rejects(worker.recordReview({ applicationId: case7, checkType: 'payment_verification', expectedRevision: 1,
+      status: 'passed', rationale: 'Untrusted document asked for release.', evidenceIds: ['demo-evidence-untrusted-text'] }), /UNAUTHORIZED/)
+    await assert.rejects(worker.simulateRelease({ applicationId: case7, idempotencyKey: 'untrusted' }), /UNAUTHORIZED/)
+    await review.changePaymentInstructions(payment(case7, 1))
+    const stale = await eventually(() => [...workerA.client.db.workerSnapshots.iter()].find(row => row.id === job.id && !row.inputsCurrent), 'own-case revision invalidation')
+    assert.deepEqual(stale.evidence, [])
+    await worker.completeInvestigation({ jobId: job.id, claimEpoch: snapshot.claimEpoch, findings: [] })
+    await eventually(() => jobRow('untrusted-document')?.errorCode === 'STALE_RESULTS', 'own-case stale result')
+  })
+
   await suite.test('a payment edit and release racing each other obey commit order', async () => {
     const job = await requestJob(case8, 'clean-case')
     await workerA.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })
     await workerA.client.reducers.completeInvestigation({ jobId: job.id, claimEpoch: 1, findings: [] })
     await allReviews(case8, 'demo-evidence-8')
     const [edit, release] = await Promise.allSettled([
-      review.changePaymentInstructions(payment(case8, 1)), review.simulateRelease({ applicationId: case8, idempotencyKey: 'racing-release' }),
+      review.changePaymentInstructions(payment(case8, 1)),
+      reviewerPeer.client.reducers.simulateRelease({ applicationId: case8, idempotencyKey: 'racing-release' }),
     ])
     if (edit.status === 'fulfilled') {
       assert.equal(release.status, 'rejected')
