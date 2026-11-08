@@ -494,6 +494,12 @@ export const ToolEvents = __t.object("ToolEvents", {
 });
 export type ToolEvents = __Infer<typeof ToolEvents>;
 
+export const UploadClaim = __t.object("UploadClaim", {
+  id: __t.string(),
+  byteLength: __t.u32(),
+});
+export type UploadClaim = __Infer<typeof UploadClaim>;
+
 export const UploadGrants = __t.object("UploadGrants", {
   id: __t.string(),
   applicationId: __t.string(),
@@ -504,6 +510,14 @@ export const UploadGrants = __t.object("UploadGrants", {
   applicationRevision: __t.u32(),
   expiresAt: __t.timestamp(),
   used: __t.bool(),
+  uploaderIdentity: __t.option(__t.identity()),
+  secretHash: __t.option(__t.string()),
+  maxBytes: __t.option(__t.u32()),
+  get claim() {
+    return __t.option(UploadClaim);
+  },
+  revokedAt: __t.option(__t.timestamp()),
+  attachedDocumentId: __t.option(__t.string()),
 });
 export type UploadGrants = __Infer<typeof UploadGrants>;
 
@@ -515,6 +529,10 @@ export const UploadSummary = __t.object("UploadSummary", {
   documentType: __t.string(),
   applicationRevision: __t.u32(),
   expiresAt: __t.timestamp(),
+  secretHash: __t.string(),
+  maxBytes: __t.u32(),
+  status: __t.string(),
+  attachedDocumentId: __t.option(__t.string()),
 });
 export type UploadSummary = __Infer<typeof UploadSummary>;
 

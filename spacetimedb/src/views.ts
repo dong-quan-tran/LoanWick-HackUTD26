@@ -1,10 +1,10 @@
-import { t } from 'spacetimedb/server'
+import { t, type Infer } from 'spacetimedb/server'
 import { activeJob, readiness, revisions } from './domain'
 import { jobCollateral, jobEvidence, sourcesMatch } from './scope'
 import {
   applications, auditEvents, borrowerResponses, clarificationRequests, collateral, db, demoReleases, documentFields,
   entityRecords, evidence, findings, matchCandidates, reviewRecords, revisionVector, sourceRevision, toolEvents,
-  type ReadContext,
+  uploadGrants, type ReadContext,
 } from './schema'
 
 function staffCases(ctx: ReadContext) {
@@ -204,18 +204,29 @@ export const workerSnapshots = db.view({ name: 'worker_snapshots', public: true 
 const uploadSummary = t.row('UploadSummary', {
   id: t.string().primaryKey(), applicationId: t.string(), requestId: t.option(t.string()), uploaderId: t.string(),
   documentType: t.string(), applicationRevision: t.u32(), expiresAt: t.timestamp(),
+  secretHash: t.string(), maxBytes: t.u32(), status: t.string(), attachedDocumentId: t.option(t.string()),
 })
+
+function uploadSummaryRows(grant: Infer<typeof uploadGrants.rowType>) {
+  const { id, applicationId, requestId, uploaderId, documentType, applicationRevision,
+    expiresAt, secretHash, maxBytes, attachedDocumentId } = grant
+  if (!grant.uploaderIdentity || !secretHash || !maxBytes) return []
+  const status = grant.used ? 'attached' : grant.revokedAt ? 'revoked' : grant.claim ? 'claimed' : 'ready'
+  return [{ id, applicationId, requestId, uploaderId, documentType, applicationRevision,
+    expiresAt, secretHash, maxBytes, status, attachedDocumentId }]
+}
+
 export const myUploadGrants = db.view({ name: 'my_upload_grants', public: true }, t.array(uploadSummary), ctx => {
   const user = ctx.db.users.identity.find(ctx.sender)
   if (!user?.active || !['officer', 'borrower'].includes(user.role)) return []
-  return [...ctx.db.uploadGrants.uploaderId.filter(user.id)].filter(grant => !grant.used)
-    .map(({ workerIdentity: _worker, used: _used, ...grant }) => grant)
+  return [...ctx.db.uploadGrants.uploaderId.filter(user.id)]
+    .filter(grant => grant.uploaderIdentity?.isEqual(ctx.sender)).flatMap(uploadSummaryRows)
 })
 
 export const workerUploadGrants = db.view({ name: 'worker_upload_grants', public: true }, t.array(uploadSummary), ctx => {
   const user = ctx.db.users.identity.find(ctx.sender)
   if (!user?.active || user.role !== 'worker') return []
-  return [...ctx.db.uploadGrants.workerIdentity.filter(ctx.sender)].filter(grant => !grant.used &&
+  return [...ctx.db.uploadGrants.workerIdentity.filter(ctx.sender)].filter(grant =>
     ctx.db.applications.id.find(grant.applicationId)?.organizationId === user.organizationId)
-    .map(({ workerIdentity: _worker, used: _used, ...grant }) => grant)
+    .flatMap(uploadSummaryRows)
 })
