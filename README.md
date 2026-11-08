@@ -1,6 +1,6 @@
-# LoanWick
+# LoanWick's DealPilot - HackUTD
 
-LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
+DealPilot is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
 This branch implements Person 4's shared foundation: TypeScript contracts/runtime schemas, pure deterministic checks, eight application fixtures, source-backed evidence, sample frontend projections, regression tests, and a fixture evaluator. The database, web app, live model worker, and their integration are separate teammates' work and are not implemented or verified here.
 
