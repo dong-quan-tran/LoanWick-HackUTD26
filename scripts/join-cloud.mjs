@@ -48,8 +48,13 @@ const tokenDir = args['token-dir'] ?? join(homedir(), '.loanwick', database, nam
 // 1. Database client dependencies (spacetimedb/ only; quick, pinned by its lockfile).
 if (!existsSync(join(moduleDir, 'node_modules', 'spacetimedb', 'package.json')) || !existsSync(join(moduleDir, 'node_modules', 'tsx'))) {
   say('Installing the database client (one time)…')
-  const npm = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['ci', '--prefix', 'spacetimedb', '--no-audit', '--no-fund'],
-    { cwd: repo, stdio: 'inherit', shell: process.platform === 'win32' })
+  const npmArgs = ['ci', '--prefix', 'spacetimedb', '--no-audit', '--no-fund']
+  // `npm run` provides npm's own CLI path, so npm runs through Node directly (no shell, no argument concatenation).
+  const npm = process.env.npm_execpath?.endsWith('.js')
+    ? spawnSync(process.execPath, [process.env.npm_execpath, ...npmArgs], { cwd: repo, stdio: 'inherit' })
+    : process.platform === 'win32'
+      ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `npm ${npmArgs.join(' ')}`], { cwd: repo, stdio: 'inherit' })
+      : spawnSync('npm', npmArgs, { cwd: repo, stdio: 'inherit' })
   if (npm.status !== 0) die('npm ci --prefix spacetimedb failed. Check your internet connection and Node version.')
 }
 const tsx = join(moduleDir, 'node_modules', 'tsx', 'dist', 'cli.mjs')
@@ -76,7 +81,7 @@ if (args['copy-token']) {
   const file = join(tokenDir, `${role}.token`)
   if (!existsSync(file)) die(`No ${role} identity yet. Include it in --roles first.`)
   const tool = process.platform === 'win32' ? ['clip'] : process.platform === 'darwin' ? ['pbcopy'] : ['xclip', '-selection', 'clipboard']
-  const copied = spawnSync(tool[0], tool.slice(1), { input: readFileSync(file, 'utf8').trim(), shell: process.platform === 'win32' })
+  const copied = spawnSync(tool[0], tool.slice(1), { input: readFileSync(file, 'utf8').trim() })
   say(copied.status === 0 ? `\n✔ ${role} token copied to the clipboard. Paste it into the web app, then copy something else.` :
     `\n✖ Could not use the clipboard (${tool[0]}). Open ${file} yourself; never paste it anywhere except the web app.`)
 }
