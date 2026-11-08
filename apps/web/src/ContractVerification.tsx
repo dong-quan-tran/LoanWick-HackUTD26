@@ -8,6 +8,7 @@ import { inspectContractFile } from './adapters/contract-file';
 import type { ContractFile } from './adapters/contract-file';
 import styles from './ContractVerification.module.css';
 import contractFolio from './assets/contract-folio.webp';
+import engravedBanknote from './assets/engraved-banknote.webp';
 
 type Message = { id: string; text: string; state: 'done' | 'working' | 'attention'; detail?: string | undefined };
 const sizes = (size: number) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
@@ -55,6 +56,13 @@ const VERIFICATION_STAGES: ReadonlyArray<{
     durationMs: 550,
   },
 ];
+
+// One decorative asset at different focal depths; never part of the evidence.
+function BanknoteMargins() {
+  return <div className={styles.banknoteMargins} aria-hidden="true">{Array.from({ length: 6 }, (_, index) =>
+    <img key={index} src={engravedBanknote} alt="" width={1000} height={454} className={styles.banknote} />,
+  )}</div>;
+}
 
 function friendlyToolSummary(event: ToolEvent): { text: string; detail?: string } {
   const summary = event.safeOutputSummary || '';
@@ -234,6 +242,8 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [hasEnteredDesk, setHasEnteredDesk] = useState(false);
+  const deskHeading = useRef<HTMLHeadingElement>(null);
   const [uri, setUri] = useState(import.meta.env.VITE_SPACETIMEDB_URI ?? 'ws://127.0.0.1:4310');
   const [database, setDatabase] = useState(import.meta.env.VITE_SPACETIMEDB_DATABASE ?? '');
   const [token, setToken] = useState('');
@@ -248,7 +258,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     return () => { window.document.removeEventListener('pointerdown', outside); window.document.removeEventListener('keydown', escape); };
   }, []);
   useEffect(() => {
-    generation.current++; setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError('');
+    generation.current++; setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError(''); setHasEnteredDesk(false);
     if (!connected) return;
     return adapter.subscribePortfolio(items => { setApplications(items); setApplicationId(current => items.some(i => i.application.id === current) ? current : session.defaultApplicationId && items.some(i => i.application.id === session.defaultApplicationId) ? session.defaultApplicationId : items[0]?.application.id ?? ''); }, value => { setApplications([]); setError(value.message); });
   }, [adapter, connected, session.user?.id, session.defaultApplicationId]);
@@ -263,6 +273,22 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const failed = !!error || job?.status === 'failed' || job?.status === 'cancelled' || document?.extractionStatus === 'failed' || document?.extractionStatus === 'unsupported';
   const complete = job?.status === 'succeeded';
   const heading = complete ? 'Verification complete' : failed ? 'Verification needs attention' : running ? 'Verifying your contract' : messages.length ? 'Waiting for contract upload' : 'Verify a loan contract';
+  const selectedLoanName = applications.find(item => item.application.id === applicationId)?.application.businessName ?? 'Loan application';
+  const shortLoanName = selectedLoanName.split(/\s+/).slice(0, 2).join(' ');
+  const coverActive = !hasEnteredDesk && connected && !file && !messages.length && !jobId && !documentId && !running && !failed && !complete;
+  const workingStage = VERIFICATION_STAGES.findIndex(stage => messages.some(message => message.id === stage.id && message.state === 'working'));
+  const lastFinishedStage = VERIFICATION_STAGES.reduce((last, stage, index) => messages.some(message => message.id === stage.id && message.state === 'done') ? index : last, -1);
+  // Live tools do not expose these four substages: only extraction and the
+  // returned summary can be highlighted without inventing intermediate work.
+  const activeStage = complete ? 3 : workingStage >= 0 ? workingStage : documentId && document?.extractionStatus !== 'succeeded' ? 0 : -1;
+  const stageLabels = ['Reading pages', 'Equipment claims', 'Borrower limits', 'Evidence summary'];
+  function enterDesk(focusHeading = true) {
+    setHasEnteredDesk(true);
+    if (focusHeading) window.requestAnimationFrame(() => {
+      deskHeading.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  }
 
   async function startInvestigation(isSample: boolean, activeGeneration: number) {
     const result = await adapter.requestInvestigation({ applicationId, executionMode: isSample ? 'fixture' : 'live', correlationId: correlationId() });
@@ -298,10 +324,11 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   }
   function choose(selected: File | undefined) {
     if (!selected || running) return;
-    reset(); setFile(selected);
+    enterDesk(false); reset(); setFile(selected);
   }
   async function verify() {
     if (!file || !applicationId || running) return;
+    enterDesk(false);
     const activeGeneration = ++generation.current; setBusy(true); setError(''); setMessages([{ id: 'file', text: 'Checking the selected file…', state: 'working' }]);
     try {
       const info = await inspectContractFile(file); if (generation.current !== activeGeneration) return;
@@ -324,7 +351,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     finally { if (generation.current === activeGeneration) setBusy(false); }
   }
   async function runSample() {
-    if (!applicationId || running) return; reset(); const activeGeneration = ++generation.current; setSample(true); setBusy(true);
+    if (!applicationId || running) return; enterDesk(false); reset(); const activeGeneration = ++generation.current; setSample(true); setBusy(true);
     setMessages([{ id: 'sample', text: 'Sample verification started.', detail: 'Uses sample documents only. Your selected contract is not used.', state: 'done' }]);
     try {
       const finishedStages = await runStagedVerification(activeGeneration);
@@ -347,15 +374,32 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   }
   if (error) stream.push({ id: 'error', text: error, state: 'attention' });
 
-  return <div className={styles.page}>
-    <a className={styles.skip} href="#verification">Skip to verification</a>
+  return <div className={`${styles.page} ${coverActive ? styles.coverActive : ''}`}>
+    <a className={styles.skip} href="#verification" onClick={() => enterDesk()}>Skip to verification</a>
     <header className={styles.header}><Link to="/" className={styles.brand}><span aria-hidden="true">W</span>LoanWick</Link><div className={styles.session}><span className={connected ? styles.online : styles.offline} /><span>{connected ? 'Loan officer' : readable(session.status)}</span><details ref={menu} className={styles.menu}><summary><Icon name="menu" size={17} />Menu</summary><div className={styles.menuPanel}><p>{connected ? 'Loan officer · Connected' : readable(session.status)}</p>{connected && <><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); if (menu.current) menu.current.open = false; }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><button onClick={() => { adapter.disconnect(); if (menu.current) menu.current.open = false; }}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></>}</div></details></div></header>
-    <main id="verification" className={styles.main}>
-      <div className={styles.title}><h1>{heading}</h1><p>{complete ? 'Review the returned checks and supporting evidence.' : messages.length ? 'Follow the verification as each stage reports back.' : 'Upload your contract. We’ll guide you through the checks.'}</p></div>
+    {coverActive && <section className={styles.cover} aria-labelledby="dossier-heading">
+      <BanknoteMargins />
+      <span className={`${styles.edgeTab} ${styles.coverLeft}`}>{shortLoanName}</span>
+      <span className={`${styles.edgeTab} ${styles.coverRight}`}>{adapter.mode === 'fixture' ? 'Sample mode' : 'Connected mode'}</span>
+      <div className={styles.coverContent}>
+        <p className={styles.dossierLabel}><span>Active dossier</span><span aria-hidden="true">·</span>{selectedLoanName}</p>
+        <h2 id="dossier-heading">EVERY LOAN CLAUSE,<br /><span>TRACED TO THE SOURCE.</span></h2>
+        <p className={styles.coverSubtitle}>Upload your contract. We’ll guide you through the checks step by step.</p>
+        <button className={styles.enterDesk} onClick={() => enterDesk()}>Enter Verification Desk<Icon name="arrow" size={19} /></button>
+      </div>
+      <ol className={styles.coverRuler}>{['Contract intake', 'Page extraction', 'Ownership claims', 'Borrower limits', 'Evidence summary'].map((label, index) => <li key={label}><span>0{index + 1}</span>{label}</li>)}</ol>
+    </section>}
+    <div className={styles.deskShell}>
+      <BanknoteMargins />
+      <span className={`${styles.edgeTab} ${styles.deskLeft}`}>Loan: {selectedLoanName}</span>
+      <span className={`${styles.edgeTab} ${styles.deskRight}`}>{adapter.mode === 'fixture' ? 'Sample workspace' : 'Live workspace'}</span>
+    <main id="verification" className={styles.main} onFocusCapture={event => { if (coverActive && event.target.matches(':focus-visible')) enterDesk(false); }}>
+      <div className={styles.title}><h1 ref={deskHeading} tabIndex={-1}>{heading}</h1><p>{complete ? 'Review the returned checks and supporting evidence.' : messages.length ? 'Follow the verification as each stage reports back.' : 'Upload your contract. We’ll guide you through the checks.'}</p></div>
       {!connected ? !canConnect ? <section className={styles.connection}><h2>{adapter.mode === 'fixture' ? 'Demo connection paused' : 'Connection unavailable'}</h2><p>{adapter.mode === 'fixture' ? 'Reconnect to continue with the synthetic verification demo.' : session.message ?? 'Retry the authorized connection before continuing.'}</p><button className={styles.primary} onClick={() => adapter.retry()}>Retry connection</button></section> : <section className={styles.connection}><h2>Connect your bank session</h2><p>{session.message ?? 'Use your individually authorized officer session.'}</p><form onSubmit={event => { event.preventDefault(); adapter.connect?.(uri, database, token); }}><label>Database endpoint<input required value={uri} onChange={e => setUri(e.target.value)} /></label><label>Database name<input required value={database} onChange={e => setDatabase(e.target.value)} /></label><label>Individual session token<input required type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label><button className={styles.primary} disabled={session.status === 'connecting'}>Connect authorized session</button></form>{session.status === 'disconnected' && <button onClick={() => adapter.retry()}>Retry connection</button>}</section> : <>
-        {applicationId && <p className={styles.caseContext}>Loan: <strong>{applications.find(item => item.application.id === applicationId)?.application.businessName}</strong></p>}
         {!jobId && !documentId && !messages.length && <section className={`${styles.upload} ${dragging ? styles.dragging : ''}`} aria-label="Contract upload" onDragOver={e => { e.preventDefault(); if (!running) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length > 1) { setError('Select one contract at a time.'); return; } choose(e.dataTransfer.files[0]); }}>
-          <img src={contractFolio} width={192} height={128} className={styles.illustration} alt="" /><h2>{file ? file.name : 'Drop your loan contract here'}</h2><p>{file ? `${sizes(file.size)} · Ready to check` : 'PDF or Word document · Up to 10 MB'}</p>
+          {applicationId && <p className={styles.capitalBadge}><strong>{selectedLoanName}</strong><span>· Commercial Facility</span></p>}
+          <span className={styles.cornerTicks} aria-hidden="true" />
+          <div className={styles.folioComposition} aria-hidden="true"><img src={engravedBanknote} width={1000} height={454} alt="" className={styles.securityPaper} /><img src={engravedBanknote} width={1000} height={454} alt="" className={styles.securityPaper} /><img src={contractFolio} width={192} height={128} className={styles.illustration} alt="" /></div><h2>{file ? file.name : 'Drop your loan contract here'}</h2><p>{file ? `${sizes(file.size)} · Ready to check` : 'PDF or Word document · Up to 10 MB'}</p>
           <input ref={fileInput} id="contract-file" tabIndex={-1} aria-label="Loan contract" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={running} onChange={e => choose(e.target.files?.[0])} className={styles.fileInput} />
           <div className={styles.actions}>{file ? <><button className={styles.primary} disabled={running || !applicationId || adapter.contractUploadNeedsReconciliation?.(applicationId)} onClick={() => void verify()}>{busy ? 'Checking file…' : 'Verify contract'}<Icon name="arrow" size={17} /></button><button disabled={running} onClick={() => fileInput.current?.click()}>Choose another file</button></> : <button className={styles.primary} disabled={running || !applicationId} onClick={() => fileInput.current?.click()}>Choose contract<Icon name="arrow" size={17} /></button>}</div>
           {adapter.mode === 'fixture' && <p className={styles.localNote}>Sample workspace. Selected files stay on this device.</p>}
@@ -367,7 +411,9 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
         {(complete || failed || (messages.length > 0 && !running)) && <button className={styles.newRun} disabled={running} onClick={reset}>New verification</button>}
         {adapter.mode === 'fixture' && !running && !jobId && !messages.length && <div className={styles.sample}><button disabled={!applicationId} onClick={() => void runSample()}>Try a sample verification<Icon name="arrow" size={15} /></button><span>Sample documents · No client data</span></div>}
       </>}
+      <ol className={styles.stageRuler} aria-label="Verification stages">{stageLabels.map((label, index) => <li key={label} aria-current={activeStage === index ? 'step' : undefined} className={`${activeStage === index ? styles.activeStage : ''} ${complete || index <= lastFinishedStage ? styles.finishedStage : ''}`}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>
       <footer className={styles.footer}><span><Icon name="shield" size={15} />Synthetic prototype · No money moves</span><span>{adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span>{fileInfo && <details><summary>File details</summary><p>{fileInfo.name} · {fileInfo.format} · {sizes(fileInfo.size)}</p><code>SHA-256 {fileInfo.sha256}</code></details>}</footer>
     </main>
+    </div>
   </div>;
 }

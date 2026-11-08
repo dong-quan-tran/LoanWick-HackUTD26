@@ -7,7 +7,7 @@
   svg { flex-shrink: 0; }
 }
 @layer base {
-  :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #342a23; background: #f8f5f0; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --rail: #392b23; --ink: #342a23; --muted: #756556; --line: #dfd3c4; --accent: #725032; --focus: #426b80; }
+  :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #231a14; background: #fbf9f5; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --rail: #18120d; --ink: #231a14; --muted: #756556; --line: #dfd3c4; --accent: #725032; --focus: #5b7a94; }
   body { min-width: 320px; font-size: 14px; line-height: 1.55; }
   button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
   ::selection { background: #ead9b7; color: #392b23; }
