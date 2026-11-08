@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "smoke": "tsx src/smoke.ts",
-    "investigate": "tsx src/investigate.ts"
+    "investigate": "tsx src/investigate.ts",
+    "api": "tsx src/api.ts"
   },
   "dependencies": {
     "@loanwick/analysis": "*",

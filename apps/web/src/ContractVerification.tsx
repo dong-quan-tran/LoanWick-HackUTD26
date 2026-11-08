@@ -13,6 +13,7 @@ import contractFolio from './assets/contract-folio.webp';
 import engravedBanknote from './assets/engraved-banknote.webp';
 
 type Message = { id: string; text: string; state: 'done' | 'working' | 'attention'; detail?: string | undefined };
+type ServiceResult = { model: string; title: string; related: string; summary: string };
 const sizes = (size: number) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const money = (cents: number, currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 const wait = (ms: number) => new Promise<void>(resolve => { window.setTimeout(resolve, ms); });
@@ -243,6 +244,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const [sample, setSample] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [serviceResult, setServiceResult] = useState<ServiceResult | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hasEnteredDesk, setHasEnteredDesk] = useState(false);
   const deskHeading = useRef<HTMLHeadingElement>(null);
@@ -260,7 +262,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     return () => { window.document.removeEventListener('pointerdown', outside); window.document.removeEventListener('keydown', escape); };
   }, []);
   useEffect(() => {
-    generation.current++; setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError(''); setHasEnteredDesk(false);
+    generation.current++; setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError(''); setServiceResult(null); setHasEnteredDesk(false);
     if (!connected) return;
     return adapter.subscribePortfolio(items => { setApplications(items); setApplicationId(current => items.some(i => i.application.id === current) ? current : session.defaultApplicationId && items.some(i => i.application.id === session.defaultApplicationId) ? session.defaultApplicationId : items[0]?.application.id ?? ''); }, value => { setApplications([]); setError(value.message); });
   }, [adapter, connected, session.user?.id, session.defaultApplicationId]);
@@ -273,7 +275,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const currentFindings = view?.findings.filter(item => item.investigationJobId === jobId) ?? [];
   const running = busy || job?.status === 'queued' || job?.status === 'running' || (!!documentId && !jobId && document?.extractionStatus === 'pending');
   const failed = !!error || job?.status === 'failed' || job?.status === 'cancelled' || document?.extractionStatus === 'failed' || document?.extractionStatus === 'unsupported';
-  const complete = job?.status === 'succeeded';
+  const complete = job?.status === 'succeeded' || serviceResult !== null;
   const heading = complete ? 'Verification complete' : failed ? 'Verification needs attention' : running ? 'Verifying your contract' : messages.length ? 'Waiting for contract upload' : 'Verify a loan contract';
   const selectedLoanName = applications.find(item => item.application.id === applicationId)?.application.businessName ?? 'Loan application';
   const shortLoanName = selectedLoanName.split(/\s+/).slice(0, 2).join(' ');
@@ -322,7 +324,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   }, [documentId, document?.extractionStatus, jobId]);
 
   function reset() {
-    generation.current++; requestedDocument.current = null; setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setError(''); setBusy(false); if (fileInput.current) fileInput.current.value = '';
+    generation.current++; requestedDocument.current = null; setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setError(''); setBusy(false); setServiceResult(null); if (fileInput.current) fileInput.current.value = '';
   }
   function choose(selected: File | undefined) {
     if (!selected || running) return;
@@ -354,6 +356,21 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   }
   async function runSample() {
     if (!applicationId || running) return; enterDesk(false); reset(); const activeGeneration = ++generation.current; setSample(true); setBusy(true);
+    if (import.meta.env.PROD) {
+      setMessages([{ id: 'sample', text: 'Asking the verification service.', detail: 'Sample documents only. Your selected contract is not used.', state: 'working' }]);
+      try {
+        const response = await fetch('/api/investigate', { method: 'POST' });
+        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string; findings?: { title?: string; relatedApplicationIds?: string[] }[] };
+        if (generation.current !== activeGeneration) return;
+        if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
+        const finding = body.findings?.[0];
+        const related = finding?.relatedApplicationIds?.join(', ') ?? '';
+        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? 'The service returned no explanation.' });
+        setMessages([{ id: 'sample', text: 'Verification service finished.', detail: body.model ?? 'verification service', state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Related application ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
+      } catch (value) { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'The verification service did not finish.'); }
+      finally { if (generation.current === activeGeneration) setBusy(false); }
+      return;
+    }
     setMessages([{ id: 'sample', text: 'Sample verification started.', detail: 'Uses sample documents only. Your selected contract is not used.', state: 'done' }]);
     try {
       const finishedStages = await runStagedVerification(activeGeneration);
@@ -406,7 +423,8 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
         {file && messages.length > 0 && <div className={styles.fileSummary}><Icon name="document" size={22} /><div><strong>{file.name}</strong><small>{fileInfo?.format ?? 'Selected file'} · {sizes(file.size)}</small></div></div>}
         {adapter.contractUploadNeedsReconciliation?.(applicationId) && <div className={styles.reconcile}><p>A previous upload needs confirmation before another file can be sent.</p><button disabled={busy} onClick={() => { setBusy(true); const activeGeneration = generation.current; void adapter.reconcileContractUpload?.(applicationId).then(id => { if (generation.current === activeGeneration) { setDocumentId(id); setError(''); setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: id ? 'Your contract has been received.' : 'The previous file was not received. You can choose it again.', state: id ? 'done' : 'attention' }]); } }).catch(value => { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'Upload outcome is still unconfirmed.'); }).finally(() => { if (generation.current === activeGeneration) setBusy(false); }); }}>Check previous upload</button></div>}
         {stream.length > 0 && <section className={styles.pipeline} aria-label="Verification progress"><div className={styles.pipelineHeading}><h2>Verification updates</h2><span>{sample ? 'Sample run' : adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span></div><div role="log" aria-live="polite" aria-relevant="additions text" aria-label="Verification messages"><ol className={styles.messages}>{stream.map(item => <li key={item.id}><span className={`${styles.messageIcon} ${styles[item.state]}`}><Icon name={item.state === 'done' ? 'check' : item.state === 'attention' ? 'alert' : 'clock'} size={17} /></span><div><p>{item.text}</p>{item.detail && <small>{item.detail}</small>}</div></li>)}</ol></div></section>}
-        {complete && <section className={styles.result}><div><Icon name={currentFindings.length ? 'alert' : 'check'} size={22} /><h2>{currentFindings.length ? `${currentFindings.length} item${currentFindings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{sample ? 'These are results from the synthetic sample case.' : 'Review the supporting evidence before making a decision.'} Verification does not approve a loan.</p>{currentFindings.map(finding => { const info = friendlyFinding(finding, view); return <details key={finding.id}><summary>{info.title}</summary><p>{info.explanation}</p><p className={styles.muted}>{info.whyItMatters}</p><p className={styles.nextStep}><strong>Suggested next step:</strong> {info.nextStep}</p>{finding.evidenceIds.map(id => { const evidence = view?.evidence.find(item => item.id === id); const source = view?.documents.find(item => item.id === evidence?.documentId); if (!evidence) return null; const item = friendlyEvidence(evidence, source, view); return <blockquote key={id}><p><strong>{item.label}:</strong> {item.value}</p><cite>{item.citation}</cite></blockquote>; })}</details>; })}</section>}
+        {serviceResult && <section className={styles.result}><div><Icon name="alert" size={22} /><h2>{serviceResult.title}</h2></div><p>Result from the verification service ({serviceResult.model}).{serviceResult.related ? ` Related application ${serviceResult.related}.` : ''} Verification does not approve a loan.</p><p>{serviceResult.summary}</p></section>}
+        {complete && !serviceResult && <section className={styles.result}><div><Icon name={currentFindings.length ? 'alert' : 'check'} size={22} /><h2>{currentFindings.length ? `${currentFindings.length} item${currentFindings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{sample ? 'These are results from the synthetic sample case.' : 'Review the supporting evidence before making a decision.'} Verification does not approve a loan.</p>{currentFindings.map(finding => { const info = friendlyFinding(finding, view); return <details key={finding.id}><summary>{info.title}</summary><p>{info.explanation}</p><p className={styles.muted}>{info.whyItMatters}</p><p className={styles.nextStep}><strong>Suggested next step:</strong> {info.nextStep}</p>{finding.evidenceIds.map(id => { const evidence = view?.evidence.find(item => item.id === id); const source = view?.documents.find(item => item.id === evidence?.documentId); if (!evidence) return null; const item = friendlyEvidence(evidence, source, view); return <blockquote key={id}><p><strong>{item.label}:</strong> {item.value}</p><cite>{item.citation}</cite></blockquote>; })}</details>; })}</section>}
         {(complete || failed || (messages.length > 0 && !running)) && <button className={styles.newRun} disabled={running} onClick={reset}>New verification</button>}
         {adapter.mode === 'fixture' && !running && !jobId && !messages.length && <div className={styles.sample}><button disabled={!applicationId} onClick={() => void runSample()}>Try a sample verification<Icon name="arrow" size={15} /></button><span>Sample documents · No client data</span></div>}
       </>}
