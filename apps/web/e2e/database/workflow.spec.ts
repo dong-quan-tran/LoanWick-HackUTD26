@@ -53,7 +53,7 @@ test('separate authorized sessions, stored evidence, clarification, stale review
   const contexts = await Promise.all(['officer', 'borrower-a', 'borrower-b', 'reviewer'].map(() => browser.newContext()));
   try {
     const [officer, borrower, otherBorrower, reviewer] = await Promise.all(contexts.map(c => c.newPage()));
-    await Promise.all([login(officer!, 'officer'), login(borrower!, 'borrower-a'), login(otherBorrower!, 'borrower-b'), login(reviewer!, 'reviewer')]);
+    await Promise.all([login(officer!, 'officer', '/applications'), login(borrower!, 'borrower-a'), login(otherBorrower!, 'borrower-b'), login(reviewer!, 'reviewer')]);
     await expect(officer!.getByRole('table').getByRole('row')).toHaveCount(9);
     await expect(borrower!.getByLabel('Your applications').getByRole('option')).toHaveCount(5);
     expect(await borrower!.getByLabel('Your applications').getByRole('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value).filter(Boolean))).toEqual(expect.arrayContaining(['db.r.demo-case-1', 'db.r.demo-case-3', 'db.r.demo-case-5', 'db.r.demo-case-7']));

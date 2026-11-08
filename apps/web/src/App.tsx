@@ -7,6 +7,7 @@ import { Icon } from './components/Icon';
 import { correlationId, readable } from './adapters/types';
 import type { BorrowerApplicationSummary, FrontendAdapter, SessionState } from './adapters/types';
 import styles from './App.module.css';
+import { ContractVerification } from './ContractVerification';
 
 const money = (cents: number, currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 const time = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
@@ -37,6 +38,13 @@ function useAction() {
 }
 
 export function App({ adapter }: { adapter: FrontendAdapter }) {
+  const route = useLocation();
+  const [session, setSession] = useState<SessionState>({ status: 'connecting', user: null, message: null });
+  useEffect(() => adapter.subscribeSession(setSession), [adapter]);
+  if ((route.pathname === '/' || route.pathname === '/verify') && session.user?.role !== 'borrower' && session.user?.role !== 'reviewer') return <ContractVerification adapter={adapter} session={session} />;
+  return <WorkspaceApp adapter={adapter} />;
+}
+function WorkspaceApp({ adapter }: { adapter: FrontendAdapter }) {
   const [session, setSession] = useState<SessionState>({ status: 'connecting', user: null, message: null });
   const navigate = useNavigate(); const route = useLocation();
   useEffect(() => { document.getElementById('main')?.focus({ preventScroll: true }); }, [route.pathname]);
@@ -51,7 +59,7 @@ export function App({ adapter }: { adapter: FrontendAdapter }) {
     <aside className={styles.rail} aria-label="Application navigation">
       <Link to={session.user?.role === 'borrower' ? `/borrower/${selectedCase}` : '/applications'} className={styles.brand}><span className={styles.brandMark}><svg viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="m5 8 4 14 6-10 6 10 4-14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>LoanWick</Link>
       <div className={styles.railCaption}>Investigation workspace</div>
-      <nav>{session.user?.role !== 'borrower' ? <><NavLink to="/applications"><Icon name="grid" />Applications</NavLink><NavLink to={`/cases/${selectedCase}`}><Icon name="folder" />Case workspace</NavLink></> : <NavLink to={`/borrower/${selectedCase}`}><Icon name="folder" />Your application</NavLink>}</nav>
+      <nav>{session.user?.role !== 'borrower' ? <>{session.user?.role === 'officer' && <NavLink to="/verify"><Icon name="document" />Verify contract</NavLink>}<NavLink to="/applications"><Icon name="grid" />Applications</NavLink><NavLink to={`/cases/${selectedCase}`}><Icon name="folder" />Case workspace</NavLink></> : <NavLink to={`/borrower/${selectedCase}`}><Icon name="folder" />Your application</NavLink>}</nav>
       <div className={styles.railBottom}><Icon name="shield" /><p>Evidence first.<br />Human decisions.</p><small>Synthetic prototype<br />No real banking integrations.</small></div>
     </aside>
     <div className={styles.frame}>

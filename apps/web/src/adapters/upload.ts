@@ -2,7 +2,7 @@ export interface UploadGrant {
   id: string; secretHash: string; status: string; attachedDocumentId?: string | undefined;
 }
 export interface UploadPort {
-  create(input: { secretHash: string; applicationId: string; requestId: string; workerUserId: string; documentType: string; maxBytes: number; ttlSeconds: number }): Promise<UploadGrant>;
+  create(input: { secretHash: string; applicationId: string; requestId?: string | undefined; workerUserId: string; documentType: string; maxBytes: number; ttlSeconds: number }): Promise<UploadGrant>;
   observe(secretHash: string, predicate: (grant: UploadGrant) => boolean): Promise<UploadGrant>;
   revoke(grantId: string): Promise<void>;
 }
@@ -27,22 +27,24 @@ export async function createUploadCapability() {
   return { secret: hex(bytes), secretHash: hex(new Uint8Array(digest)) };
 }
 export async function uploadWithCapability(input: {
-  file: File; origin: string; applicationId: string; requestId: string; documentType: string;
+  file: File; origin: string; applicationId: string; requestId?: string | undefined; documentType: string;
+  format?: 'structured' | 'contract';
   workerUserId: string; port: UploadPort; signal?: AbortSignal | undefined; fetcher?: typeof fetch;
 }): Promise<string> {
   const { file, port } = input;
   const origin = new URL(input.origin);
   if (origin.protocol !== 'https:' || origin.username || origin.password) throw new Error('Document intake requires an HTTPS service without credentials in its URL.');
-  if (!/\.(json|csv)$/i.test(file.name)) throw new Error('Choose a JSON or CSV document. This intake does not support other formats.');
+  if (input.format === 'contract' ? !/\.(pdf|docx)$/i.test(file.name) : !/\.(json|csv)$/i.test(file.name)) throw new Error(input.format === 'contract' ? 'Choose a PDF or DOCX contract.' : 'Choose a JSON or CSV document. This intake does not support other formats.');
   if (file.size <= 0 || file.size > 10 * 1024 * 1024) throw new Error('Choose a nonempty document no larger than 10 MiB.');
   const capability = await createUploadCapability();
   // Only the digest goes to SpacetimeDB. The raw secret stays in this call's memory.
   const grant = await port.create({ secretHash: capability.secretHash, applicationId: input.applicationId, requestId: input.requestId, workerUserId: input.workerUserId, documentType: input.documentType, maxBytes: file.size, ttlSeconds: 300 });
   const headers = new Headers({
-    'Content-Type': /\.csv$/i.test(file.name) ? 'text/csv' : 'application/json',
+    'Content-Type': /\.pdf$/i.test(file.name) ? 'application/pdf' : /\.docx$/i.test(file.name) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : /\.csv$/i.test(file.name) ? 'text/csv' : 'application/json',
     'X-Upload-Grant': grant.id, 'X-Upload-Secret': capability.secret,
-    'X-Application-Id': input.applicationId, 'X-Request-Id': input.requestId, 'X-Document-Type': input.documentType,
+    'X-Application-Id': input.applicationId, 'X-Document-Type': input.documentType,
   });
+  if (input.requestId) headers.set('X-Request-Id', input.requestId);
   try {
     const signals = [AbortSignal.timeout(30_000), ...(input.signal ? [input.signal] : [])];
     const response = await (input.fetcher ?? fetch)(new URL('/documents/upload', origin), {

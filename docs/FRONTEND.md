@@ -2,11 +2,19 @@
 
 ## Implemented on this branch
 
+The current primary screen at `/` (also `/verify`) follows the user's revised bank-verification workflow: choose one PDF/DOCX contract → follow current-stage messages → open verification results and source excerpts. It uses one page with a compact Menu for loan/session options, brown/gold/ivory styling with restrained blue accents, and generated contract-folio artwork. There is no sidebar, navigation tab, portfolio table, or case-history link in this primary flow. Results and evidence expand on the same page. Previous case/borrower/reviewer routes remain available directly for compatibility and separate authorized roles.
+
+Officer file checks cover a 10 MB limit, extension, PDF header/DOCX package markers, and the selected bytes' SHA-256. They do not extract contract text or certify authenticity. The sample action runs the existing synthetic case through actual deterministic checks; it does not analyze a selected contract. Default PDF/DOCX intake reports unavailable and explicitly says the file was not uploaded.
+
+`LiveAdapter.uploadContract` uses officer application scope, `supporting_document`, optional request ID omitted, and the existing single-use HTTPS capability protocol. Enable `VITE_CONTRACT_UPLOAD_ENABLED=true` only after the configured worker privately stores and extracts PDF/DOCX. The client waits for matching owned document metadata/hash, reconciles uncertain attempts, and refuses blind replay. The screen requests a live investigation only after the stored contract's extraction succeeds; messages come from actual document/job/tool projections. Failed/unsupported extraction and worker failures stay visible. No PDF/DOCX worker service or model verification has been exercised here.
+
 `apps/web` is a React/Vite/TypeScript application with an evidence-first staff workspace, application portfolio, borrower view, clarification preview/send, human decisions, review checks, payment changes, tool activity, audit history, and simulated release.
 
 The complete **fixture** workflow is runnable. Its single-window identity switch is explicitly synthetic and does not authenticate a real person. All canonical records remain synthetic. The fixture adapter runs the shared deterministic analysis helpers; no live model calls or tool traces are invented.
 
 The **live** adapter uses unchanged Person 2 bindings from database commit `09288ebcad82fbb5c8fb867281794082ed924131` (SpacetimeDB 2.14.0). It subscribes to `my_user`, then only the permitted staff or borrower projections. A real loopback database browser test now verifies the subset below; compilation and the offline fixture suite do not establish live worker/document integration.
+
+The decorative upload artwork was generated with the built-in image tool, optimized to a 600×400 WebP (~36 KB), and saved at `apps/web/src/assets/contract-folio.webp`. Its exact generation prompt is in `apps/web/.impeccable/assets/contract-folio.prompt.txt`, with a provenance sidecar beside the image. No image API secret is used by the frontend.
 
 ## Run and verify
 
@@ -27,7 +35,7 @@ npx playwright install chromium
 npm run test:e2e --workspace @loanwick/web
 ```
 
-`check` retains the shared-package typecheck, 84 existing tests, and fixture evaluator, and adds frontend typechecking and 23 frontend adapter/workflow/upload tests. The seven-test browser suite exercises the complete synthetic round trip and release, opening the corrected response source before the human decision, responsive borrower forms, forbidden routes, connection recovery, empty filters, keyboard tabs, live connection failure without fixture fallback, and two automated WCAG AA scans. Screenshots are generated under the repository's `.impeccable/review/` directory. These scans do not establish whole-product accessibility conformance.
+`check` retains the shared-package typecheck, 84 existing tests, and fixture evaluator, and adds frontend typechecking and 29 frontend adapter/workflow/upload/file tests. The ten-test browser suite covers the simplified contract entry, real sample messages/results, preliminary PDF/DOCX checks and truthful unavailable intake, plus the retained synthetic round trip and release, corrected response source, responsive borrower forms, forbidden routes, connection recovery, empty filters, keyboard tabs, and live connection failure without fixture fallback. Four automated WCAG AA scans cover the primary/secondary screens. Screenshots are generated under the repository's `.impeccable/review/` directory. These scans do not establish whole-product accessibility conformance.
 
 ## Repeatable real database browser check
 
@@ -52,7 +60,7 @@ Executed successfully on macOS arm64 with Node 26.12.0 and CLI/server/SDK 2.14.0
 - On the clean control case, current reviews permit release; a payment instruction update stales payment/document reviews. A direct reducer call also rejects release. A fresh deterministic investigation and reverified checks permit one simulated release; same-key retry, different-key rejection, and reconnect persistence are checked.
 - Explicit disconnect clears the displayed case and credential form. Web storage contains no session tokens. This is browser integration evidence, not a comprehensive authorization or concurrency audit.
 
-The test-only driver imports Person 4's bridge in Node from the isolated checkout. Neither its worker identity nor its implementation enters the web bundle. This does not prove Person 3's model loop, document transport, extraction, or corrected-document resolution. The default seven-test browser suite remains independent of the database tooling.
+The test-only driver imports Person 4's bridge in Node from the isolated checkout. Neither its worker identity nor its implementation enters the web bundle. This does not prove Person 3's model loop, document transport, extraction, or corrected-document resolution. The default ten-test browser suite remains independent of the database tooling.
 
 ## Fixture demo sequence
 

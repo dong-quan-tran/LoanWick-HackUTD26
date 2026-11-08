@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync } from 'node:fs';
 
 test('staff accessibility, keyboard tabs, and 1280px evidence comparison', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.goto('/');
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.goto('/cases/app-excavator-a');
   await expect(page.getByRole('heading', { name: 'Equipment EX-0042' })).toBeVisible();
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary })) }))).toEqual([]);
@@ -18,7 +18,7 @@ test('staff accessibility, keyboard tabs, and 1280px evidence comparison', async
   await capture(page, 'desktop-1280.png');
 });
 test('borrower accessibility at tablet width', async ({ page }) => {
-  await page.setViewportSize({ width: 768, height: 1024 }); await page.goto('/');
+  await page.setViewportSize({ width: 768, height: 1024 }); await page.goto('/cases/app-excavator-a');
   await page.getByRole('button', { name: 'Request clarification', exact: true }).click();
   await page.getByRole('button', { name: 'Save & preview request' }).click();
   await page.getByRole('button', { name: 'Send this request' }).click();

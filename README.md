@@ -6,7 +6,7 @@ This branch includes Person 4's shared foundation and Person 1's frontend: TypeS
 
 ## Frontend
 
-Run `npm ci`, then `npm run dev:web`, and open http://127.0.0.1:5173. The complete fixture demo includes evidence comparison, clarification, borrower response, human review, stale payment checks, and one simulated release. Read the [frontend handoff](docs/FRONTEND.md) for the exact sequence, test commands, live connection setup, and remaining integration gates.
+Run `npm ci`, then `npm run dev:web`, and open http://127.0.0.1:5173. The officer opens a simplified PDF/DOCX contract-upload screen with pipeline progress messages. Try the clearly labeled sample to run actual deterministic fixture checks. PDF/DOCX server intake remains unavailable until a compatible worker is connected; selected files are not silently treated as verified. The officer workflow stays on one page with a compact menu, brown/gold styling, generated contract artwork, and plain-language updates. Older case/borrower/reviewer routes remain compatible without adding navigation tabs to the primary flow. Read the [frontend handoff](docs/FRONTEND.md) for the exact sequence, test commands, live connection setup, and remaining integration gates.
 
 ## Local setup
 

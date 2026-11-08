@@ -8,39 +8,43 @@ web
 Planned TypeScript monorepo using npm workspaces: React/Vite frontend, SpacetimeDB application database, and a Node/TypeScript worker with NVIDIA/Nemotron orchestration. Shared contracts and deterministic analysis belong in separate packages. Coordinate root tooling and the frontend styling approach with Person 4; Person 2 must verify and pin compatible database tooling before integration.
 
 ## Current State
+Current user direction (November 8, 2026): the primary frontend is a bank loan-contract verification tool. A loan officer selects a PDF or DOCX contract, starts verification, and follows a simple series of operational pipeline messages. Results and source evidence use progressive disclosure. The officer interface is one page only: a compact menu, contract upload, and verification messages/results in the same view. Earlier portfolio, borrower, and reviewer routes remain available only for compatibility with existing role workflows; they are not primary navigation.
+
+The new upload screen checks file type/signature, size, and SHA-256 locally. Real officer intake uses the existing application-scoped capability transport only when explicitly enabled for a PDF/DOCX-capable worker. The current worker has no such service, so the screen explicitly reports that the file has not been uploaded. An optional sample runs the existing synthetic deterministic case, clearly separated from an uploaded contract.
+
 This checkout now contains the shared contracts and deterministic analysis packages, eight canonical synthetic applications and their source documents, and a runnable React frontend in `apps/web`. The complete fixture officer/borrower/reviewer workflow has passed frontend unit and browser tests. Responsive staff/borrower captures and two automated accessibility scans have been checked; this does not establish whole-product WCAG conformance.
 
 The live frontend boundary uses unchanged Person 2 bindings from database commit `09288ebcad82fbb5c8fb867281794082ed924131`. A disposable real database has verified distinct-session browser clarification, current/stale reviews, server release rejection, and release retry/persistence, using Person 4's deterministic analysis bridge. Person 3's published `1-ai-worker-and-ingestion` branch currently implements only a clock-tool smoke with `connectedDatabase: false`. Connected investigation/model execution, source/download/upload transport, and editable live draft persistence remain incomplete. Requirements below must not be presented as fully completed live functionality. See `docs/FRONTEND.md` for executed checks and integration gates.
 
 ## Users
-- **Primary**: **Commercial Loan Officer**: Investigates commercial loan applications for collateral conflicts (e.g., equipment double-pledging) and entity risk; reviews side-by-side evidence; drafts and previews borrower-safe clarification requests; monitors worker extraction; records human resolutions with mandatory rationale.
+- **Primary**: **Bank Loan Officer**: Uploads a loan contract in PDF or DOCX format, follows current verification stages as concise messages, and reviews the returned concerns and their source evidence.
 - **Secondary**:
   - **Borrower**: Reviews clarification requests via a strictly isolated projection; submits explanations and supporting documents (JSON/CSV); tracks document extraction status without exposure to internal bank notes or other borrowers.
   - **Loan Reviewer**: Examines required pre-disbursement checks against active revision vectors; simulates payment-instruction updates (verifying stale-check invalidation); executes simulated fund release protected by idempotency keys.
 
 ## Product Purpose
-LoanWick is a planned commercial-loan investigation prototype that helps lending teams investigate conflicting equipment ownership claims, review confirmed-group exposure, exchange borrower clarifications, and verify release readiness against current evidence.
+LoanWick is a bank loan-contract verification prototype. Its primary workflow is contract upload → current-stage messages → verification results. It helps the officer follow what the pipeline is doing and open supporting evidence when attention is required. Operational summaries are shown, never private model reasoning.
 
-Success is one complete workflow across distinct identities: an officer investigates a case and opens its source evidence; a borrower answers a clarification; the officer records a reasoned decision; a reviewer sees a payment change invalidate required checks, reverifies them, and performs exactly one simulated release. A live model/tool demonstration must be verified separately from deterministic or fixture execution.
+A completed check is not approval of a loan, a legal-compliance certification, or proof of fraud. Actual upload, extraction, model use, and verification completion must be confirmed by the corresponding service/database events.
 
 ## Positioning
 Deterministic checks establish traceable concerns from stored evidence; model orchestration assists with tool use, supported explanations, and clarification drafts. Side-by-side source excerpts, preserved document versions, audit history, and revision-aware release controls support human investigation. A finding is a concern to investigate, not a fraud verdict or automatic lending decision.
 
 ## Operating Context
-Desktop-oriented staff investigation work, demonstrated with synthetic applications and separate officer, borrower, and reviewer sessions. Officers compare collateral schedules and source excerpts, preview borrower-safe requests, and follow asynchronous extraction and investigation activity. The borrower has a separate, narrowly scoped case view. The app must support an explicitly selected development fixture adapter and live authorized SpacetimeDB subscriptions through the same frontend domain interface.
+The officer uses a simple single-column verification screen. One contract upload is the primary action. A compact Menu contains the existing-loan selector and session actions. The selected loan remains visible, while upload, messages, and expandable evidence all stay on the same page. There are no tabs or case-history links in the officer's main flow. Borrower clarification and reviewer release tools retain their existing authorized routes but do not clutter the primary verification screen.
 
 ## Workflow Priorities
-Follow `docs/team-plans/01-FRONTEND.md` for the frontend workflow within the shared project contract:
+The current user direction supersedes the earlier dashboard-first hierarchy in `docs/team-plans/01-FRONTEND.md`:
 
-1. Establish session identity, connection feedback, execution labels, case navigation, and visible failure states.
-2. Provide a portfolio with stage/status filters and a case workspace prioritizing findings, precise source evidence, application/collateral context, related-case reasons, actual tool activity, clarification history, required checks, and audit history.
-3. Complete the officer preview/send -> borrower response -> officer review/resolution round trip. Receipt or extraction of a new document never automatically resolves a finding.
-4. Show server-computed release readiness and blocking reasons; demonstrate stale checks after a payment change and one simulated release after re-verification.
+1. Choose or drop one PDF or DOCX loan contract, with clear file requirements and meaningful failure feedback.
+2. Start verification and display safe, factual messages for upload, extraction, queued/running checks, actual tool output, failure, and completion as supported by real events.
+3. Show a concise outcome and expandable concerns/source excerpts. Keep uncertainty and human review explicit.
+4. Retain deeper case investigation, clarification, and revision/release controls as secondary surfaces compatible with the rest of the project.
 
-Integrate the first real subscription/job/worker/evidence flow before expanding optional features. Cut OCR, relationship graphs, extra models, and optional checks before sacrificing the complete workflow or server-enforced permissions.
+Do not invent successful uploads or verification stages while the worker is unavailable. The explicitly labeled sample uses the existing synthetic case; it never analyzes the officer's selected file.
 
 ## Capabilities and Constraints
-- **Desktop Workstation Density**: High information density optimized for desktop screens with multi-pane side-by-side document and excerpt comparisons.
+- **Simple Primary Surface**: One upload area becomes a compact file summary and a readable pipeline message stream. The user-pinned palette is espresso brown, antique gold, ivory, and restrained dusty blue accents inspired by the Goldman Sachs reference. A generated brown leather contract-folio illustration supports the upload step. Larger plain-language messages serve non-technical loan officers. Dense comparisons belong in secondary case details.
 - **Strict Evidence Grounding**: Every finding must point to concrete document excerpts, versions, and locators (no hallucinated page numbers or invented confidence scores).
 - **Deterministic Concerns**: Equipment conflicts require active conflicting exclusive ownership claims with source evidence. Similar names or shared addresses only suggest candidates; group exposure uses human-confirmed relationships and a named, versioned synthetic policy. Missing evidence remains unknown.
 - **Human-in-the-Loop Investigation**: Flags indicate potential concerns (clerical errors, outdated schedules, or potential conflicts) requiring human inquiry, not automated fraud verdicts. All finding resolutions and checklist sign-offs require written rationale.
@@ -49,7 +53,7 @@ Integrate the first real subscription/job/worker/evidence flow before expanding 
 - **Simulated Release Safeguards**: The server atomically rechecks policy and records one immutable release per application. The browser reuses an idempotency key on uncertain retries, prevents pending double submissions, handles server rejection, and displays the release ID plus `SIMULATED RELEASE - NO MONEY MOVED`. Release-relevant edits are rejected after simulated release.
 - **Dual Adapter Architecture**: Starts with a development fixture adapter implementing the exact same domain interface as the real SpacetimeDB subscription adapter; connection failures display explicit errors and never silently fallback to fixtures.
 - **Resilient State Coverage**: Comprehensive handling of pending, disconnected, empty, forbidden, failed, and retry states across all views.
-- **Document Intake**: Prioritize structured JSON, then CSV, with an initial 10 MB limit and actual field/row locators. Text PDFs are optional after the core flow; OCR is outside initial scope. Uploads use authenticated worker transport and authorized database attachment. If unavailable, an agreed synthetic-document selection flow must be labeled honestly.
+- **Document Intake**: The officer upload accepts PDF and DOCX contracts up to 10 MB. Browser header/package checks are preliminary file checks, not text extraction or document authenticity verification. Private storage, PDF/DOCX extraction, encryption/scanned-document errors, source locators, and pipeline execution belong to the worker. Borrower JSON/CSV intake remains a secondary existing capability. Unavailable services must remain explicit.
 - **Synthetic Data Prototype**: Operates strictly on synthetic commercial loan applications and documents; no real money, real PII, or live banking integrations.
 
 ## Integration Boundaries
@@ -61,6 +65,7 @@ Integrate the first real subscription/job/worker/evidence flow before expanding 
 
 ## Brand Commitments
 - **Name**: LoanWick
+- **Palette and imagery**: Brown/gold rather than green, with restrained institutional blue accents. Goldman Sachs is a design reference, not the product brand. Use the project's own generated contract-folio artwork; keep the officer workflow to one page with a compact menu.
 - **Voice & Tone**: Conservative, objective, and analytical. Terminology must remain non-accusatory (e.g., use "conflicting ownership claim" or "potential concern" rather than "fraudster" or "fraud confirmed").
 - **Visual Status Banners**: Persistent shell header displays connection state, authenticated role, live/fixture execution mode, and a clear `SYNTHETIC DATA - NOT REAL MONEY` indicator.
 
@@ -83,7 +88,7 @@ Integrate the first real subscription/job/worker/evidence flow before expanding 
 1. **Evidence Over Accusation**: Ground findings in exact document excerpts and normalized identifiers; treat discrepancies as items for human investigation.
 2. **Complete Auditability**: Preserve document versions and audit state transitions, clarification exchanges, reviewer decisions, and actual tool activity. Bind jobs, findings, and reviews to the relevant source revisions.
 3. **Revision-Locked Safety**: Release readiness is dynamic; any mutation to loan inputs automatically invalidates dependent reviews and requires re-verification before release.
-4. **Density and Clarity**: Maximize screen utility for desktop investigation workflows, keeping evidence, context, and resolution actions accessible without unnecessary nesting or clutter.
+4. **Task Clarity**: Give the officer one primary action and a linear message stream. Reveal results and evidence on demand; keep the primary screen free of portfolio tables, role switches, and review/release controls.
 5. **Fail-Visible Resilience**: Connection losses, model errors, or extraction failures must remain visibly surfaced with retry actions; never hide errors behind infinite spinners or fake successes.
 
 ## Accessibility & Inclusion

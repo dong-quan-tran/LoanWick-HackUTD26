@@ -13,7 +13,7 @@ async function review(page: Page, name: string, evidence: RegExp) {
 }
 test('evidence workspace, real source viewer, and fixture tool activity', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto('/');
+  await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto('/cases/app-excavator-a');
   await expect(page.getByRole('heading', { name: 'Cedar Demo Excavation', exact: true, level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Equipment EX-0042' })).toBeVisible();
   await expect(page.getByText('excavator-a.json', { exact: true }).first()).toBeVisible();
@@ -31,7 +31,7 @@ test('evidence workspace, real source viewer, and fixture tool activity', async 
   expect(errors).toEqual([]);
 });
 test('complete role-switch demo, stale payment checks, and release after reload', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: 'Investigate case', exact: true }).click();
+  await page.goto('/cases/app-excavator-a'); await page.getByRole('button', { name: 'Investigate case', exact: true }).click();
   await page.getByRole('button', { name: 'Request clarification', exact: true }).click();
   await page.getByLabel('Message to borrower').fill('Please provide current ownership documentation for EX-0042 and a corrected collateral schedule.');
   await page.getByRole('button', { name: 'Save & preview request' }).click();
@@ -63,7 +63,7 @@ test('complete role-switch demo, stale payment checks, and release after reload'
   await page.getByLabel('Synthetic account token', { exact: true }).fill('SYNTH-CHANGED-0002');
   await page.getByRole('button', { name: 'Save synthetic payment', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Simulate release', exact: true })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Simulate release', exact: true })).toHaveCSS('background-color', 'rgb(237, 241, 239)');
+  await expect(page.getByRole('button', { name: 'Simulate release', exact: true })).toHaveCSS('background-color', 'rgb(238, 231, 220)');
   await expect(page.getByRole('button', { name: /^Collateral review Current revision/ })).toContainText('Current');
   await expect(page.getByRole('button', { name: /^Document consistency Current revision/ })).toContainText('Stale');
   await expect(page.getByRole('button', { name: /^Payment verification Current revision/ })).toContainText('Stale');
@@ -92,7 +92,7 @@ test('group clarification uses own-case financial copy without an equipment corr
   await expect(page.getByText('No synthetic supporting document is configured for this request. You can send a written response.')).toBeVisible();
 });
 test('mobile borrower, private routes, failures, and empty filters', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: 'Request clarification', exact: true }).click();
+  await page.goto('/cases/app-excavator-a'); await page.getByRole('button', { name: 'Request clarification', exact: true }).click();
   await page.getByRole('button', { name: 'Save & preview request' }).click();
   await page.getByRole('button', { name: 'Send this request' }).click();
   await role(page, 'borrower'); await page.setViewportSize({ width: 390, height: 844 });

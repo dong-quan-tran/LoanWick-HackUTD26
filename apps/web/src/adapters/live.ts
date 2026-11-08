@@ -7,6 +7,7 @@ import type { FrontendAdapter, SessionState } from './types';
 import { prioritizeBorrowerApplications } from './types';
 import { reconcileUploadGrant, UnconfirmedUploadError, uploadWithCapability } from './upload';
 import type { UploadGrant, UploadPort } from './upload';
+import { inspectContractFile } from './contract-file';
 
 // All SDK-specific conversions live here. Encoding is reversible and collision-free.
 export const publicId = (raw: string) => {
@@ -45,12 +46,14 @@ export class LiveAdapter implements FrontendAdapter {
   private ready = false;
   private queued = false;
   uploadDocument?: ((requestId: string, file: File) => Promise<string>) | undefined;
+  uploadContract?: ((applicationId: string, file: File) => Promise<string>) | undefined;
   private uploads = new Set<AbortController>();
   private pendingUploads = new Map<string, Pick<UploadGrant, 'id' | 'secretHash'>>();
   constructor(private transport?: DocumentTransport) {
     const origin = import.meta.env.VITE_UPLOAD_ORIGIN;
     const workerUserId = import.meta.env.VITE_UPLOAD_WORKER_ID;
     if (origin && workerUserId) this.uploadDocument = (requestId, file) => this.upload(requestId, file, origin, workerUserId);
+    if (origin && workerUserId && import.meta.env.VITE_CONTRACT_UPLOAD_ENABLED === 'true') this.uploadContract = (applicationId, file) => this.uploadOfficerContract(applicationId, file, origin, workerUserId);
   }
   private emit() {
     if (this.queued) return; this.queued = true;
@@ -234,6 +237,51 @@ export class LiveAdapter implements FrontendAdapter {
     const result = rows(this.db().db.staffReleases).find(r => r.applicationId === nativeId(input.applicationId) && r.idempotencyKey === input.idempotencyKey); return result ? releaseView(result) : undefined;
   });
   private uploadKey(requestId: string) { return `${this.state.user?.id ?? ''}|${nativeId(requestId)}`; }
+  private contractUploadKey(applicationId: string) { return `contract|${this.state.user?.id ?? ''}|${nativeId(applicationId)}`; }
+  contractUploadNeedsReconciliation(applicationId: string) {
+    if (!this.ready || this.state.user?.role !== 'officer' || !applicationId) return false;
+    return this.pendingUploads.has(this.contractUploadKey(applicationId)) || rows(this.db().db.myUploadGrants).some(g => g.applicationId === nativeId(applicationId) && !g.requestId && (g.status === 'ready' || g.status === 'claimed'));
+  }
+  async reconcileContractUpload(applicationId: string): Promise<string | null> {
+    const actor = this.user(['officer']); const generation = this.generation; const key = this.contractUploadKey(applicationId); const rawApp = nativeId(applicationId);
+    const guard = () => { if (generation !== this.generation || this.state.user?.id !== actor.id) throw new Error('Reconnect before reconciling the contract upload.'); this.db(); };
+    const unwrap = <T,>(result: OperationResult<T>): T => { if (!result.ok) throw new Error(result.error.message); return result.value; };
+    const port: UploadPort = {
+      create: async () => { throw new Error('Reconciliation does not upload a new contract.'); },
+      revoke: async grantId => { guard(); await this.db().reducers.revokeUpload({ grantId }); },
+      observe: async (hash, predicate) => unwrap(await this.operation(crypto.randomUUID(), async () => { guard(); }, () => { guard(); const grant = rows(this.db().db.myUploadGrants).find(g => g.secretHash === hash); return grant && predicate(grant) ? grant : undefined; })),
+    };
+    const pending = this.pendingUploads.get(key);
+    const attempts: Pick<UploadGrant, 'id' | 'secretHash'>[] = rows(this.db().db.myUploadGrants).filter(g => g.applicationId === rawApp && !g.requestId && (g.id === pending?.id || g.status === 'ready' || g.status === 'claimed'));
+    if (pending && !attempts.some(g => g.id === pending.id)) attempts.push(pending);
+    let attached: string | null = null;
+    for (const attempt of attempts) {
+      const id = await reconcileUploadGrant(port, attempt);
+      if (id) attached = unwrap(await this.operation(crypto.randomUUID(), async () => { guard(); }, () => { guard(); return rows(this.db().db.staffDocuments).some(d => d.id === id && d.applicationId === rawApp && d.uploadedBy === nativeId(actor.id) && !d.requestId) ? publicId(id) : undefined; }));
+    }
+    this.pendingUploads.delete(key); this.emit(); return attached;
+  }
+  private async uploadOfficerContract(applicationId: string, file: File, origin: string, workerUserId: string) {
+    const actor = this.user(['officer']); const generation = this.generation; const rawApp = nativeId(applicationId); const key = this.contractUploadKey(applicationId);
+    const guard = () => { if (generation !== this.generation || this.state.user?.id !== actor.id) throw new Error('The session changed. Reconnect before uploading.'); this.db(); };
+    const unwrap = <T,>(result: OperationResult<T>): T => { if (!result.ok) throw new Error(result.error.message); return result.value; };
+    if (!rows(this.db().db.staffApplications).some(a => a.id === rawApp)) throw new Error('This application is unavailable for your session.');
+    if (this.contractUploadNeedsReconciliation(applicationId)) throw new Error('Reconcile the previous contract upload before sending another file.');
+    const inspected = await inspectContractFile(file); guard();
+    const prior = rows(this.db().db.staffDocuments).find(d => d.applicationId === rawApp && d.uploadedBy === nativeId(actor.id) && d.current && d.sha256 === inspected.sha256 && d.extractionStatus !== 'failed' && d.extractionStatus !== 'unsupported' && !d.requestId);
+    if (prior) return publicId(prior.id);
+    const port: UploadPort = {
+      create: async input => unwrap(await this.operation(crypto.randomUUID(), () => { guard(); return this.db().reducers.authorizeUpload(input); }, () => { guard(); return rows(this.db().db.myUploadGrants).find(g => g.secretHash === input.secretHash && g.applicationId === rawApp && !g.requestId && g.status === 'ready'); })),
+      observe: async (hash, predicate) => unwrap(await this.operation(crypto.randomUUID(), async () => { guard(); }, () => { guard(); const grant = rows(this.db().db.myUploadGrants).find(g => g.secretHash === hash); return grant && predicate(grant) ? grant : undefined; })),
+      revoke: async grantId => { guard(); await this.db().reducers.revokeUpload({ grantId }); },
+    };
+    const controller = new AbortController(); this.uploads.add(controller);
+    try {
+      const id = await uploadWithCapability({ file, origin, applicationId: rawApp, documentType: 'supporting_document', workerUserId, port, signal: controller.signal, format: 'contract' });
+      return unwrap(await this.operation(crypto.randomUUID(), async () => { guard(); }, () => { guard(); return rows(this.db().db.staffDocuments).some(d => d.id === id && d.applicationId === rawApp && d.uploadedBy === nativeId(actor.id) && d.sha256 === inspected.sha256 && !d.requestId) ? publicId(id) : undefined; }));
+    } catch (value) { if (value instanceof UnconfirmedUploadError) { this.pendingUploads.set(key, value.attempt); this.emit(); } throw value; }
+    finally { this.uploads.delete(controller); }
+  }
   uploadNeedsReconciliation(requestId: string) {
     if (!this.ready || this.state.user?.role !== 'borrower') return false;
     const rawRequest = nativeId(requestId);

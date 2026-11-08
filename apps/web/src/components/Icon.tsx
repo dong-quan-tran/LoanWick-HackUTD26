@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  menu: 'M3 6h16 M3 11h16 M3 16h16',
   grid: 'M3 3h6v6H3z M13 3h6v6h-6z M3 13h6v6H3z M13 13h6v6h-6z',
   folder: 'M3 6V4h6l2 2h8v12H3z', search: 'M15 15l5 5 M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
   check: 'm5 11 4 4L18 6', arrow: 'M4 11h14m-5-5 5 5-5 5', document: 'M5 2h8l5 5v13H5z M13 2v6h5 M8 12h7 M8 16h7',

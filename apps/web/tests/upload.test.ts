@@ -15,6 +15,18 @@ function port() {
   };
 }
 describe('Person 2 HTTPS capability contract', () => {
+  test.each(['pdf', 'docx'] as const)('uses officer application scope for a %s contract without a borrower request', async extension => {
+    const db = port();
+    const fetcher: typeof fetch = vi.fn(async (_url, init) => {
+      const headers = new Headers(init?.headers);
+      expect(headers.get('Content-Type')).toBe(extension === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      expect(headers.has('X-Request-Id')).toBe(false); expect(headers.has('Authorization')).toBe(false);
+      expect(headers.get('X-Document-Type')).toBe('supporting_document');
+      db.attach(); return new Response(JSON.stringify({ documentId: 'document-1' }), { status: 201 });
+    });
+    expect(await uploadWithCapability({ origin: scope.origin, applicationId: scope.applicationId, documentType: 'supporting_document', workerUserId: scope.workerUserId, file: new File(['synthetic transport bytes'], `contract.${extension}`), format: 'contract', port: db, fetcher })).toBe('document-1');
+    expect(db.create.mock.calls[0]![0].requestId).toBeUndefined();
+  });
   test('hashes 32 random bytes and does not reuse capabilities', async () => {
     const a = await createUploadCapability(); const b = await createUploadCapability();
     expect(a.secret).toMatch(/^[0-9a-f]{64}$/); expect(a.secretHash).toMatch(/^[0-9a-f]{64}$/); expect(a.secret).not.toBe(b.secret);
@@ -75,6 +87,17 @@ describe('live upload lifetime', () => {
     connectionError(generation: number, message: string): void;
     invalidate(status: 'forbidden' | 'disconnected', message: string, clearUser?: boolean): void;
   };
+  test('officer contract reconciliation revokes a pending grant without returning an unrelated earlier attachment', async () => {
+    const adapter = new LiveAdapter(); const internal = adapter as unknown as Internals;
+    const grants = [{ id: 'old', secretHash: 'a'.repeat(64), status: 'attached', attachedDocumentId: 'old-document', applicationId: 'case-1' }, { id: 'pending', secretHash: 'b'.repeat(64), status: 'claimed', applicationId: 'case-1' }];
+    const revokeUpload = vi.fn(async ({ grantId }: { grantId: string }) => { grants.find(g => g.id === grantId)!.status = 'revoked'; });
+    internal.ready = true; internal.state = { status: 'connected', message: null, user: { id: publicId('officer-1'), role: 'officer' } };
+    internal.connection = { db: { myUploadGrants: { iter: () => grants }, staffDocuments: { iter: () => [{ id: 'old-document', applicationId: 'case-1', uploadedBy: 'officer-1' }] } }, reducers: { revokeUpload } };
+    expect(adapter.contractUploadNeedsReconciliation(publicId('case-1'))).toBe(true);
+    expect(await adapter.reconcileContractUpload(publicId('case-1'))).toBeNull();
+    expect(revokeUpload).toHaveBeenCalledExactlyOnceWith({ grantId: 'pending' });
+    expect(adapter.contractUploadNeedsReconciliation(publicId('case-1'))).toBe(false);
+  });
   test('connection loss aborts active HTTPS controllers and preserves uncertain attempts', () => {
     const adapter = new LiveAdapter(); const internal = adapter as unknown as Internals; const controller = new AbortController();
     internal.uploads.add(controller); internal.pendingUploads.set('borrower|request', { id: 'grant', secretHash: 'a'.repeat(64) });

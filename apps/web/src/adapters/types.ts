@@ -13,12 +13,16 @@ export interface FrontendAdapter extends CaseAdapter {
   subscribeBorrowerApplications?(value: (items: BorrowerApplicationSummary[]) => void, error: (error: DomainError) => void): Unsubscribe;
   source(documentId: string, version: number): Promise<string>;
   retry(): void;
+  connect?(uri: string, database: string, token: string): void;
   disconnect(): void;
   selectIdentity?(role: 'officer' | 'borrower' | 'reviewer', applicationId: string): void;
   reset?(): void;
   attachSyntheticCorrection?(requestId: string): Promise<string>;
   canAttachSyntheticCorrection?(requestId: string): boolean;
   uploadDocument?: ((requestId: string, file: File) => Promise<string>) | undefined;
+  uploadContract?: ((applicationId: string, file: File) => Promise<string>) | undefined;
+  contractUploadNeedsReconciliation?(applicationId: string): boolean;
+  reconcileContractUpload?(applicationId: string): Promise<string | null>;
   uploadNeedsReconciliation?(requestId: string): boolean;
   reconcileUpload?(requestId: string): Promise<string | null>;
   setFailure?(failure: 'none' | 'offline' | 'investigation'): void;

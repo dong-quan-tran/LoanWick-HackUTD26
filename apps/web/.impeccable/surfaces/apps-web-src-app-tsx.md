@@ -2,27 +2,27 @@
 version: 1
 slug: "apps-web-src-app-tsx"
 primary_target: "apps/web/src/App.tsx"
-related_targets: []
+related_targets: ["apps/web/src/ContractVerification.tsx","apps/web/src/ContractVerification.module.css"]
 ---
 
-# LoanWick application surfaces
+# Loan contract verification
 
-Mode: Operate. Desktop staff and mobile borrower. Complete fixture demo first, then authorized live integration. Single-window role switching is fixture-only.
+Mode: Operate. Bank loan officer, primarily desktop with a usable mobile layout. The current user request replaces the primary dashboard with contract upload and a stream of pipeline messages. PDF and DOCX are the confirmed input formats.
 
 ## Direction contract
 
-THESIS: A concise investigation workspace that keeps each concern beside its actual source evidence and the next human action.
+THESIS: Give non-technical loan officers one page for choosing a contract and following verification in plain language.
 
-OWN-WORLD: Light evidence surfaces, a deep teal navigation rail, cool neutral work areas, compact system typography, tabular money and revisions, and semantic status labels. Conventional tables, tabs, forms, and buttons. No decorative imagery or ornamental dashboard metrics.
+OWN-WORLD: User-pinned espresso brown, antique gold, warm ivory, and restrained Goldman Sachs-inspired dusty blue accents. Familiar readable controls, a calm serif heading, and larger system-text messages. The project-owned generated leather contract-folio cutout is the single visual signature; no borrowed bank logo.
 
-STORY: Open a case, compare the sources, request clarification, review the response, and verify current checks before a simulated release.
+STORY: Choose a contract, start verification, follow actual stage messages, then open only the result and evidence details needed for review.
 
-FIRST VIEWPORT: Persistent role/connection/synthetic-data feedback, case name and amount, concise readiness, a finding list, and paired evidence excerpts. Investigation action beside the case header. Borrower sees a single-column own-case request and response form.
+FIRST VIEWPORT: LoanWick and one compact Menu above a concise heading, the selected loan, and one illustrated PDF/DOCX upload area. Menu holds loan/session options. After submission, the file collapses to a summary and actual stage messages take priority. Results and evidence expand inline; there are no navigation tabs or extra-page links.
 
-FORM: User-pinned evidence workspace and palette, confirmed in the planning interview. Source highlights connect a finding to both document versions. seed: none (user-pinned direction).
+FORM: User-specified upload-to-message-stream workflow within the established visual world. Code-first application surface. seed: none (user-pinned direction).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 ## Protected behaviors
 
-Source/version accuracy; borrower-safe projections; non-accusatory copy; revision-aware checks; no implicit fixture fallback; no invented live activity; human rationale; preserved release idempotency. Native mobile borrower controls and keyboard-operable staff UI.
+Only safe operational summaries are shown, never private model reasoning. File selection/format checks must not claim upload or verification. Live messages come from actual database job/tool/document states; no invented stage percentages or timer-driven success. The explicitly synthetic sample runs existing deterministic checks. PDF/DOCX service activation requires backend support. Keep source versions, role isolation, and existing review/release safeguards available behind case details.
