@@ -47,45 +47,34 @@ The `Backend QA` workflow fails a pull request when either copy is stale.
 
 ## Your identity (one-time, per role)
 
-New teammates: follow the short step-by-step guide in [ONBOARDING.md](ONBOARDING.md). Summary below.
+Use the one-command flow in [ONBOARDING.md](ONBOARDING.md):
+`npm run join:cloud -- --name <name> --roles <roles>` creates one identity per role, keeps the tokens in
+`~/.loanwick/loanwick-hackutd26-dev/<name>/`, and prints `LOANWICK-JOIN` lines with public identities to send the owner.
+Rerunning it reports each role's access. The owner previews and applies requests with `spacetimedb/qa/grant-requests.ps1`.
+Never share tokens, and never ask for the owner's login.
 
-Each person uses their own identity. Never share tokens, and never ask for the owner's login.
-
-1. Create the folder for your private token, outside the repository:
-   - Windows PowerShell: `New-Item -ItemType Directory -Force "$HOME\.loanwick"`
-   - macOS/Linux: `mkdir -p ~/.loanwick`
-2. Create an identity (one per role you need, each with its own token file):
-
-   ```sh
-   npx --prefix spacetimedb tsx spacetimedb/qa/whoami.ts https://maincloud.spacetimedb.com loanwick-hackutd26-dev $HOME/.loanwick/officer.token
-   ```
-
-   Use `$HOME` (not `~`) so the path expands in both PowerShell and bash. It prints
-   `{"identity":"c200…","tokenSaved":true,"myUser":null}`. The token stays in that file.
-3. Send the owner **only** the 64-character `identity`, the role (`officer`, `reviewer`, `worker`, or `borrower`), and a
-   unique user ID such as `officer-jason`. The identity is public; the token is not.
-4. After the owner confirms, run the same command again. `myUser` now shows your role.
-
-One identity holds exactly one role. The seeded borrower cases belong to the demo users `borrower-a` and `borrower-b`; to test
+Under the hood it uses `spacetimedb/qa/whoami.ts` (create or reuse an identity) and `spacetimedb/qa/access-check.ts`
+(role, visible data, private tables blocked). One identity holds exactly one role. The seeded borrower cases belong to the demo users `borrower-a` and `borrower-b`; to test
 as a borrower with your own identity, have an officer create a new application for your borrower user ID.
 
 ### Owner: granting a role without sharing credentials
 
-The owner runs this with their own CLI login (Windows PowerShell):
+The owner runs this with their own CLI login (Windows PowerShell). Batch: paste every teammate's messages into a file and run
+`spacetimedb\qa\grant-requests.ps1 -RequestFile requests.txt` (preview), then add `-Apply`. Single identity:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File spacetimedb\qa\assign-role.ps1 -Identity <64-hex> -UserId officer-jason -Role officer -DisplayName "Jason (officer)"
 ```
 
-It validates the input, refuses anything that looks like a token, and calls `assign_demo_user` on the shared database.
-Add `-Deactivate` to revoke. Git Bash equivalent:
+Both validate input, refuse anything that looks like a token, and call `assign_demo_user` on the shared database.
+Add `-Deactivate` to `assign-role.ps1` to revoke. Git Bash equivalent:
 `spacetime call --server maincloud loanwick-hackutd26-dev assign_demo_user '"0x<hex>"' '"officer-jason"' '"demo-org"' '"officer"' '"Jason"' true`.
 
 ## Frontend configuration
 
 ```sh
-cp apps/web/.env.example apps/web/.env.live      # already points at the shared database
-npm run dev:web:live                             # http://127.0.0.1:5174
+npm run join:cloud -- --name <name> --roles officer   # writes apps/web/.env.live (or: cp apps/web/.env.example apps/web/.env.live)
+npm run dev:web:live                                  # http://127.0.0.1:5174
 ```
 
 Paste one role token into the connection form at runtime. Never put a token in any `VITE_*` variable or `.env` file; Vite

@@ -26,7 +26,8 @@
     "test:database": "npm run build && node scripts/test-database.mjs",
     "fixtures:database": "node scripts/generate-database-seed.mjs",
     "fixtures:database:check": "node scripts/generate-database-seed.mjs --check",
-    "test:database:local": "npm run build && node scripts/test-database-local.mjs"
+    "test:database:local": "npm run build && node scripts/test-database-local.mjs",
+    "join:cloud": "node scripts/join-cloud.mjs"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
