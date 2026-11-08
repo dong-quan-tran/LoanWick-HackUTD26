@@ -50,12 +50,16 @@ function publicResult(result: {
   assistantSummary: string;
   findings: { type: string; title: string; relatedApplicationIds: string[] }[];
   toolEvents: { toolName: string; status: string }[];
-  jobId?: string;
-  outcome?: string;
+  jobId?: string | undefined;
+  outcome?: string | undefined;
+  modelId?: string | undefined;
+  drafts?: { state: string; sent: boolean; template: string }[] | undefined;
+  draftErrors?: { message: string }[] | undefined;
 }) {
   return {
     executionMode: result.executionMode,
     model: result.model,
+    modelId: result.modelId,
     jobId: result.jobId,
     outcome: result.outcome,
     tools: result.toolEvents.map((event) => ({ name: event.toolName, status: event.status })),
@@ -64,6 +68,8 @@ function publicResult(result: {
       title: finding.title,
       relatedApplicationIds: finding.relatedApplicationIds,
     })),
+    drafts: result.drafts?.map((draft) => ({ state: draft.state, sent: draft.sent, template: draft.template })),
+    draftErrors: result.draftErrors?.map((error) => error.message),
     assistantSummary: result.assistantSummary,
   };
 }

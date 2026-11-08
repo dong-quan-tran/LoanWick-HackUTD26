@@ -9,7 +9,7 @@
 - The group threshold is a named synthetic demo policy. Mixed currencies are rejected and no exchange rate is inferred.
 - Latest review sequence must be assigned/validated by the server. Pure readiness cannot enforce transaction order, caller privileges, release uniqueness, or idempotency.
 - Snapshot/result validation cannot prove model prose true or detect source updates after the snapshot without a current-state server check. Full source membership changes must also invalidate stale runs.
-- Only JSON sources are included in this foundation. CSV/text-PDF ingestion, extraction errors, byte-upload authorization, private storage, and unsupported scans belong to the worker integration. No OCR is implemented here.
+- The worker extracts JSON, CSV, and text PDFs into private development storage. Scanned PDFs are unsupported. No OCR is implemented. The public site does not receive the NVIDIA key, and a live database claim still needs a worker-role token.
 - Worker-local byte storage, if used later, is development-only. Do not publish private paths/keys or server secrets in browser projections.
 - Free-text clarification schemas cannot guarantee confidentiality. The worker must use approved own-case context and an officer must review/send.
 - The eight planted applications are a regression fixture set, not a production fraud dataset. There is no calibrated fraud probability, production credit model, legal clearance, or automatic loan approval.

@@ -4,20 +4,51 @@ import {
   checkGroupThreshold,
   getPaymentVerificationState,
 } from "@loanwick/analysis";
-import type { AnalysisSnapshot } from "@loanwick/contracts";
+import { ToolArgumentsSchemas, type AnalysisSnapshot } from "@loanwick/contracts";
 import { toDatabaseFindings, type DatabaseFindingInput } from "@loanwick/database-adapter";
 
 import { WorkerRunError } from "../errors.js";
-import type { ToolDefinition } from "../provider/types.js";
+import type { ToolDefinition, ToolParameters } from "../provider/types.js";
+import { borrowerSafeDraft, clarificationTemplate, foreignApplicantNames } from "./drafts.js";
 
-const TARGET_ONLY = {
+const TARGET_ONLY: ToolParameters = {
   type: "object",
   properties: {
     applicationId: { type: "string", description: "Claimed application id." },
   },
   additionalProperties: false,
   required: ["applicationId"],
-} as const;
+};
+
+const EVIDENCE_PARAMETERS: ToolParameters = {
+  type: "object",
+  properties: {
+    applicationId: { type: "string", description: "Application id in this authorized claim." },
+    evidenceIds: {
+      type: "array",
+      description: "Optional evidence ids to read. Omit them to read a bounded set for that application.",
+      items: { type: "string" },
+      maxItems: 8,
+    },
+  },
+  additionalProperties: false,
+  required: ["applicationId"],
+};
+
+const DRAFT_PARAMETERS: ToolParameters = {
+  type: "object",
+  properties: {
+    applicationId: { type: "string", description: "Claimed application id." },
+    findingId: { type: "string", description: "Persisted finding id this draft refers to." },
+    requestedEvidence: {
+      type: "string",
+      description: "Allowlisted request: collateral, financials, or supporting.",
+      enum: ["collateral", "financials", "supporting"],
+    },
+  },
+  additionalProperties: false,
+  required: ["applicationId", "findingId", "requestedEvidence"],
+};
 
 export const CASE_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   {
@@ -27,60 +58,44 @@ export const CASE_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   },
   {
     name: "get_application_evidence",
-    description: "Read bounded evidence excerpts for an application in this claim.",
-    parameters: {
-      type: "object",
-      properties: {
-        applicationId: { type: "string", description: "Application id in this claim." },
-      },
-      additionalProperties: false,
-      required: ["applicationId"],
-    },
+    description: "Read bounded evidence excerpts for permitted evidence ids in this claim.",
+    parameters: EVIDENCE_PARAMETERS,
   },
   {
     name: "find_related_applications",
-    description: "List confirmed relationships already present in this claim.",
+    description: "List server-permitted relationships. Confirmed links stay distinct from candidates.",
     parameters: TARGET_ONLY,
   },
   {
     name: "run_collateral_check",
-    description: "Compare equipment identifiers and exclusive ownership claims across this claim.",
+    description: "Run the deterministic equipment-identifier check on this authorized claim.",
     parameters: TARGET_ONLY,
   },
   {
     name: "run_group_threshold_check",
-    description: "Sum confirmed related applications and compare the total with the review threshold.",
+    description: "Run the deterministic confirmed-group threshold check on this authorized claim.",
     parameters: TARGET_ONLY,
   },
   {
     name: "get_payment_verification_state",
-    description: "Read the stored payment-review state for the claimed application.",
+    description: "Read the claimed application's payment revision and stored review state.",
     parameters: TARGET_ONLY,
   },
   {
     name: "draft_clarification",
-    description: "Draft a borrower-safe question. This does not send the question.",
-    parameters: {
-      type: "object",
-      properties: {
-        applicationId: { type: "string", description: "Claimed application id." },
-        findingId: { type: "string", description: "Finding id this draft refers to." },
-        requestedEvidence: {
-          type: "string",
-          description: "One of collateral, financials, or supporting.",
-        },
-      },
-      additionalProperties: false,
-      required: ["applicationId", "findingId", "requestedEvidence"],
-    },
+    description: "Prepare an allowlisted borrower question. This never sends it or resolves the finding.",
+    parameters: DRAFT_PARAMETERS,
   },
 ];
 
-const DRAFTS = {
-  collateral: "Please send a current equipment list that shows what this business owns.",
-  financials: "Please send a current financial statement for this application.",
-  supporting: "Please send a supporting document for this application.",
-} as const;
+const TARGET_TOOLS = new Set([
+  "get_application_summary",
+  "find_related_applications",
+  "run_collateral_check",
+  "run_group_threshold_check",
+  "get_payment_verification_state",
+  "draft_clarification",
+]);
 
 export type CaseToolEvent = {
   toolName: string;
@@ -99,12 +114,30 @@ export function oneLine(value: string, max = 280): string {
   return flat.slice(0, max);
 }
 
-export function executeCaseTool(snapshot: AnalysisSnapshot, name: string, args: unknown): unknown {
-  const record = argumentRecord(args);
-  const applicationId = requiredId(record, "applicationId");
-  if (name === "get_application_summary" || name === "run_collateral_check" || name === "run_group_threshold_check" || name === "get_payment_verification_state" || name === "find_related_applications") {
+export function executeCaseTool(
+  snapshot: AnalysisSnapshot,
+  name: string,
+  args: unknown,
+  options?: { persistedFindingIds?: readonly string[] },
+): unknown {
+  if (!(name in ToolArgumentsSchemas)) {
+    throw new WorkerRunError("UNKNOWN_TOOL", `rejected tool ${name}`);
+  }
+  const parsed = ToolArgumentsSchemas[name as keyof typeof ToolArgumentsSchemas].safeParse(args);
+  if (!parsed.success) {
+    throw new WorkerRunError("INVALID_ARGUMENTS", `${name} arguments do not match the tool schema`);
+  }
+  const data = parsed.data as {
+    applicationId: string;
+    evidenceIds?: string[];
+    findingId?: string;
+    requestedEvidence?: string;
+  };
+  const applicationId = data.applicationId;
+  if (TARGET_TOOLS.has(name)) {
     requireTarget(snapshot, applicationId);
   }
+
   if (name === "get_application_summary") {
     const application = requireApplication(snapshot, applicationId);
     return {
@@ -121,25 +154,16 @@ export function executeCaseTool(snapshot: AnalysisSnapshot, name: string, args: 
     };
   }
   if (name === "get_application_evidence") {
-    requireKnown(snapshot, applicationId);
-    return snapshot.evidence
-      .filter((item) => item.applicationId === applicationId)
-      .slice(0, 8)
-      .map((item) => ({
-        id: item.id,
-        fieldName: item.fieldName,
-        extractedValue: item.extractedValue,
-        excerpt: oneLine(item.excerpt, 180),
-      }));
+    return evidenceExcerpts(snapshot, applicationId, data.evidenceIds);
   }
   if (name === "find_related_applications") {
     return snapshot.relationships
       .filter((item) => item.leftApplicationId === applicationId || item.rightApplicationId === applicationId)
       .map((item) => ({
         id: item.id,
-        leftApplicationId: item.leftApplicationId,
-        rightApplicationId: item.rightApplicationId,
+        otherApplicationId: item.leftApplicationId === applicationId ? item.rightApplicationId : item.leftApplicationId,
         decision: item.decision,
+        classification: relationshipClass(item.decision),
         evidenceIds: item.evidenceIds,
       }));
   }
@@ -151,16 +175,23 @@ export function executeCaseTool(snapshot: AnalysisSnapshot, name: string, args: 
   }
   if (name === "get_payment_verification_state") {
     const application = requireApplication(snapshot, applicationId);
-    return getPaymentVerificationState(application.paymentRevision, snapshot.reviews);
+    const reviews = snapshot.reviews.filter((review) => review.applicationId === application.id);
+    return {
+      applicationId: application.id,
+      paymentRevision: application.paymentRevision,
+      verification: getPaymentVerificationState(application.paymentRevision, reviews),
+    };
   }
   if (name === "draft_clarification") {
-    requireTarget(snapshot, applicationId);
-    requiredId(record, "findingId");
-    const requested = record.requestedEvidence;
-    if (requested !== "collateral" && requested !== "financials" && requested !== "supporting") {
+    const persisted = options?.persistedFindingIds ?? [];
+    if (!persisted.includes(data.findingId ?? "")) {
+      throw new WorkerRunError("INVALID_ARGUMENTS", "draft requires a persisted finding");
+    }
+    if (data.requestedEvidence === undefined) {
       throw new WorkerRunError("INVALID_ARGUMENTS", "requestedEvidence must be collateral, financials, or supporting");
     }
-    return { sent: false, borrowerSafeMessage: DRAFTS[requested] };
+    const template = clarificationTemplate(data.requestedEvidence);
+    return borrowerSafeDraft(template, foreignApplicantNames(snapshot));
   }
   throw new WorkerRunError("UNKNOWN_TOOL", `rejected tool ${name}`);
 }
@@ -169,28 +200,86 @@ export async function databaseFindings(snapshot: AnalysisSnapshot): Promise<Data
   return toDatabaseFindings(snapshot, analyzeSnapshot(snapshot).results);
 }
 
+export function safeToolSummary(value: unknown): string {
+  return oneLine(JSON.stringify(redactForLog(value)));
+}
+
+function evidenceExcerpts(snapshot: AnalysisSnapshot, applicationId: string, evidenceIds: readonly string[] | undefined) {
+  requireKnown(snapshot, applicationId);
+  const owned = snapshot.evidence.filter((item) => item.applicationId === applicationId);
+  const selected = evidenceIds === undefined ? owned.slice(0, 8) : selectRequested(owned, evidenceIds);
+  return selected.map((item) => ({
+    id: item.id,
+    documentId: item.documentId,
+    documentVersion: item.documentVersion,
+    locator: item.locator,
+    pageNumber: item.pageNumber,
+    fieldName: item.fieldName,
+    extractedValue: item.extractedValue,
+    excerpt: oneLine(item.excerpt, 180),
+  }));
+}
+
+function selectRequested(owned: AnalysisSnapshot["evidence"], evidenceIds: readonly string[]) {
+  if (evidenceIds.length > 8) {
+    throw new WorkerRunError("INVALID_ARGUMENTS", "evidenceIds exceed the excerpt bound");
+  }
+  if (new Set(evidenceIds).size !== evidenceIds.length) {
+    throw new WorkerRunError("INVALID_ARGUMENTS", "evidenceIds must be unique");
+  }
+  const byId = new Map(owned.map((item) => [item.id, item]));
+  return evidenceIds.map((id) => {
+    const item = byId.get(id);
+    if (item === undefined) {
+      throw new WorkerRunError("INVALID_ARGUMENTS", "evidence id is missing or outside this application");
+    }
+    return item;
+  });
+}
+
+function relationshipClass(decision: string): "confirmed" | "candidate" | "rejected" | "other" {
+  if (decision === "candidate") {
+    return "candidate";
+  }
+  if (decision === "rejected") {
+    return "rejected";
+  }
+  if (decision.startsWith("confirmed_")) {
+    return "confirmed";
+  }
+  return "other";
+}
+
 function publicCheck(result: ReturnType<typeof checkCollateralConflicts>[number]) {
   return {
     findingType: result.findingType,
     severity: result.severity,
+    evidenceState: result.evidenceState,
     title: result.title,
     applicationIds: result.applicationIds,
     evidenceIds: result.evidenceIds,
+    observedRevisions: result.observedRevisions,
     facts: result.facts,
   };
 }
 
-function argumentRecord(args: unknown): Record<string, unknown> {
-  if (args === null || typeof args !== "object" || Array.isArray(args)) {
-    throw new WorkerRunError("INVALID_ARGUMENTS", "tool arguments must be an object");
+function redactForLog(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactForLog(item));
   }
-  return args as Record<string, unknown>;
-}
-
-function requiredId(record: Record<string, unknown>, key: string): string {
-  const value = record[key];
-  if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(value)) {
-    throw new WorkerRunError("INVALID_ARGUMENTS", `${key} is not a valid id`);
+  if (value !== null && typeof value === "object") {
+    const redacted: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) {
+      if (key === "excerpt" || key === "borrowerSafeMessage") {
+        continue;
+      }
+      if (key === "extractedValue" || key === "fieldValue") {
+        redacted[key] = "[stored]";
+        continue;
+      }
+      redacted[key] = redactForLog(item);
+    }
+    return redacted;
   }
   return value;
 }

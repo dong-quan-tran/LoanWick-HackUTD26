@@ -2,7 +2,13 @@ export type ExecutionMode = "live" | "fixture";
 
 export type ToolParameters = {
   type: "object";
-  properties: Record<string, { type: string; description: string }>;
+  properties: Record<string, {
+    type: string;
+    description?: string;
+    items?: { type: string; description?: string };
+    maxItems?: number;
+    enum?: readonly string[];
+  }>;
   additionalProperties: false;
   required?: readonly string[];
 };

@@ -15,7 +15,8 @@
     "@loanwick/analysis": "*",
     "@loanwick/contracts": "*",
     "@loanwick/database-adapter": "*",
-    "spacetimedb": "2.14.0"
+    "spacetimedb": "2.14.0",
+    "unpdf": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

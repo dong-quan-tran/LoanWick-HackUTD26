@@ -1,47 +1,56 @@
-# Worker step 1: clock tool smoke
+# LoanWick worker
 
-This package is only step 1 of `docs/team-plans/03-AI-WORKER-AND-INGESTION.md`.
+The worker claims an investigation, runs the deterministic collateral and group checks, records bounded tool events, and stores findings from `toDatabaseFindings`. The model may explain those results. It does not invent a fraud match, send a borrower question, or approve a loan. An officer sends drafts.
 
-It runs one harmless local tool, `read_worker_clock`, through either a deterministic fixture provider or a live NVIDIA chat completion. It does not connect to a database, persist findings, or accept documents. `connectedDatabase` is always `false`.
+JSON, CSV, and text-PDF intake lives in this package. The public site is unchanged and does not receive `NVIDIA_API_KEY`. Do not put that key in `VITE_*` or the website bundle.
 
 ## Modes
 
-`AGENT_MODE=fixture` (the default) never calls the network. The fixture model id is the literal `fixture`.
+`AGENT_MODE=fixture` (the default) never calls NVIDIA. Fixture jobs complete with `modelId` omitted.
 
-`AGENT_MODE=live` calls NVIDIA and stays live if that call fails. It does not switch to the fixture provider.
+`AGENT_MODE=live` stays live when the provider fails. It does not switch to the fixture provider. A live job is completed only with the configured `NVIDIA_MODEL`. A live job refused by a fixture worker is failed as `MODEL_UNAVAILABLE`.
 
-The smoke result's `executionMode` comes from the provider, not from the model's sentence.
+`connectedDatabase` is true only for `runQueuedCloudJob`, which requires `SPACETIMEDB_TOKEN`. Tests use an in-memory claim session and do not call the shared database.
 
-## Live API
+## Environment
 
-Documented shape used here:
+Names only. Values stay in `apps/worker/.env`, which is not committed and must not be printed.
 
-- Chat completions: https://docs.api.nvidia.com/nim/reference/nvidia-nemotron-3_5-bolt-e4b-infer
-- Tool calling: https://docs.nvidia.com/nim/large-language-models/latest/function-calling.html
+- `AGENT_MODE` `fixture` or `live`
+- `AGENT_MAX_STEPS` from 1 to 8
+- `AGENT_TIMEOUT_MS` from 1000 to 120000
+- `WORKER_UPLOAD_DIR` development-only private directory
+- `SPACETIMEDB_URI`, `SPACETIMEDB_DATABASE`, `SPACETIMEDB_TOKEN` for a real claim
+- `NVIDIA_BASE_URL`, `NVIDIA_API_KEY`, `NVIDIA_MODEL` for live mode
+- Optional `NVIDIA_MAX_TOKENS`, `NVIDIA_TEMPERATURE`, `NVIDIA_TOP_P`, `NVIDIA_REASONING_BUDGET`
 
-Request: `POST {NVIDIA_BASE_URL}/chat/completions` with `Authorization: Bearer`. The default base URL is `https://integrate.api.nvidia.com/v1`.
-
-`tool_choice` is `"auto"`. `parallel_tool_calls` is `false`, so the request asks for one tool call. If a response still contains more than one, the worker rejects it before running any of them. `max_tokens` is 512 and `temperature` is 0. `top_p` is left unset because the NVIDIA page says not to set both. Instructions stay on the `system` role, which the OpenAI-compatible NIM docs use. Reasoning fields on the response are ignored and not stored.
-
-`NVIDIA_MODEL` is required. The code does not fill one in. The Nemotron sample for this project uses `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`. That sample is a vision prompt; the worker sends text and one tool instead of an image. Optional `NVIDIA_MAX_TOKENS`, `NVIDIA_TEMPERATURE`, `NVIDIA_TOP_P`, and `NVIDIA_REASONING_BUDGET` are copied onto the request when set. `reasoning_budget` cannot be larger than `NVIDIA_MAX_TOKENS`.
-
-Redirects are refused so the bearer token is not forwarded to another host.
-
-A self-hosted Brev NIM can use the same client by setting `NVIDIA_BASE_URL` to that instance's `https://.../v1` URL. An `http://` URL is rejected.
+Copy `.env.example`. A live clock smoke still uses `npm run smoke`.
 
 ## Commands
 
-From `apps/worker`:
+From the repository root:
 
 ```text
-npm install
-npm test
-npm run typecheck
-npm run smoke
+npm run typecheck --workspace @loanwick/worker
+npm test --workspace @loanwick/worker
+npm run smoke --workspace @loanwick/worker
+npm run investigate --workspace @loanwick/worker
 ```
 
-`npm run smoke` reads `apps/worker/.env` without printing it. Copy `.env.example` and fill `NVIDIA_API_KEY` and `NVIDIA_MODEL` before a live run. Do not commit `.env`.
+`investigate` runs the local demo case unless `SPACETIMEDB_TOKEN` is set. A cloud claim subscribes to `my_user`, `worker_available_jobs`, `worker_snapshots`, and `worker_job_outcomes` before `claimInvestigation`. This machine has no worker-role token, so a live claim against `loanwick-hackutd26-dev` has not been run. `claimEpoch >= 3` is not claimed; the server fails that job as `LEASE_EXHAUSTED`.
 
-## Storage
+Local check: `npm run typecheck --workspace @loanwick/worker` passed, and `npm test --workspace @loanwick/worker` passed 50 tests. Those tests use an in-memory claim client. They do not call the shared database.
 
-`WORKER_UPLOAD_DIR` is recorded for a later intake step. This step does not create that directory or write files. Worker-local file storage, when it exists, is development-only.
+## Job rules
+
+The worker claims one queued job, keeps that claim epoch, and reads only that job's snapshot. Tool events use sequence 1, 2, 3, and so on, status `started`, `succeeded`, or `failed`, summaries of at most 280 characters with no newlines, and `durationMs` of at most 120000. Over-long durations fail the job instead of being clipped. Findings passed to `completeInvestigation` are recomputed with `toDatabaseFindings`. Fixture completion omits `modelId`. Stale inputs call `failInvestigation` and do not complete. The same completion payload may be tried up to three times after a transient transport error, and it is not retried after `STALE_RESULTS` or with refreshed revisions. A claim is not retried. Draft creation happens after accepted finding ids exist. Draft failure leaves the investigation succeeded. The worker does not call `sendClarification` or `decideFinding`.
+
+## Intake
+
+Supported uploads are JSON, CSV, and text PDFs, at most 10 MB. The grant's application, request, document type, and uploader are authoritative. A caller-supplied role or case id is not. A browser `Origin` that does not match the allowed origin is rejected. A request that sends a cookie must also send the matching CSRF token. Bytes are hashed with SHA-256 and stored under an internal `wk_` plus 32 hex characters. JSON evidence uses `$.field` locators. CSV evidence uses `row N column name`. PDF text comes from `unpdf` 2.1.0 `extractText(bytes, { mergePages: false })`, one string per page. Missing fields stay unknown. Malformed extraction is `failed` with no evidence. A PDF with no extractable text, including a scan, is `unsupported`. No fixture document is substituted.
+
+Worker-local storage is development-only. `cleanupUnattachedUploads` deletes unattached private files older than 24 hours from `WORKER_UPLOAD_DIR`. It does not delete canonical fixtures. If the application revision changes before attachment, attachment is refused.
+
+The website at https://loanmebro.vip was not changed by this intake. Uploads are not accepted there until an officer grant and a worker token are wired to this extractor.
+
+Text PDFs are parsed from their bytes. Expected-result sidecars are not model input and are not treated as findings.
