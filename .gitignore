@@ -9,6 +9,10 @@ dist-live/
 .env
 .env.*
 !.env.example
+# SpacetimeDB identity tokens and CLI state must never be committed.
+*.token
+.loanwick/
+spacetimedb/.local/
 coverage/
 playwright-report/
 test-results/

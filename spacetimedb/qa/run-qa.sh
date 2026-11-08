@@ -57,3 +57,10 @@ for k in typecheck bindings integration repro regression b2; do printf '%-12s %s
 echo "--- QA test results"; grep -hE '^\s*(✔|✖) (F[0-9]|R[0-9]|B2-)' "$LOG"/qa-*.log
 echo "--- Observations"; grep -h '^OBS' "$LOG"/qa-*.log
 echo "Logs: $LOG"
+# Non-zero exit when anything failed, so CI can block the pull request.
+for k in typecheck bindings integration repro regression b2; do
+  case "${RESULT[$k]:-}" in *FAIL*|*"fail "[1-9]*) echo "QA FAILED: $k"; exit 1 ;; esac
+done
+for k in repro regression b2; do
+  case "${RESULT[$k]:-}" in *"pass "[1-9]*) ;; *) echo "QA FAILED: $k did not run"; exit 1 ;; esac
+done

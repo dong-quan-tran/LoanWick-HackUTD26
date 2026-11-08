@@ -4,6 +4,12 @@ DealPilot is a hackathon prototype for evidence-backed commercial-loan investiga
 
 This tree combines the shared contracts and deterministic checks, the SpacetimeDB module, the officer/borrower/reviewer frontend, and the worker smoke client. The live adapter has passed a browser workflow against a disposable database with separate authorized role sessions. A connected NVIDIA investigation, document intake, and original-source downloads remain pending. See docs/DATABASE-TESTS.md for the tested database limits.
 
+## Shared cloud database
+
+The team uses one SpacetimeDB Maincloud database: `loanwick-hackutd26-dev` at `https://maincloud.spacetimedb.com`
+(backend `09288eb`, schema-identical to `main`). Get your own authorized identity, configure the frontend, and follow the
+GitHub workflow in [docs/CLOUD.md](docs/CLOUD.md). Publishing is manual and owner-only ([spacetimedb/DEPLOYMENT.md](spacetimedb/DEPLOYMENT.md)).
+
 ## Frontend
 
 Run `npm ci`, then `npm run dev:web`, and open http://127.0.0.1:5173. The officer opens a simplified PDF/DOCX contract-upload screen with pipeline progress messages. Try the clearly labeled sample to run actual deterministic fixture checks. PDF/DOCX server intake remains unavailable until a compatible worker is connected; selected files are not silently treated as verified. The officer workflow stays on one page with a compact menu, brown/gold styling, generated contract artwork, and plain-language updates. Older case/borrower/reviewer routes remain compatible without adding navigation tabs to the primary flow. Read the [frontend handoff](docs/FRONTEND.md) for the exact sequence, test commands, live connection setup, and remaining integration gates.

@@ -1,0 +1,155 @@
+name: Backend QA
+
+# Checks the SpacetimeDB module, its generated bindings, and compatibility with the deployed Maincloud database.
+# Read-only toward Maincloud: no secrets, no tokens, no publishing. Cloud publishing stays a manual, owner-approved step
+# (docs/CLOUD.md, spacetimedb/DEPLOYMENT.md).
+
+on:
+  pull_request:
+    paths:
+      - 'spacetimedb/**'
+      - 'apps/web/src/generated/**'
+      - '.github/workflows/backend-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'spacetimedb/**'
+      - 'apps/web/src/generated/**'
+      - '.github/workflows/backend-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  LOANWICK_DB_URL: http://127.0.0.1:4310
+  LOANWICK_CLOUD_DATABASE: loanwick-hackutd26-dev
+
+jobs:
+  bindings:
+    name: Generated bindings in sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: spacetimedb/package-lock.json
+      - run: npm ci --prefix spacetimedb
+      - name: Install pinned database tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/loanwick-spacetime"
+          mkdir -p "$tool_dir"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.14.0/spacetime-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$tool_dir/tools.tar.gz"
+          tar -xzf "$tool_dir/tools.tar.gz" -C "$tool_dir"
+          echo "LOANWICK_SPACETIME_CLI=$tool_dir/spacetimedb-cli" >> "$GITHUB_ENV"
+      - name: Module bindings match a fresh generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$LOANWICK_SPACETIME_CLI" generate --lang typescript --module-path spacetimedb --out-dir "$RUNNER_TEMP/regen" --yes
+          diff -r spacetimedb/bindings "$RUNNER_TEMP/regen" \
+            || { echo "::error::spacetimedb/bindings is stale. Regenerate it (docs/CLOUD.md#generated-bindings)."; exit 1; }
+      - name: Frontend copy matches module bindings
+        shell: bash
+        run: |
+          diff -r spacetimedb/bindings apps/web/src/generated \
+            || { echo "::error::apps/web/src/generated differs from spacetimedb/bindings. Copy the regenerated bindings."; exit 1; }
+
+  suites:
+    name: Backend integration and QA suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: spacetimedb/package-lock.json
+      - name: Install pinned database tools and start a disposable loopback server
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/loanwick-spacetime"
+          mkdir -p "$tool_dir"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.14.0/spacetime-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$tool_dir/tools.tar.gz"
+          tar -xzf "$tool_dir/tools.tar.gz" -C "$tool_dir"
+          echo "LOANWICK_SPACETIME_CLI=$tool_dir/spacetimedb-cli" >> "$GITHUB_ENV"
+          nohup "$tool_dir/spacetimedb-cli" start --listen-addr 127.0.0.1:4310 --in-memory --non-interactive > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 60); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:4310/v1/identity || true)"
+            [ "$code" = "200" ] && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/server.log"; exit 1
+      - name: Typecheck, bindings, integration suite, and QA suites (F1/F4/F5/F6, R1-R6, B2)
+        shell: bash
+        run: QA_OUT="$RUNNER_TEMP/qa" bash spacetimedb/qa/run-qa.sh "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: backend-qa-logs
+          path: ${{ runner.temp }}/qa/**/logs/
+          if-no-files-found: ignore
+
+  deployed-schema:
+    name: Schema vs deployed Maincloud (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Informational: a difference means publishing this commit needs owner review, not that the PR is wrong.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: spacetimedb/package-lock.json
+      - run: npm ci --prefix spacetimedb
+      - name: Describe this commit (disposable local server) and the deployed database (anonymous)
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/loanwick-spacetime"; root="$RUNNER_TEMP/owner"
+          mkdir -p "$tool_dir" "$root"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.14.0/spacetime-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$tool_dir/tools.tar.gz"
+          tar -xzf "$tool_dir/tools.tar.gz" -C "$tool_dir"
+          cli="$tool_dir/spacetimedb-cli"
+          nohup "$cli" start --listen-addr 127.0.0.1:4310 --in-memory --non-interactive > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 60); do
+            owner="$(curl -s -X POST http://127.0.0.1:4310/v1/identity || true)"
+            [ -n "$owner" ] && break; sleep 1
+          done
+          token="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).token)' "$owner")"
+          echo "::add-mask::$token"
+          "$cli" --root-dir "$root" login --token "$token" > /dev/null
+          "$cli" --root-dir "$root" publish schema-check --server http://127.0.0.1:4310 --module-path spacetimedb --yes=skip-login > /dev/null
+          "$cli" --root-dir "$root" describe schema-check --server http://127.0.0.1:4310 --json < /dev/null > "$RUNNER_TEMP/candidate.json"
+          "$cli" describe "$LOANWICK_CLOUD_DATABASE" --server maincloud --anonymous --json < /dev/null > "$RUNNER_TEMP/deployed.json"
+      - name: Compare
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "### Schema vs deployed \`$LOANWICK_CLOUD_DATABASE\`"
+            echo '```'
+            node spacetimedb/qa/schema-diff.mjs "$RUNNER_TEMP/deployed.json" "$RUNNER_TEMP/candidate.json"
+            status=$?
+            echo '```'
+            exit $status
+          } | tee -a "$GITHUB_STEP_SUMMARY"

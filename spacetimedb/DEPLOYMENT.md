@@ -16,22 +16,21 @@
 
 All data is synthetic. Never load real borrower or payment data into this database.
 
-Identity tokens are bearer credentials for this database. They live only in the owner's `~/.loanwick/loanwick-hackutd26-dev/`
-folder (outside the repository) and are handed to each teammate privately. Never commit, paste into chat, log, or put a
-token in a URL. Identities (hex) are public and safe to share.
+Seed note: the cloud data was seeded by `09288eb`. `main` (`d99a7cb`) has an identical schema, reducers, views, and bindings,
+but its newer seed adds source-backed ownership evidence for the Northline/Pineworks forklift claims and amount/currency
+evidence for the Cedar group. Existing cases cannot be re-seeded in place; the full judge-demo dataset needs an approved
+publish of `main` to a fresh database name followed by the bootstrap below.
+
+Identity tokens are bearer credentials for this database. They live only in each person's `~/.loanwick/` folder (outside the
+repository). Never commit, paste into chat, log, or put a token in a URL. Identities (hex) are public and safe to share.
+The demo role tokens created at deploy time exist only on the owner's machine.
 
 ## Getting access (teammates)
 
-You can use the demo role token the owner gives you, or create your own identity:
-
-1. Run once: `npx tsx spacetimedb/qa/whoami.ts https://maincloud.spacetimedb.com loanwick-hackutd26-dev ~/.loanwick/me.token`.
-   It connects without a token, saves the new token to that file (keep it private), and prints your public identity.
-2. Send the identity hex to the owner over a trusted channel, with the role you need.
-3. The owner runs `spacetime call --server maincloud loanwick-hackutd26-dev assign_demo_user '"0x<hex>"' '"<unique-user-id>"' '"demo-org"' '"<role>"' '"<display name>"' true`.
-   User IDs must be unique (the demo roles already use `officer`, `reviewer`, `worker`, `borrower-a`, `borrower-b`).
-4. Run the same `whoami.ts` command again; it now prints your `my_user` row with the role.
-
-Revoke access with the same call and `false` as the last argument. Roles cannot be changed on an existing identity.
+Every teammate creates their own identity and sends the owner only the public identity; the owner grants the role with
+[qa/assign-role.ps1](qa/assign-role.ps1). The full procedure is in [docs/CLOUD.md](../docs/CLOUD.md#your-identity-one-time-per-role).
+User IDs must be unique (the demo roles already use `officer`, `reviewer`, `worker`, `borrower-a`, `borrower-b`).
+Revoke with `-Deactivate`. Roles cannot be changed on an existing identity; create a new identity instead.
 
 ## Frontend (Person 1)
 
@@ -109,7 +108,10 @@ spacetime publish loanwick-hackutd26-dev --server maincloud --module-path . --ye
 spacetime logs loanwick-hackutd26-dev --server maincloud -n 50
 ```
 
-Run `bash spacetimedb/qa/run-qa.sh <approved-sha>` against a local 2.14.0 server first. Never pass a bare `-y`/`--yes` (it also
+Run `bash spacetimedb/qa/run-qa.sh <approved-sha>` against a local 2.14.0 server first, and read the `Backend QA` workflow's
+"Schema vs deployed Maincloud" summary for that commit (or run `spacetime describe` on both and
+`node spacetimedb/qa/schema-diff.mjs deployed.json candidate.json`). Identical schema: republish to the same name.
+Different schema: publish to a new database name and update `docs/CLOUD.md` and `apps/web/.env.example` in one pull request. Never pass a bare `-y`/`--yes` (it also
 skips the destructive-data prompt) and never `--delete-data` without explicit approval. Republishing hot-swaps the module and
 keeps data if the schema change is compatible (see SpacetimeDB automatic migrations); incompatible changes fail to publish.
 
