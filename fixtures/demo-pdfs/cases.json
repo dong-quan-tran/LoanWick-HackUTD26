@@ -1,0 +1,57 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "reference",
+      "filename": "00-reference-northline.pdf",
+      "businessName": "Northline Foods",
+      "applicationReference": "DEMO-REFERENCE-001",
+      "amountCents": 15100000,
+      "currency": "USD",
+      "equipmentDescription": "Warehouse forklift",
+      "equipmentIdentifier": "FL-004821",
+      "exclusiveOwnershipClaim": true,
+      "purpose": "Reference document for the existing database loan; not a new application.",
+      "expected": "Reference only. Corresponds to demo-case-1, demo-doc-1 and demo-evidence-1. This new PDF is not the original seeded text document."
+    },
+    {
+      "id": "duplicate",
+      "filename": "01-duplicate-collateral.pdf",
+      "businessName": "Redwood Warehouse Services",
+      "applicationReference": "DEMO-UPLOAD-001",
+      "amountCents": 18000000,
+      "currency": "USD",
+      "equipmentDescription": "Warehouse forklift",
+      "equipmentIdentifier": "FL-004821",
+      "exclusiveOwnershipClaim": true,
+      "purpose": "Purchase warehouse equipment and expand order handling capacity.",
+      "expected": "Potential collateral conflict with demo-case-1 and demo-case-2, if both cases are in the authorized comparison scope. Cite matching serial and exclusive ownership evidence. Never declare proven fraud."
+    },
+    {
+      "id": "clean",
+      "filename": "02-unique-collateral.pdf",
+      "businessName": "Sunrise Distribution",
+      "applicationReference": "DEMO-UPLOAD-002",
+      "amountCents": 12500000,
+      "currency": "USD",
+      "equipmentDescription": "Electric pallet stacker",
+      "equipmentIdentifier": "DEMO-PS-783260",
+      "exclusiveOwnershipClaim": true,
+      "purpose": "Purchase equipment for a new distribution line.",
+      "expected": "No exact identifier conflict against the unchanged eight-case seed. This is not approval or a guarantee of no fraud. A previous upload of this same asset can create a real match on later runs."
+    },
+    {
+      "id": "missing",
+      "filename": "03-missing-serial.pdf",
+      "businessName": "Meadow Packaging",
+      "applicationReference": "DEMO-UPLOAD-003",
+      "amountCents": 9500000,
+      "currency": "USD",
+      "equipmentDescription": "Hydraulic packaging press",
+      "equipmentIdentifier": null,
+      "exclusiveOwnershipClaim": true,
+      "purpose": "Refurbish a packaging line. The equipment identifier plate is currently unreadable.",
+      "expected": "Extract equipmentIdentifier as null. Report insufficient identifier evidence or request clarification; do not invent a serial or claim a successful collateral cross-check."
+    }
+  ]
+}

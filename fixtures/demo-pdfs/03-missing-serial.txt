@@ -1,0 +1,24 @@
+LOANWICK DEMO - SYNTHETIC DOCUMENT
+COMMERCIAL LOAN COLLATERAL SCHEDULE
+
+Application reference: DEMO-UPLOAD-003
+Document date: November 8, 2026
+Business name: Meadow Packaging
+Requested loan amount: USD 95,000.00
+Currency: USD
+
+Equipment description: Hydraulic packaging press
+Equipment serial number: NOT PROVIDED - identifier plate unreadable
+Quantity: 1
+Ownership declaration:
+Meadow Packaging claims sole and exclusive ownership of the listed equipment.
+The listed equipment is offered as collateral for this application.
+
+Business purpose: Refurbish a packaging line. The equipment identifier plate is
+currently unreadable.
+
+Applicant representative: Synthetic Demo Representative
+Signature: UNSIGNED DEMO COPY
+
+All names, identifiers and amounts are fictional. No real borrower data.
+This document is test input, not a loan approval or evidence of real fraud.

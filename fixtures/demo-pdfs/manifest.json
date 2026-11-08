@@ -1,0 +1,62 @@
+{
+  "synthetic": true,
+  "database": "loanwick-hackutd26-dev",
+  "files": [
+    {
+      "filename": "00-reference-northline.pdf",
+      "sha256": "0dce8e3a2a82d38ff7dfa0c59ee43a0df23792fae35187910e27276a97521c05",
+      "bytes": 1590,
+      "expectedExtraction": {
+        "businessName": "Northline Foods",
+        "amountCents": 15100000,
+        "currency": "USD",
+        "equipmentDescription": "Warehouse forklift",
+        "equipmentIdentifier": "FL-004821",
+        "exclusiveOwnershipClaim": true
+      },
+      "expectedBehavior": "Reference only. Corresponds to demo-case-1, demo-doc-1 and demo-evidence-1. This new PDF is not the original seeded text document."
+    },
+    {
+      "filename": "01-duplicate-collateral.pdf",
+      "sha256": "768aa6714c78e3e532b6f344dc41b3a038ade2f103731ab0883bfb22c8f9ac4e",
+      "bytes": 1600,
+      "expectedExtraction": {
+        "businessName": "Redwood Warehouse Services",
+        "amountCents": 18000000,
+        "currency": "USD",
+        "equipmentDescription": "Warehouse forklift",
+        "equipmentIdentifier": "FL-004821",
+        "exclusiveOwnershipClaim": true
+      },
+      "expectedBehavior": "Potential collateral conflict with demo-case-1 and demo-case-2, if both cases are in the authorized comparison scope. Cite matching serial and exclusive ownership evidence. Never declare proven fraud."
+    },
+    {
+      "filename": "02-unique-collateral.pdf",
+      "sha256": "53d921e8af6cc59c9152d50912dbed9950da3eda07923d96059be8e4df5117c2",
+      "bytes": 1573,
+      "expectedExtraction": {
+        "businessName": "Sunrise Distribution",
+        "amountCents": 12500000,
+        "currency": "USD",
+        "equipmentDescription": "Electric pallet stacker",
+        "equipmentIdentifier": "DEMO-PS-783260",
+        "exclusiveOwnershipClaim": true
+      },
+      "expectedBehavior": "No exact identifier conflict against the unchanged eight-case seed. This is not approval or a guarantee of no fraud. A previous upload of this same asset can create a real match on later runs."
+    },
+    {
+      "filename": "03-missing-serial.pdf",
+      "sha256": "04f2291c6a6397269461e13b1a74b1775c000ba80ef562b934449b23b2ac3c0c",
+      "bytes": 1638,
+      "expectedExtraction": {
+        "businessName": "Meadow Packaging",
+        "amountCents": 9500000,
+        "currency": "USD",
+        "equipmentDescription": "Hydraulic packaging press",
+        "equipmentIdentifier": null,
+        "exclusiveOwnershipClaim": true
+      },
+      "expectedBehavior": "Extract equipmentIdentifier as null. Report insufficient identifier evidence or request clarification; do not invent a serial or claim a successful collateral cross-check."
+    }
+  ]
+}

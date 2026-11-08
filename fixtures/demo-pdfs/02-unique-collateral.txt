@@ -1,0 +1,23 @@
+LOANWICK DEMO - SYNTHETIC DOCUMENT
+COMMERCIAL LOAN COLLATERAL SCHEDULE
+
+Application reference: DEMO-UPLOAD-002
+Document date: November 8, 2026
+Business name: Sunrise Distribution
+Requested loan amount: USD 125,000.00
+Currency: USD
+
+Equipment description: Electric pallet stacker
+Equipment serial number: DEMO-PS-783260
+Quantity: 1
+Ownership declaration:
+Sunrise Distribution claims sole and exclusive ownership of the listed equipment.
+The listed equipment is offered as collateral for this application.
+
+Business purpose: Purchase equipment for a new distribution line.
+
+Applicant representative: Synthetic Demo Representative
+Signature: UNSIGNED DEMO COPY
+
+All names, identifiers and amounts are fictional. No real borrower data.
+This document is test input, not a loan approval or evidence of real fraud.
