@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
-    "test:e2e:database": "node scripts/test-database.mjs"
+    "test:e2e:database": "node scripts/test-database.mjs",
+    "test:e2e:service": "playwright test --config playwright.service.config.ts"
   },
   "dependencies": {
     "@loanwick/analysis": "*",

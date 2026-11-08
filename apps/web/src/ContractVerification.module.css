@@ -213,3 +213,8 @@
   .pipeline, .result { padding: 18px; }
   .pipelineHeading { flex-wrap: wrap; }
 }
+
+.extracted { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; margin: 20px 0; }
+.extracted div { min-width: 0; }
+.extracted dt { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.extracted dd { margin: 0; font-size: 16px; overflow-wrap: anywhere; }

@@ -7,13 +7,15 @@ import { correlationId, readable } from './adapters/types';
 import type { FrontendAdapter, SessionState } from './adapters/types';
 import { inspectContractFile } from './adapters/contract-file';
 import type { ContractFile } from './adapters/contract-file';
+import { hasLiveExplanation, requestVerification } from './adapters/verification-service';
+import type { VerificationResult } from './adapters/verification-service';
+import { VerificationResults } from './components/VerificationResults';
 import styles from './ContractVerification.module.css';
 import motion from './motion.module.css';
 import contractFolio from './assets/contract-folio.webp';
 import engravedBanknote from './assets/engraved-banknote.webp';
 
 type Message = { id: string; text: string; state: 'done' | 'working' | 'attention'; detail?: string | undefined };
-type ServiceResult = { model: string; title: string; related: string; summary: string };
 const sizes = (size: number) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const money = (cents: number, currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 const wait = (ms: number) => new Promise<void>(resolve => { window.setTimeout(resolve, ms); });
@@ -244,17 +246,19 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const [sample, setSample] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [serviceResult, setServiceResult] = useState<ServiceResult | null>(null);
+  const [serviceResult, setServiceResult] = useState<VerificationResult | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hasEnteredDesk, setHasEnteredDesk] = useState(false);
   const deskHeading = useRef<HTMLHeadingElement>(null);
   const [uri, setUri] = useState(import.meta.env.VITE_SPACETIMEDB_URI ?? 'ws://127.0.0.1:4310');
   const [database, setDatabase] = useState(import.meta.env.VITE_SPACETIMEDB_DATABASE ?? '');
   const [token, setToken] = useState('');
+  const serviceRequest = useRef<AbortController | null>(null);
+  const serverVerification = adapter.mode === 'fixture' && import.meta.env.PROD;
   const generation = useRef(0); const requestedDocument = useRef<string | null>(null); const fileInput = useRef<HTMLInputElement>(null); const menu = useRef<HTMLDetailsElement>(null);
   const connected = session.status === 'connected' && session.user?.role === 'officer';
   const canConnect = adapter.mode === 'live' && typeof adapter.connect === 'function';
-  useEffect(() => () => { generation.current++; }, []);
+  useEffect(() => () => { generation.current++; serviceRequest.current?.abort(); }, []);
   useEffect(() => {
     const outside = (event: PointerEvent) => { if (menu.current?.open && event.target instanceof Node && !menu.current.contains(event.target)) menu.current.open = false; };
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && menu.current?.open) { menu.current.open = false; menu.current.querySelector<HTMLElement>('summary')?.focus(); } };
@@ -262,7 +266,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     return () => { window.document.removeEventListener('pointerdown', outside); window.document.removeEventListener('keydown', escape); };
   }, []);
   useEffect(() => {
-    generation.current++; setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError(''); setServiceResult(null); setHasEnteredDesk(false);
+    generation.current++; serviceRequest.current?.abort(); setToken(''); setApplications([]); setApplicationId(''); setView(null); setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setBusy(false); setError(''); setServiceResult(null); setHasEnteredDesk(false);
     if (!connected) return;
     return adapter.subscribePortfolio(items => { setApplications(items); setApplicationId(current => items.some(i => i.application.id === current) ? current : session.defaultApplicationId && items.some(i => i.application.id === session.defaultApplicationId) ? session.defaultApplicationId : items[0]?.application.id ?? ''); }, value => { setApplications([]); setError(value.message); });
   }, [adapter, connected, session.user?.id, session.defaultApplicationId]);
@@ -276,16 +280,16 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   const running = busy || job?.status === 'queued' || job?.status === 'running' || (!!documentId && !jobId && document?.extractionStatus === 'pending');
   const failed = !!error || job?.status === 'failed' || job?.status === 'cancelled' || document?.extractionStatus === 'failed' || document?.extractionStatus === 'unsupported';
   const complete = job?.status === 'succeeded' || serviceResult !== null;
-  const heading = complete ? 'Verification complete' : failed ? 'Verification needs attention' : running ? 'Verifying your contract' : messages.length ? 'Waiting for contract upload' : 'Verify a loan contract';
-  const selectedLoanName = applications.find(item => item.application.id === applicationId)?.application.businessName ?? 'Loan application';
+  const heading = complete ? serviceResult && !hasLiveExplanation(serviceResult) ? 'Document checks finished' : 'Verification complete' : failed ? 'Verification needs attention' : running ? 'Verifying your contract' : messages.length ? 'Waiting for contract upload' : 'Verify a loan contract';
+  const selectedLoanName = serverVerification ? serviceResult?.extracted?.businessName ?? 'Your uploaded contract' : applications.find(item => item.application.id === applicationId)?.application.businessName ?? 'Loan application';
   const shortLoanName = selectedLoanName.split(/\s+/).slice(0, 2).join(' ');
   const coverActive = !hasEnteredDesk && connected && !file && !messages.length && !jobId && !documentId && !running && !failed && !complete;
   const workingStage = VERIFICATION_STAGES.findIndex(stage => messages.some(message => message.id === stage.id && message.state === 'working'));
   const lastFinishedStage = VERIFICATION_STAGES.reduce((last, stage, index) => messages.some(message => message.id === stage.id && message.state === 'done') ? index : last, -1);
   // Live tools do not expose these four substages: only extraction and the
   // returned summary can be highlighted without inventing intermediate work.
-  const activeStage = complete ? 3 : workingStage >= 0 ? workingStage : documentId && document?.extractionStatus !== 'succeeded' ? 0 : -1;
-  const stageLabels = ['Reading pages', 'Equipment claims', 'Borrower limits', 'Evidence summary'];
+  const activeStage = serverVerification ? busy ? 0 : serviceResult && hasLiveExplanation(serviceResult) ? 3 : -1 : complete ? 3 : workingStage >= 0 ? workingStage : documentId && document?.extractionStatus !== 'succeeded' ? 0 : -1;
+  const stageLabels = serverVerification ? ['Worker request', 'Extracted fields', 'Loan comparison', 'AI explanation'] : ['Reading pages', 'Equipment claims', 'Borrower limits', 'Evidence summary'];
   function enterDesk(focusHeading = true) {
     setHasEnteredDesk(true);
     if (focusHeading) window.requestAnimationFrame(() => {
@@ -324,7 +328,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
   }, [documentId, document?.extractionStatus, jobId]);
 
   function reset() {
-    generation.current++; requestedDocument.current = null; setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setError(''); setBusy(false); setServiceResult(null); if (fileInput.current) fileInput.current.value = '';
+    generation.current++; serviceRequest.current?.abort(); serviceRequest.current = null; requestedDocument.current = null; setFile(null); setFileInfo(null); setMessages([]); setJobId(null); setDocumentId(null); setSample(false); setError(''); setBusy(false); setServiceResult(null); if (fileInput.current) fileInput.current.value = '';
   }
   function choose(selected: File | undefined) {
     if (!selected || running) return;
@@ -335,27 +339,11 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     enterDesk(false);
     const activeGeneration = ++generation.current; setBusy(true); setError(''); setMessages([{ id: 'file', text: 'Checking the selected file…', state: 'working' }]);
     try {
+      if (serverVerification && !/\.pdf$/i.test(file.name)) throw new Error('The AI upload service currently reads text PDFs only. DOCX and scanned documents are not supported yet.');
       const info = await inspectContractFile(file); if (generation.current !== activeGeneration) return;
       setFileInfo(info); setMessages([{ id: 'file', text: `${info.format} selected: ${info.name}`, detail: `${sizes(info.size)} · File format checked`, state: 'done' }]);
-      if (adapter.mode === 'fixture' && import.meta.env.PROD) {
-        setMessages(current => [...current, { id: 'intake', text: 'Reading the contract and comparing it with loans on file.', detail: 'This usually takes under a minute.', state: 'working' }]);
-        const response = await fetch('/api/investigate', { method: 'POST', headers: { 'content-type': file.type || 'application/pdf', 'x-filename': encodeURIComponent(file.name) }, body: file });
-        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string | null; extracted?: { businessName?: string; identifier?: string }; comparedWith?: unknown[]; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
-        if (generation.current !== activeGeneration) return;
-        if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
-        const finding = body.findings?.[0];
-        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
-        const read = [body.extracted?.businessName, body.extracted?.identifier && `serial ${body.extracted.identifier}`].filter(Boolean).join(' · ');
-        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? (finding ? `${body.extracted?.identifier ?? 'This collateral'} is also claimed by ${related}.` : 'No other loan on file claims this collateral.') });
-        setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: 'Contract read.', detail: read || undefined, state: 'done' }, { id: 'compare', text: `Compared with ${body.comparedWith?.length ?? 0} loans on file.`, state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Also claimed by ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
-        return;
-      }
-      if (adapter.mode === 'fixture') {
-        const finishedStages = await runStagedVerification(activeGeneration);
-        if (!finishedStages) return;
-        await startInvestigation(true, activeGeneration);
-        return;
-      }
+      if (serverVerification) { await runService(activeGeneration, file); return; }
+      if (adapter.mode === 'fixture') throw new Error('Live AI upload is not configured in this local build. Your PDF was not uploaded and no sample result was substituted.');
       if (!adapter.uploadContract) {
         setMessages(current => [...current, { id: 'intake', text: 'The contract upload service is not connected yet.', detail: 'Your file has not been uploaded. Please contact your support team to connect the upload service.', state: 'attention' }]);
         return;
@@ -364,23 +352,33 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
       const id = await adapter.uploadContract(applicationId, file); if (generation.current !== activeGeneration) return;
       setMessages(current => current.map(item => item.id === 'intake' ? { id: 'intake', text: 'Your contract has been received.', state: 'done' } : item));
       setDocumentId(id);
-    } catch (value) { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'The contract could not be received.'); }
+    } catch (value) { if (generation.current === activeGeneration) { setError(value instanceof Error ? value.message : 'The contract could not be received.'); setMessages(current => current.map(item => item.state === 'working' ? { ...item, state: 'attention' } : item)); } }
     finally { if (generation.current === activeGeneration) setBusy(false); }
+  }
+  async function runService(activeGeneration: number, selected?: File) {
+    const controller = new AbortController();
+    serviceRequest.current?.abort(); serviceRequest.current = controller;
+    setMessages(current => [...current, {
+      id: 'service', text: selected ? 'Sending your PDF to the verification worker.' : 'Asking the worker to check the sample case.',
+      detail: selected ? 'Waiting for extraction, demo-loan comparison and AI explanation. Individual stages are not reported while the worker runs.' : 'Uses the server sample, not an uploaded contract.', state: 'working',
+    }]);
+    const result = await requestVerification(selected, controller.signal);
+    if (generation.current !== activeGeneration) return;
+    setServiceResult(result);
+    const returned: Message[] = [{ id: 'service', text: 'The verification worker returned a result.', state: 'done' }];
+    if (result.extracted) {
+      returned.push({ id: 'extracted', text: 'Fields extracted from your PDF.', detail: [result.extracted.businessName, result.extracted.identifier && `Equipment ID: ${result.extracted.identifier}`].filter(Boolean).join(' / ') || 'Some required fields could not be read.', state: 'done' });
+      if (!result.extracted.identifier) returned.push({ id: 'missing-identifier', text: 'No usable equipment ID was extracted. The collateral check is incomplete; ask for clarification.', state: 'attention' });
+    }
+    if (result.comparedWith) returned.push({ id: 'compared', text: `Compared with ${result.comparedWith.length} synthetic demo loans.`, detail: 'This comparison uses the server demo dataset, not live cloud database records.', state: result.comparedWith.length ? 'done' : 'attention' });
+    returned.push({ id: 'ai', text: hasLiveExplanation(result) ? 'Live AI explanation received.' : result.executionMode === 'fixture' ? 'Live AI was not used. These are deterministic check results.' : 'The AI explanation failed or was not returned. These are deterministic check results.', detail: hasLiveExplanation(result) ? result.model : 'No successful live AI explanation is confirmed.', state: hasLiveExplanation(result) ? 'done' : 'attention' });
+    setMessages(current => [...current.filter(item => item.id !== 'service'), ...returned]);
   }
   async function runSample() {
     if (!applicationId || running) return; enterDesk(false); reset(); const activeGeneration = ++generation.current; setSample(true); setBusy(true);
-    if (import.meta.env.PROD) {
-      setMessages([{ id: 'sample', text: 'Asking the verification service.', detail: 'Sample documents only. Your selected contract is not used.', state: 'working' }]);
-      try {
-        const response = await fetch('/api/investigate', { method: 'POST' });
-        const body = await response.json() as { message?: string; model?: string; assistantSummary?: string; findings?: { title?: string; relatedBusinessNames?: string[] }[] };
-        if (generation.current !== activeGeneration) return;
-        if (!response.ok) throw new Error(body.message ?? 'The verification service did not finish.');
-        const finding = body.findings?.[0];
-        const related = finding?.relatedBusinessNames?.join(', ') ?? '';
-        setServiceResult({ model: body.model ?? 'verification service', title: finding?.title ?? 'No concern returned', related, summary: body.assistantSummary ?? 'The service returned no explanation.' });
-        setMessages([{ id: 'sample', text: 'Verification service finished.', detail: body.model ?? 'verification service', state: 'done' }, { id: 'finding', text: finding?.title ?? 'No concern returned', detail: related ? `Related application ${related}` : undefined, state: finding ? 'attention' : 'done' }]);
-      } catch (value) { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'The verification service did not finish.'); }
+    if (serverVerification) {
+      try { await runService(activeGeneration); }
+      catch (value) { if (generation.current === activeGeneration) { setError(value instanceof Error ? value.message : 'The verification service did not finish.'); setMessages(current => current.map(item => item.state === 'working' ? { ...item, state: 'attention' } : item)); } }
       finally { if (generation.current === activeGeneration) setBusy(false); }
       return;
     }
@@ -408,11 +406,11 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
 
   return <div className={`${styles.page} ${coverActive ? styles.coverActive : ''}`}>
     {coverActive && <a className={styles.skip} href="#verification" onClick={() => enterDesk()}>Skip to verification</a>}
-    {coverActive && <header className={styles.header}><Link to="/" className={styles.brand}><span aria-hidden="true">W</span>LoanWick</Link><div className={styles.session}><span className={connected ? styles.online : styles.offline} /><span>{connected ? 'Loan officer' : readable(session.status)}</span><details ref={menu} className={styles.menu}><summary><Icon name="menu" size={17} />Menu</summary><div className={styles.menuPanel}><p>{connected ? 'Loan officer · Connected' : readable(session.status)}</p>{connected && <><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); if (menu.current) menu.current.open = false; }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><button onClick={() => { adapter.disconnect(); if (menu.current) menu.current.open = false; }}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></>}</div></details></div></header>}
+    {coverActive && <header className={styles.header}><Link to="/" className={styles.brand}><span aria-hidden="true">W</span>LoanWick</Link><div className={styles.session}><span className={connected ? styles.online : styles.offline} /><span>{serverVerification ? 'Contract verification' : connected ? 'Loan officer' : readable(session.status)}</span><details ref={menu} className={styles.menu}><summary><Icon name="menu" size={17} />Menu</summary><div className={styles.menuPanel}><p>{connected ? 'Loan officer · Connected' : readable(session.status)}</p>{connected && !serverVerification && <><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); if (menu.current) menu.current.open = false; }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><button onClick={() => { adapter.disconnect(); if (menu.current) menu.current.open = false; }}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></>}</div></details></div></header>}
     {coverActive && <section className={styles.cover} aria-labelledby="dossier-heading">
       <BanknoteMargins />
       <span className={`${styles.edgeTab} ${styles.coverLeft}`}>{shortLoanName}</span>
-      <span className={`${styles.edgeTab} ${styles.coverRight}`}>{adapter.mode === 'fixture' ? 'Sample mode' : 'Connected mode'}</span>
+      <span className={`${styles.edgeTab} ${styles.coverRight}`}>{serverVerification ? 'AI contract demo' : adapter.mode === 'fixture' ? 'Sample mode' : 'Connected mode'}</span>
       <div className={styles.coverContent}>
         <p className={styles.dossierLabel}><span>Active dossier</span><span aria-hidden="true">·</span>{selectedLoanName}</p>
         <h2 id="dossier-heading">EVERY LOAN CLAUSE,<br /><span>TRACED TO THE SOURCE.</span></h2>
@@ -421,28 +419,28 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
       </div>
       <ol className={styles.coverRuler}>{['Contract intake', 'Page extraction', 'Ownership claims', 'Borrower limits', 'Evidence summary'].map((label, index) => <li key={label}><span>0{index + 1}</span>{label}</li>)}</ol>
     </section>}
-    <WorkspaceShell adapter={adapter} session={session} applicationId={applicationId} chromeVisible={!coverActive} mainId="verification">
+    <WorkspaceShell adapter={adapter} session={session} applicationId={applicationId} serviceVerification={serverVerification} chromeVisible={!coverActive} mainId="verification">
     <div className={styles.deskShell}>
     <main id="verification" tabIndex={-1} className={`${styles.main} ${!coverActive ? motion.enter : ''}`} onFocusCapture={event => { if (coverActive && event.target.matches(':focus-visible')) enterDesk(false); }}>
       <div className={styles.title}><h1 ref={deskHeading} tabIndex={-1}>{heading}</h1><p>{complete ? 'Review the returned checks and supporting evidence.' : messages.length ? 'Follow the verification as each stage reports back.' : 'Upload your contract. We’ll guide you through the checks.'}</p></div>
-      {connected && !coverActive && <div className={styles.loanToolbar}><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><span><Icon name="folder" size={16} />Commercial Facility</span><button onClick={() => adapter.disconnect()}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></div>}
+      {connected && !serverVerification && !coverActive && <div className={styles.loanToolbar}><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><span><Icon name="folder" size={16} />Commercial Facility</span><button onClick={() => adapter.disconnect()}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></div>}
       {!connected ? !canConnect ? <section className={styles.connection}><h2>{adapter.mode === 'fixture' ? 'Demo connection paused' : 'Connection unavailable'}</h2><p>{adapter.mode === 'fixture' ? 'Reconnect to continue with the synthetic verification demo.' : session.message ?? 'Retry the authorized connection before continuing.'}</p><button className={styles.primary} onClick={() => adapter.retry()}>Retry connection</button></section> : <section className={styles.connection}><h2>Connect your bank session</h2><p>{session.message ?? 'Use your individually authorized officer session.'}</p><form onSubmit={event => { event.preventDefault(); adapter.connect?.(uri, database, token); }}><label>Database endpoint<input required value={uri} onChange={e => setUri(e.target.value)} /></label><label>Database name<input required value={database} onChange={e => setDatabase(e.target.value)} /></label><label>Individual session token<input required type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label><button className={styles.primary} disabled={session.status === 'connecting'}>Connect authorized session</button></form>{session.status === 'disconnected' && <button onClick={() => adapter.retry()}>Retry connection</button>}</section> : <>
         {!jobId && !documentId && !messages.length && <section className={`${styles.upload} ${dragging ? styles.dragging : ''}`} aria-label="Contract upload" onDragOver={e => { e.preventDefault(); if (!running) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length > 1) { setError('Select one contract at a time.'); return; } choose(e.dataTransfer.files[0]); }}>
-          <div className={styles.folioComposition} aria-hidden="true"><img src={contractFolio} width={192} height={128} className={styles.illustration} alt="" /></div><h2>{file ? file.name : 'Drop your loan contract here'}</h2><p>{file ? `${sizes(file.size)} · Ready to check` : 'PDF or Word document · Up to 10 MB'}</p>
-          <input ref={fileInput} id="contract-file" tabIndex={-1} aria-label="Loan contract" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={running} onChange={e => choose(e.target.files?.[0])} className={styles.fileInput} />
+          <div className={styles.folioComposition} aria-hidden="true"><img src={contractFolio} width={192} height={128} className={styles.illustration} alt="" /></div><h2>{file ? file.name : 'Drop your loan contract here'}</h2><p>{file ? `${sizes(file.size)} · Ready to check` : serverVerification ? 'Text PDF / Up to 10 MB' : 'PDF or Word document · Up to 10 MB'}</p>
+          <input ref={fileInput} id="contract-file" tabIndex={-1} aria-label="Loan contract" type="file" accept={serverVerification ? '.pdf,application/pdf' : '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'} disabled={running} onChange={e => choose(e.target.files?.[0])} className={styles.fileInput} />
           <div className={styles.actions}>{file ? <><button className={styles.primary} disabled={running || !applicationId || adapter.contractUploadNeedsReconciliation?.(applicationId)} onClick={() => void verify()}>{busy ? 'Checking file…' : 'Verify contract'}<Icon name="arrow" size={17} /></button><button disabled={running} onClick={() => fileInput.current?.click()}>Choose another file</button></> : <button className={styles.primary} disabled={running || !applicationId} onClick={() => fileInput.current?.click()}>Choose contract<Icon name="arrow" size={17} /></button>}</div>
-          {adapter.mode === 'fixture' && <p className={styles.localNote}>Sample workspace. Selected files stay on this device.</p>}
+          {adapter.mode === 'fixture' && <p className={styles.localNote}>{serverVerification ? 'Your PDF is sent to the server for analysis against synthetic demo loans. Results are not saved to the shared cloud database. Text PDFs only; scanned files and DOCX are not supported.' : 'Local sample workspace. Uploaded PDFs cannot run live AI in this build.'}</p>}
         </section>}
         {file && messages.length > 0 && <div className={styles.fileSummary}><Icon name="document" size={22} /><div><strong>{file.name}</strong><small>{fileInfo?.format ?? 'Selected file'} · {sizes(file.size)}</small></div></div>}
         {adapter.contractUploadNeedsReconciliation?.(applicationId) && <div className={styles.reconcile}><p>A previous upload needs confirmation before another file can be sent.</p><button disabled={busy} onClick={() => { setBusy(true); const activeGeneration = generation.current; void adapter.reconcileContractUpload?.(applicationId).then(id => { if (generation.current === activeGeneration) { setDocumentId(id); setError(''); setMessages(current => [...current.filter(item => item.id !== 'intake'), { id: 'intake', text: id ? 'Your contract has been received.' : 'The previous file was not received. You can choose it again.', state: id ? 'done' : 'attention' }]); } }).catch(value => { if (generation.current === activeGeneration) setError(value instanceof Error ? value.message : 'Upload outcome is still unconfirmed.'); }).finally(() => { if (generation.current === activeGeneration) setBusy(false); }); }}>Check previous upload</button></div>}
-        {stream.length > 0 && <section className={styles.pipeline} aria-label="Verification progress"><div className={styles.pipelineHeading}><h2>Verification updates</h2><span>{sample ? 'Sample run' : adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span></div><div role="log" aria-live="polite" aria-relevant="additions text" aria-label="Verification messages"><ol className={styles.messages}>{stream.map(item => <li key={item.id}><span className={`${styles.messageIcon} ${styles[item.state]}`}><Icon name={item.state === 'done' ? 'check' : item.state === 'attention' ? 'alert' : 'clock'} size={17} /></span><div><p>{item.text}</p>{item.detail && <small>{item.detail}</small>}</div></li>)}</ol></div></section>}
-        {serviceResult && <section className={styles.result}><div><Icon name="alert" size={22} /><h2>{serviceResult.title}</h2></div><p>Result from the verification service ({serviceResult.model}).{serviceResult.related ? ` Related application ${serviceResult.related}.` : ''} Verification does not approve a loan.</p><p>{serviceResult.summary}</p></section>}
+        {stream.length > 0 && <section className={styles.pipeline} aria-label="Verification progress"><div className={styles.pipelineHeading}><h2>Verification updates</h2><span>{serverVerification ? sample ? 'Server sample' : 'Uploaded PDF analysis' : sample ? 'Sample run' : adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span></div><div role="log" aria-live="polite" aria-relevant="additions text" aria-label="Verification messages"><ol className={styles.messages}>{stream.map(item => <li key={item.id}><span className={`${styles.messageIcon} ${styles[item.state]}`}><Icon name={item.state === 'done' ? 'check' : item.state === 'attention' ? 'alert' : 'clock'} size={17} /></span><div><p>{item.text}</p>{item.detail && <small>{item.detail}</small>}</div></li>)}</ol></div></section>}
+        {serviceResult && <VerificationResults result={serviceResult} />}
         {complete && !serviceResult && <section className={styles.result}><div><Icon name={currentFindings.length ? 'alert' : 'check'} size={22} /><h2>{currentFindings.length ? `${currentFindings.length} item${currentFindings.length === 1 ? ' needs' : 's need'} review` : 'No concerns returned by these checks'}</h2></div><p>{sample ? 'These are results from the synthetic sample case.' : 'Review the supporting evidence before making a decision.'} Verification does not approve a loan.</p>{currentFindings.map(finding => { const info = friendlyFinding(finding, view); return <details key={finding.id}><summary>{info.title}</summary><p>{info.explanation}</p><p className={styles.muted}>{info.whyItMatters}</p><p className={styles.nextStep}><strong>Suggested next step:</strong> {info.nextStep}</p>{finding.evidenceIds.map(id => { const evidence = view?.evidence.find(item => item.id === id); const source = view?.documents.find(item => item.id === evidence?.documentId); if (!evidence) return null; const item = friendlyEvidence(evidence, source, view); return <blockquote key={id}><p><strong>{item.label}:</strong> {item.value}</p><cite>{item.citation}</cite></blockquote>; })}</details>; })}</section>}
         {(complete || failed || (messages.length > 0 && !running)) && <button className={styles.newRun} disabled={running} onClick={reset}>New verification</button>}
         {adapter.mode === 'fixture' && !running && !jobId && !messages.length && <div className={styles.sample}><button disabled={!applicationId} onClick={() => void runSample()}>Try a sample verification<Icon name="arrow" size={15} /></button><span>Sample documents · No client data</span></div>}
       </>}
-      <ol className={styles.stageRuler} aria-label="Verification stages">{stageLabels.map((label, index) => <li key={label} aria-current={activeStage === index ? 'step' : undefined} className={`${activeStage === index ? styles.activeStage : ''} ${complete || index <= lastFinishedStage ? styles.finishedStage : ''}`}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>
-      <footer className={styles.footer}><span><Icon name="shield" size={15} />Synthetic prototype · No money moves</span><span>{adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span>{fileInfo && <details><summary>File details</summary><p>{fileInfo.name} · {fileInfo.format} · {sizes(fileInfo.size)}</p><code>SHA-256 {fileInfo.sha256}</code></details>}</footer>
+      <ol className={styles.stageRuler} aria-label="Verification stages">{stageLabels.map((label, index) => <li key={label} aria-current={activeStage === index ? 'step' : undefined} className={`${activeStage === index ? styles.activeStage : ''} ${(serverVerification ? !!serviceResult && (index === 0 || index === 1 && !!serviceResult.extracted || index === 2 && !!serviceResult.comparedWith?.length || index === 3 && hasLiveExplanation(serviceResult)) : complete || index <= lastFinishedStage) ? styles.finishedStage : ''}`}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>
+      <footer className={styles.footer}><span><Icon name="shield" size={15} />Synthetic prototype · No money moves</span><span>{serverVerification ? 'Server verification / Demo loan dataset' : adapter.mode === 'live' ? 'Connected workspace' : 'Sample workspace'}</span>{fileInfo && <details><summary>File details</summary><p>{fileInfo.name} · {fileInfo.format} · {sizes(fileInfo.size)}</p><code>SHA-256 {fileInfo.sha256}</code></details>}</footer>
     </main>
     </div>
     </WorkspaceShell>

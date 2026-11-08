@@ -6,10 +6,11 @@ import { readable } from '../adapters/types';
 import { Icon } from './Icon';
 import styles from './WorkspaceShell.module.css';
 
-export function WorkspaceShell({ adapter, session, applicationId, chromeVisible = true, mainId = 'main', children }: {
+export function WorkspaceShell({ adapter, session, applicationId, serviceVerification = false, chromeVisible = true, mainId = 'main', children }: {
   adapter: FrontendAdapter;
   session: SessionState;
   applicationId?: string;
+  serviceVerification?: boolean;
   chromeVisible?: boolean;
   mainId?: string;
   children: ReactNode;
@@ -56,17 +57,17 @@ export function WorkspaceShell({ adapter, session, applicationId, chromeVisible 
     <div className={styles.frame}>
       {chromeVisible && <>
         <header className={styles.topbar}>
-          <div className={styles.connection}><span className={`${styles.connectionDot} ${session.status !== 'connected' ? styles.disconnected : ''}`} /><span>{readable(session.status)}</span><span className={styles.separator}>/</span><strong>{adapter.mode === 'fixture' ? 'Fixture data' : 'Live database'}</strong></div>
+          <div className={styles.connection}><span className={`${styles.connectionDot} ${session.status !== 'connected' ? styles.disconnected : ''}`} /><span>{serviceVerification ? 'On demand' : readable(session.status)}</span><span className={styles.separator}>/</span><strong>{serviceVerification ? 'Demo loan comparison' : adapter.mode === 'fixture' ? 'Fixture data' : 'Live database'}</strong></div>
           <div className={styles.sessionControls}>
-            {adapter.selectIdentity && <label>Demo role<select aria-label="Demo role" value={session.user?.role ?? 'officer'} onChange={event => switchRole(event.target.value as 'officer' | 'borrower' | 'reviewer')}><option value="officer">Officer</option><option value="borrower">Borrower</option><option value="reviewer">Reviewer</option></select></label>}
+            {adapter.selectIdentity && !serviceVerification && <label>Demo role<select aria-label="Demo role" value={session.user?.role ?? 'officer'} onChange={event => switchRole(event.target.value as 'officer' | 'borrower' | 'reviewer')}><option value="officer">Officer</option><option value="borrower">Borrower</option><option value="reviewer">Reviewer</option></select></label>}
             {!adapter.selectIdentity && session.user && <><span className={styles.role}>{readable(session.user.role)}</span><button onClick={() => adapter.disconnect()}>Disconnect</button></>}
             <span className={styles.avatar}><Icon name="user" size={17} /></span>
           </div>
         </header>
-        <div className={styles.synthetic}>Synthetic data · No money moves{adapter.mode === 'fixture' && <span>Role switching is a demo, not authentication.</span>}</div>
+        <div className={styles.synthetic}>Synthetic data · No money moves{serviceVerification ? <span>PDF analysis runs on the server.</span> : adapter.mode === 'fixture' && <span>Role switching is a demo, not authentication.</span>}</div>
       </>}
       {children}
-      {chromeVisible && adapter.mode === 'fixture' && <footer className={styles.demoTools}><details><summary>Demo controls</summary><label>Failure scenario<select aria-label="Failure scenario" onChange={event => adapter.setFailure?.(event.target.value as 'none' | 'offline' | 'investigation')}><option value="none">None</option><option value="offline">Disconnected</option><option value="investigation">Investigation failure</option></select></label><button onClick={() => {
+      {chromeVisible && adapter.mode === 'fixture' && !serviceVerification && <footer className={styles.demoTools}><details><summary>Demo controls</summary><label>Failure scenario<select aria-label="Failure scenario" onChange={event => adapter.setFailure?.(event.target.value as 'none' | 'offline' | 'investigation')}><option value="none">None</option><option value="offline">Disconnected</option><option value="investigation">Investigation failure</option></select></label><button onClick={() => {
         if (window.confirm('Reset all synthetic cases, responses, checks, and releases?')) { adapter.reset?.(); navigate('/applications'); }
       }}><Icon name="refresh" size={16} />Reset synthetic demo</button><small>Local deterministic checks only. No model calls or real payments.</small></details></footer>}
     </div>

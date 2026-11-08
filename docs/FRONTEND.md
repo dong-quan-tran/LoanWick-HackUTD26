@@ -133,3 +133,16 @@ Next shared integration: Person 3 should consume Person 4's authorized database 
 Merged team `main` at `e31a782` into `1-frontend` in `dbe2928`, retaining the simplified contract screen. This brings the published database, analysis bridge, worker workspace, and root lockfile into the same checkout. After clean dependency installation, `npm run check`, the worker typecheck and 13 tests, both web builds, all ten browser tests, and the disposable database browser workflow passed. The database browser workflow used this checkout itself as `LOANWICK_WEB_DATABASE_SOURCE`, rather than an external copy. The total unit count is 137 (95 shared/bridge/seed, 29 web, 13 worker).
 
 Person 3's branch remains at `21b94f0`; its worker still does not accept or extract contracts or consume database investigations. The integrated workspace and passing frontend tests do not establish real PDF/DOCX processing. Keep `VITE_CONTRACT_UPLOAD_ENABLED` disabled until that service is implemented and exercised with authorized sessions.
+
+
+## Uploaded-PDF service UI
+
+The normal production build (`npm run build:web`, output `apps/web/dist`) sends the actual selected PDF bytes to the same-origin `/api/investigate` worker on Vultr. nginx must proxy `/api/` to the worker, allow 11 MB bodies, and allow enough time for the configured model run. This path compares against the worker's eight synthetic seed loans; it does not read or save live SpacetimeDB records. Keep all worker credentials in its private server environment.
+
+The verification screen labels server processing and the demo comparison dataset, displays extracted borrower/amount/serial/ownership, lists all returned findings, and confirms live AI only when a live explanation is returned without `explanationError`. Deterministic results after an AI failure remain visible with an explicit warning. There are no timer-based stage completions in this server flow. The currently supported upload is a text PDF; DOCX and scanned PDF/OCR are unsupported.
+
+Local fixture builds reject selected-file verification instead of substituting a sample case. The explicit sample button remains available. Authorized live-database builds retain the existing grant-based upload/job workflow.
+
+Checks: `npm run check` and `npm run test:e2e:service`. The latter builds and tests the production website with mocked HTTP responses; it does not prove a live NVIDIA call. A separate public-site test with `01-duplicate-collateral.pdf` on 2026-11-08 returned `source=uploaded-contract`, `executionMode=live`, model `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, extracted `FL-004821`, and Northline/Pineworks conflict with a nonempty model explanation.
+
+Deployment: pull the merged commit on Vultr, run `npm ci` and `npm run build:web`, then publish `apps/web/dist` through the existing nginx web root. No new backend deployment, worker secrets, or database reset is required for this UI change. Verify the site says “AI contract demo” and shows the uploaded serial and worker result. The worker may return HTTP 429 while another investigation is running; the UI must display that error rather than a fabricated result.
