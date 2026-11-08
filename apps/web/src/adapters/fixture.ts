@@ -55,6 +55,29 @@ const requireText = (value: string, label: string, max = 1600) => {
   if (!value.trim() || value.length > max) fail('INVALID_INPUT', `${label} is required and must be at most ${max} characters.`);
   return value.trim();
 };
+const ACTIVE_CLAIM_STAGES = new Set<Application['stage']>(['submitted', 'reviewing', 'clarification_needed', 'ready_for_release']);
+const listBusinesses = (names: string[]) => {
+  const unique = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  if (unique.length < 2) return unique[0] ?? '';
+  if (unique.length === 2) return `${unique[0]} and ${unique[1]}`;
+  return `${unique.slice(0, -1).join(', ')}, and ${unique[unique.length - 1]}`;
+};
+function replicatedSubmission(snapshot: State['snapshot'], applicationId: string, identifier: string | null) {
+  const prior = snapshot.applications.find(application => application.id === applicationId);
+  if (prior) return `Submission failed due to this contract already being submitted as ${prior.businessName}.`;
+  const normalized = normalizeIdentifier(identifier);
+  if (normalized.state !== 'valid') return null;
+  const names = snapshot.collateral.flatMap(claim => {
+    if (!claim.active || claim.exclusiveOwnershipClaim !== true) return [];
+    const claimId = normalizeIdentifier(claim.identifier);
+    if (claimId.state !== 'valid' || claimId.normalized !== normalized.normalized) return [];
+    const application = snapshot.applications.find(item => item.id === claim.applicationId);
+    if (!application || application.id === applicationId || !ACTIVE_CLAIM_STAGES.has(application.stage)) return [];
+    return [application.businessName];
+  });
+  if (!names.length) return null;
+  return `Submission failed due to equipment ${normalized.normalized} already being claimed by ${listBusinesses(names)}.`;
+}
 function seed(): State {
   const snapshot = InvestigationSnapshotSchema.parse(structuredClone(baseline));
   for (const item of paymentSeed) {
@@ -295,7 +318,8 @@ export class FixtureAdapter implements FrontendAdapter {
       const upload = VerifiedUploadSchema.safeParse(response).data ?? fail('INVALID_INPUT', 'The verification result could not be added to Applications.');
       const applicationId = upload.applicationId;
       if (!/^[a-f0-9]{64}$/.test(fileSha256) || applicationId !== `upload-${fileSha256.slice(0, 12)}` || upload.case.application.id !== applicationId) fail('INVALID_INPUT', 'The verification result does not match the uploaded contract.');
-      const prior = this.state.snapshot.applications.find(a => a.id === applicationId); if (prior) this.editable(prior);
+      const replica = replicatedSubmission(this.state.snapshot, applicationId, upload.extracted.identifier);
+      if (replica) fail('INVALID_STATE', replica);
       const actorId = this.user.id; const createdAt = now();
       const related = (await Promise.all(upload.case.documents.filter(d => d.applicationId !== applicationId).map(async d => {
         const raw = Object.entries(loanFiles).find(([path]) => path.endsWith(`/${d.displayFilename}`))?.[1]?.replace(/\r\n/g, '\n');

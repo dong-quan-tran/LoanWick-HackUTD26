@@ -131,6 +131,9 @@
 .messages small { display: block; margin-top: 5px; font-size: 12px; color: var(--muted); line-height: 1.65; max-width: 68ch; overflow-wrap: anywhere; }
 .result { margin-top: 20px; padding: 24px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
 .result > div { display: flex; gap: 10px; align-items: center; color: var(--accent); }
+.result > .submissionFailed { align-items: flex-start; color: #77521b; }
+.result > .submissionFailed h2 { line-height: 1.45; }
+.result > .submissionFailed p { margin-top: 8px; color: #77521b; font-size: 15px; line-height: 1.5; max-width: 65ch; }
 .result h2 { font-size: 19px; font-weight: 600; }
 .result > p { margin-top: 10px; color: var(--muted); max-width: 65ch; font-size: 13px; }
 .result details { margin-top: 20px; padding-block: 13px; border-top: 1px solid var(--line); }

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { normalizeIdentifier } from '@loanwick/analysis';
 import { StaffCaseViewSchema } from '@loanwick/contracts';
 import type { BorrowerCaseView, PortfolioItem, StaffCaseView } from '@loanwick/contracts/domain';
 import { FixtureAdapter } from '../src/adapters/fixture';
@@ -48,6 +49,41 @@ function memoryStorage() {
 function portfolio(adapter: FixtureAdapter): PortfolioItem[] { let result!: PortfolioItem[]; adapter.subscribePortfolio(v => { result = v; }, e => { throw Error(e.message); })(); return result; }
 function staff(adapter: FixtureAdapter, id = applicationId): StaffCaseView { let result!: StaffCaseView; adapter.subscribeCase(id, v => { result = v; }, e => { throw Error(e.message); })(); return result; }
 async function add(adapter: FixtureAdapter, body: unknown = response, sha = fileSha256) { const result = await adapter.addVerifiedUpload(body, sha); if (!result.ok) throw Error(result.error.message); return result.value; }
+const shaFor = (n: number) => `${n.toString(16).padStart(12, '0')}${'ab'.repeat(26)}`;
+const ACTIVE_CLAIM_STAGES = new Set(['submitted', 'reviewing', 'clarification_needed', 'ready_for_release']);
+const listBusinesses = (names: Iterable<string>) => {
+  const unique = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  if (unique.length < 2) return unique[0] ?? '';
+  if (unique.length === 2) return `${unique[0]} and ${unique[1]}`;
+  return `${unique.slice(0, -1).join(', ')}, and ${unique[unique.length - 1]}`;
+};
+function uploadBody(sha: string, businessName: string, identifier: string, exclusiveOwnershipClaim = true) {
+  const id = `upload-${sha.slice(0, 12)}`;
+  const own = [
+    { id: `ev-${id}-identifier`, applicationId: id, documentId: `doc-${id}`, documentVersion: 1, pageNumber: 1, locator: 'page 1 line 6', excerpt: `Equipment: ${identifier}`, fieldName: 'identifier', extractedValue: identifier, extractionMethod: 'pdf_text' as const, createdAt },
+    { id: `ev-${id}-ownership`, applicationId: id, documentId: `doc-${id}`, documentVersion: 1, pageNumber: 1, locator: 'page 1 line 7', excerpt: 'Borrower is the sole owner of the equipment.', fieldName: 'exclusiveOwnershipClaim', extractedValue: String(exclusiveOwnershipClaim), extractionMethod: 'pdf_text' as const, createdAt },
+  ];
+  return {
+    ...response, filename: 'uploaded-contract.pdf', applicationId: id, findings: [],
+    extracted: { businessName, amountCents: 9_500_000, currency: 'USD', identifier, exclusiveOwnershipClaim },
+    case: { application: { id, businessName }, relatedApplications: [], evidence: own, documents: [{ id: `doc-${id}`, applicationId: id, displayFilename: 'uploaded-contract.pdf', version: 1 }] },
+  };
+}
+function exclusiveClaims(adapter: FixtureAdapter) {
+  const claims = new Map<string, Set<string>>();
+  for (const item of portfolio(adapter)) {
+    if (!ACTIVE_CLAIM_STAGES.has(item.application.stage)) continue;
+    for (const claim of staff(adapter, item.application.id).collateral) {
+      if (!claim.active || claim.exclusiveOwnershipClaim !== true) continue;
+      const normalized = normalizeIdentifier(claim.identifier);
+      if (normalized.state !== 'valid') continue;
+      const names = claims.get(normalized.normalized) ?? new Set<string>();
+      names.add(item.application.businessName);
+      claims.set(normalized.normalized, names);
+    }
+  }
+  return claims;
+}
 
 describe('verified contract uploads', () => {
   test('appear on Applications as a reviewing case with open concerns and a succeeded investigation', async () => {
@@ -80,13 +116,82 @@ describe('verified contract uploads', () => {
     expect(await adapter.source('doc-demo-case-1', 1)).toContain('Northline Foods claims exclusive ownership of forklift FL-004821.');
     await expect(adapter.source(`doc-${applicationId}`, 1)).rejects.toThrow('does not keep the uploaded file');
   });
-  test('replaces the same upload instead of duplicating it', async () => {
+  test('rejects a second submission of the same file and leaves the original application unchanged', async () => {
     const adapter = new FixtureAdapter(); await add(adapter);
-    await add(adapter, { ...response, extracted: { ...response.extracted, amountCents: 9_900_000 } });
+    const before = structuredClone(portfolio(adapter).map(item => item.application));
+    const again = await adapter.addVerifiedUpload({
+      ...response,
+      extracted: { ...response.extracted, amountCents: 9_900_000, businessName: 'Someone Else' },
+      case: { ...response.case, application: { ...response.case.application, businessName: 'Someone Else' } },
+    }, fileSha256);
+    expect(again.ok).toBe(false);
+    if (!again.ok) expect(again.error.message).toBe('Submission failed due to this contract already being submitted as Northwind Demo Logistics.');
     const items = portfolio(adapter);
-    expect(items).toHaveLength(19); expect(items.find(i => i.application.id === applicationId)?.application.amountCents).toBe(9_900_000);
-    const view = staff(adapter);
-    expect(view.findings).toHaveLength(1); expect(view.investigations).toHaveLength(1); expect(view.toolEvents).toHaveLength(3); expect(view.documents).toHaveLength(3);
+    expect(items).toHaveLength(before.length);
+    expect(items.map(item => item.application)).toEqual(before);
+    expect(items.find(item => item.application.id === applicationId)?.application).toMatchObject({ businessName: 'Northwind Demo Logistics', amountCents: 9_500_000, stage: 'reviewing' });
+    expect(staff(adapter).findings).toHaveLength(1);
+  });
+  test('rejects a new file whose serial is already exclusive collateral on an active application', async () => {
+    const adapter = new FixtureAdapter();
+    const before = structuredClone(portfolio(adapter).map(item => item.application));
+    const claims = exclusiveClaims(adapter);
+    for (const serial of ['OV-482917', 'IM-173640', 'PR-905218', 'RF-661034', 'XR-308751', 'CN-774196', 'GF-229480', 'GD-851327', 'FR-046582', 'EM-513069', 'EX-0042']) expect(claims.has(serial), serial).toBe(true);
+    expect(listBusinesses(claims.get('EX-0042')!)).toBe('Cedar Demo Excavation and Granite Demo Equipment');
+    expect(listBusinesses(claims.get('OV-482917')!)).toBe('Summit Hearth Bakery');
+    let n = 1;
+    for (const [serial, names] of claims) {
+      const sha = shaFor(n++);
+      const result = await adapter.addVerifiedUpload(uploadBody(sha, 'Replica Demo Company', serial.toLowerCase()), sha);
+      expect(result.ok, serial).toBe(false);
+      if (!result.ok) expect(result.error.message).toBe(`Submission failed due to equipment ${serial} already being claimed by ${listBusinesses(names)}.`);
+      expect(portfolio(adapter).some(item => item.application.id === `upload-${sha.slice(0, 12)}`)).toBe(false);
+    }
+    const shared = shaFor(90);
+    const sharedResult = await adapter.addVerifiedUpload(uploadBody(shared, 'Shared Demo Use', 'ov-482917', false), shared);
+    expect(sharedResult.ok).toBe(false);
+    if (!sharedResult.ok) expect(sharedResult.error.message).toBe('Submission failed due to equipment OV-482917 already being claimed by Summit Hearth Bakery.');
+    expect(portfolio(adapter).map(item => item.application)).toEqual(before);
+  });
+  test('adds a contract whose serial is not claimed as exclusive collateral', async () => {
+    const adapter = new FixtureAdapter();
+    const before = portfolio(adapter).length;
+    const freshSha = shaFor(70);
+    const officeSha = shaFor(71);
+    await add(adapter, uploadBody(freshSha, 'Northwind Demo Logistics', 'ZX-900001'), freshSha);
+    await add(adapter, uploadBody(officeSha, 'Northwind Demo Logistics', 'OFF-100'), officeSha);
+    const items = portfolio(adapter);
+    expect(items).toHaveLength(before + 2);
+    expect(items.find(item => item.application.id === `upload-${freshSha.slice(0, 12)}`)?.application).toMatchObject({ businessName: 'Northwind Demo Logistics', stage: 'reviewing' });
+    expect(staff(adapter, `upload-${officeSha.slice(0, 12)}`).collateral).toEqual([expect.objectContaining({ identifier: 'OFF-100', exclusiveOwnershipClaim: true, active: true })]);
+  });
+  test('a failed replica is not stored and does not block a later business once the original claim is inactive', async () => {
+    const adapter = new FixtureAdapter();
+    const seeded = portfolio(adapter).length;
+    const firstSha = shaFor(40);
+    const replicaSha = shaFor(41);
+    const laterSha = shaFor(42);
+    const firstId = `upload-${firstSha.slice(0, 12)}`;
+    await add(adapter, uploadBody(firstSha, 'Harbor Fresh Cartage', 'ZX-900001'), firstSha);
+    const replica = await adapter.addVerifiedUpload(uploadBody(replicaSha, 'Other Demo Hauling', 'zx-900001'), replicaSha);
+    expect(replica.ok).toBe(false);
+    if (!replica.ok) expect(replica.error.message).toBe('Submission failed due to equipment ZX-900001 already being claimed by Harbor Fresh Cartage.');
+    expect(portfolio(adapter).some(item => item.application.id === `upload-${replicaSha.slice(0, 12)}`)).toBe(false);
+    const original = portfolio(adapter).find(item => item.application.id === firstId)!;
+    expect(original.application).toMatchObject({ businessName: 'Harbor Fresh Cartage', amountCents: 9_500_000, stage: 'reviewing' });
+    const stored = (adapter as unknown as { state: { snapshot: { applications: Array<{ id: string; stage: string }> } } }).state.snapshot.applications.find(item => item.id === firstId)!;
+    stored.stage = 'clarification_needed';
+    const stillBlocked = await adapter.addVerifiedUpload(uploadBody(replicaSha, 'Other Demo Hauling', 'ZX-900001'), replicaSha);
+    expect(stillBlocked.ok).toBe(false);
+    if (!stillBlocked.ok) expect(stillBlocked.error.message).toBe('Submission failed due to equipment ZX-900001 already being claimed by Harbor Fresh Cartage.');
+    stored.stage = 'released_demo';
+    const later = await adapter.addVerifiedUpload(uploadBody(laterSha, 'Later Demo Freight', 'ZX-900001'), laterSha);
+    expect(later.ok).toBe(true);
+    const items = portfolio(adapter);
+    expect(items).toHaveLength(seeded + 2);
+    expect(items.some(item => item.application.id === `upload-${replicaSha.slice(0, 12)}`)).toBe(false);
+    expect(items.find(item => item.application.id === firstId)?.application).toMatchObject({ businessName: 'Harbor Fresh Cartage', stage: 'released_demo' });
+    expect(items.find(item => item.application.id === `upload-${laterSha.slice(0, 12)}`)?.application).toMatchObject({ businessName: 'Later Demo Freight', stage: 'reviewing' });
   });
   test('survives a reload of saved demo state and is removed by reset', async () => {
     const storage = memoryStorage(); const adapter = new FixtureAdapter(storage); await add(adapter);
