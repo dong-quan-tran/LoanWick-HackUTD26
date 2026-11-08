@@ -1,0 +1,12 @@
+{
+  "label": "SYNTHETIC DEMO DOCUMENT",
+  "businessName": "Juniper Demo Design",
+  "amountCents": 10000000,
+  "currency": "USD",
+  "address": "500 Shared Demo Office",
+  "syntheticRegistrationId": "SYNTH-REG-office-a",
+  "collateral": {
+    "identifier": "OFF-100",
+    "exclusiveOwnershipClaim": false
+  }
+}

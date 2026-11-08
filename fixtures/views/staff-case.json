@@ -1,0 +1,312 @@
+{
+  "application": {
+    "id": "app-excavator-a",
+    "borrowerUserId": "user-excavator-a",
+    "organizationId": "org-demo",
+    "businessName": "Cedar Demo Excavation",
+    "amountCents": 25000000,
+    "currency": "USD",
+    "stage": "reviewing",
+    "applicationRevision": 1,
+    "collateralRevision": 1,
+    "paymentRevision": 1,
+    "createdAt": "2026-11-07T12:00:00.000Z",
+    "updatedAt": "2026-11-07T12:00:00.000Z"
+  },
+  "documents": [
+    {
+      "id": "doc-excavator-a",
+      "applicationId": "app-excavator-a",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "7b704db51c73becd1d486e7ff3d97f473f204841e37f90d452f2f6079433fcbb",
+      "displayFilename": "excavator-a.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-excavator-a"
+    },
+    {
+      "id": "doc-excavator-b",
+      "applicationId": "app-excavator-b",
+      "type": "synthetic_application",
+      "version": 1,
+      "sha256": "deffca5b02fe6078cffce18b9c3b945d76f172d03a98825e038dbf3e2c4bace6",
+      "displayFilename": "excavator-b.json",
+      "extractionStatus": "succeeded",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "uploadedBy": "user-excavator-b"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-excavator-a-identifier",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.collateral.identifier",
+      "excerpt": "\"identifier\": \"EX-0042\"",
+      "fieldName": "identifier",
+      "extractedValue": "EX-0042",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-a-ownership",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.collateral.exclusiveOwnershipClaim",
+      "excerpt": "\"exclusiveOwnershipClaim\": true",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-a-address",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.address",
+      "excerpt": "\"address\": \"100 Demo Yard\"",
+      "fieldName": "address",
+      "extractedValue": "100 Demo Yard",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-a-registration",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticRegistrationId",
+      "excerpt": "\"syntheticRegistrationId\": \"SYNTH-REG-excavator-a\"",
+      "fieldName": "syntheticRegistrationId",
+      "extractedValue": "SYNTH-REG-excavator-a",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-identifier",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.collateral.identifier",
+      "excerpt": "\"identifier\": \"ex-0042\"",
+      "fieldName": "identifier",
+      "extractedValue": "ex-0042",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-ownership",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.collateral.exclusiveOwnershipClaim",
+      "excerpt": "\"exclusiveOwnershipClaim\": true",
+      "fieldName": "exclusiveOwnershipClaim",
+      "extractedValue": "true",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-address",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.address",
+      "excerpt": "\"address\": \"200 Demo Yard\"",
+      "fieldName": "address",
+      "extractedValue": "200 Demo Yard",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-registration",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.syntheticRegistrationId",
+      "excerpt": "\"syntheticRegistrationId\": \"SYNTH-REG-excavator-b\"",
+      "fieldName": "syntheticRegistrationId",
+      "extractedValue": "SYNTH-REG-excavator-b",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-a-amountCents",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.amountCents",
+      "excerpt": "\"amountCents\": 25000000",
+      "fieldName": "amountCents",
+      "extractedValue": "25000000",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-a-currency",
+      "applicationId": "app-excavator-a",
+      "documentId": "doc-excavator-a",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.currency",
+      "excerpt": "\"currency\": \"USD\"",
+      "fieldName": "currency",
+      "extractedValue": "USD",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-amountCents",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.amountCents",
+      "excerpt": "\"amountCents\": 30000000",
+      "fieldName": "amountCents",
+      "extractedValue": "30000000",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    },
+    {
+      "id": "ev-excavator-b-currency",
+      "applicationId": "app-excavator-b",
+      "documentId": "doc-excavator-b",
+      "documentVersion": 1,
+      "pageNumber": null,
+      "locator": "$.currency",
+      "excerpt": "\"currency\": \"USD\"",
+      "fieldName": "currency",
+      "extractedValue": "USD",
+      "extractionMethod": "structured",
+      "createdAt": "2026-11-07T12:00:00.000Z"
+    }
+  ],
+  "collateral": [
+    {
+      "id": "asset-excavator-a",
+      "applicationId": "app-excavator-a",
+      "assetType": "demo_equipment",
+      "identifier": "EX-0042",
+      "description": "Synthetic equipment for Cedar Demo Excavation",
+      "exclusiveOwnershipClaim": true,
+      "active": true,
+      "evidenceIds": [
+        "ev-excavator-a-identifier"
+      ],
+      "ownershipEvidenceIds": [
+        "ev-excavator-a-ownership"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "findingType": "collateral_conflict",
+      "severity": "high",
+      "evidenceState": "contradicted",
+      "title": "Conflicting exclusive equipment ownership claims",
+      "explanation": "Equipment EX-0042 appears in exclusive ownership claims across 2 applications.",
+      "uncertainty": "Submitted documents are not independently authenticated. A clerical error, an outdated schedule, or a change of ownership may explain the records.",
+      "suggestedNextStep": "Ask for a current ownership document and corrected collateral schedule; have an officer review the response.",
+      "applicationIds": [
+        "app-excavator-a",
+        "app-excavator-b"
+      ],
+      "evidenceIds": [
+        "ev-excavator-a-identifier",
+        "ev-excavator-a-ownership",
+        "ev-excavator-b-identifier",
+        "ev-excavator-b-ownership"
+      ],
+      "observedRevisions": [
+        {
+          "applicationId": "app-excavator-a",
+          "applicationRevision": 1,
+          "collateralRevision": 1,
+          "paymentRevision": 1
+        },
+        {
+          "applicationId": "app-excavator-b",
+          "applicationRevision": 1,
+          "collateralRevision": 1,
+          "paymentRevision": 1
+        }
+      ],
+      "ruleVersion": "collateral-1.0.0",
+      "deduplicationKey": "collateral-1.0.0|collateral_conflict|demo_equipment|EX-0042|app-excavator-a|app-excavator-b",
+      "facts": {
+        "normalizedIdentifier": "EX-0042",
+        "assetType": "demo_equipment"
+      },
+      "id": "finding-fixture-1",
+      "applicationId": "app-excavator-a",
+      "investigationJobId": null,
+      "status": "open",
+      "createdAt": "2026-11-07T12:00:00.000Z",
+      "updatedAt": "2026-11-07T12:00:00.000Z"
+    }
+  ],
+  "relationships": [],
+  "investigations": [],
+  "toolEvents": [],
+  "clarificationRequests": [],
+  "responses": [],
+  "reviews": [],
+  "auditEvents": [],
+  "readiness": {
+    "eligibleByPolicy": false,
+    "reasons": [
+      {
+        "code": "REVIEW_PENDING",
+        "checkType": "collateral_review"
+      },
+      {
+        "code": "REVIEW_PENDING",
+        "checkType": "document_consistency_review"
+      },
+      {
+        "code": "REVIEW_PENDING",
+        "checkType": "payment_verification"
+      },
+      {
+        "code": "BLOCKING_FINDINGS",
+        "checkType": null
+      }
+    ],
+    "checks": {
+      "collateral_review": {
+        "status": "pending",
+        "currentRevision": 1,
+        "observedRevision": null,
+        "reviewId": null
+      },
+      "document_consistency_review": {
+        "status": "pending",
+        "currentRevision": 1,
+        "observedRevision": null,
+        "reviewId": null
+      },
+      "payment_verification": {
+        "status": "pending",
+        "currentRevision": 1,
+        "observedRevision": null,
+        "reviewId": null
+      }
+    },
+    "canRelease": false
+  },
+  "release": null
+}

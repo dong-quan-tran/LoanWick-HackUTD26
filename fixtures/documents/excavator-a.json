@@ -1,0 +1,12 @@
+{
+  "label": "SYNTHETIC DEMO DOCUMENT",
+  "businessName": "Cedar Demo Excavation",
+  "amountCents": 25000000,
+  "currency": "USD",
+  "address": "100 Demo Yard",
+  "syntheticRegistrationId": "SYNTH-REG-excavator-a",
+  "collateral": {
+    "identifier": "EX-0042",
+    "exclusiveOwnershipClaim": true
+  }
+}

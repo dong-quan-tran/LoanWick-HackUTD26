@@ -1,0 +1,12 @@
+{
+  "label": "SYNTHETIC DEMO DOCUMENT",
+  "businessName": "Willow Demo Studio",
+  "amountCents": 12000000,
+  "currency": "USD",
+  "address": "500 Shared Demo Office",
+  "syntheticRegistrationId": "SYNTH-REG-office-b",
+  "collateral": {
+    "identifier": "OFF-200",
+    "exclusiveOwnershipClaim": false
+  }
+}

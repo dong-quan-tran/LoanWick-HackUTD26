@@ -1,0 +1,123 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "applicationId": "app-excavator-a",
+      "findings": [
+        {
+          "findingType": "collateral_conflict",
+          "applicationIds": [
+            "app-excavator-a",
+            "app-excavator-b"
+          ],
+          "evidenceIds": [
+            "ev-excavator-a-identifier",
+            "ev-excavator-a-ownership",
+            "ev-excavator-b-identifier",
+            "ev-excavator-b-ownership"
+          ],
+          "facts": {
+            "normalizedIdentifier": "EX-0042",
+            "assetType": "demo_equipment"
+          }
+        }
+      ]
+    },
+    {
+      "applicationId": "app-excavator-b",
+      "findings": [
+        {
+          "findingType": "collateral_conflict",
+          "applicationIds": [
+            "app-excavator-a",
+            "app-excavator-b"
+          ],
+          "evidenceIds": [
+            "ev-excavator-a-identifier",
+            "ev-excavator-a-ownership",
+            "ev-excavator-b-identifier",
+            "ev-excavator-b-ownership"
+          ],
+          "facts": {
+            "normalizedIdentifier": "EX-0042",
+            "assetType": "demo_equipment"
+          }
+        }
+      ]
+    },
+    {
+      "applicationId": "app-office-a",
+      "findings": []
+    },
+    {
+      "applicationId": "app-office-b",
+      "findings": []
+    },
+    {
+      "applicationId": "app-similar-a",
+      "findings": []
+    },
+    {
+      "applicationId": "app-similar-b",
+      "findings": []
+    },
+    {
+      "applicationId": "app-group-a",
+      "findings": [
+        {
+          "findingType": "group_review_required",
+          "applicationIds": [
+            "app-group-a",
+            "app-group-b"
+          ],
+          "evidenceIds": [
+            "ev-group-a-amountCents",
+            "ev-group-a-currency",
+            "ev-group-a-group",
+            "ev-group-b-amountCents",
+            "ev-group-b-currency",
+            "ev-group-b-group"
+          ],
+          "facts": {
+            "totalCents": 110000000,
+            "thresholdCents": 100000000,
+            "currency": "USD",
+            "policyVersion": "1.0.0"
+          }
+        }
+      ]
+    },
+    {
+      "applicationId": "app-group-b",
+      "findings": [
+        {
+          "findingType": "group_review_required",
+          "applicationIds": [
+            "app-group-a",
+            "app-group-b"
+          ],
+          "evidenceIds": [
+            "ev-group-a-amountCents",
+            "ev-group-a-currency",
+            "ev-group-a-group",
+            "ev-group-b-amountCents",
+            "ev-group-b-currency",
+            "ev-group-b-group"
+          ],
+          "facts": {
+            "totalCents": 110000000,
+            "thresholdCents": 100000000,
+            "currency": "USD",
+            "policyVersion": "1.0.0"
+          }
+        }
+      ]
+    }
+  ],
+  "paymentState": {
+    "applicationId": "app-office-a",
+    "expected": "stale",
+    "currentRevision": 2,
+    "observedRevision": 1
+  }
+}
