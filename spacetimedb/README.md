@@ -2,6 +2,9 @@
 
 This module owns loan cases, evidence metadata, investigation leases, clarification, review, and simulated release. The frontend and worker use the generated TypeScript client in [`bindings/`](bindings/) with `spacetimedb` 2.14.0.
 
+The development database is deployed to Maincloud as `loanwick-hackutd26-dev`. See [DEPLOYMENT.md](DEPLOYMENT.md) for connection
+details, teammate access, the worker contract, redeploys, and recovery. Independent QA lives in [qa/](qa/).
+
 ## Run locally
 
 Use Node.js 24 and SpacetimeDB CLI and standalone server 2.14.0. The HTTPS integration test uses OpenSSL to generate a temporary loopback certificate. It detects the Git for Windows copy or accepts its path in `LOANWICK_OPENSSL`. These commands run from the repository root.
