@@ -77,7 +77,7 @@ test('separate authorized sessions, stored evidence, clarification, stale review
       const sourceText = readFileSync(join(source, `fixtures/database/application-${number}.txt`), 'utf8');
       expect(createHash('sha256').update(sourceText).digest('hex')).toBe(record.sha256);
       const panel = officer!.getByRole('article').filter({ hasText: record.filename });
-      await expect(panel.getByText(`Version ${record.version}`, { exact: true })).toBeVisible();
+      await expect(panel.getByText(`Version ${record.version}`, { exact: true }).first()).toBeVisible();
       await panel.getByText('View original wording', { exact: true }).click();
       for (const excerpt of record.excerpts) {
         expect(sourceText).toContain(excerpt.text);
