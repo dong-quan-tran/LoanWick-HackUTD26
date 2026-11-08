@@ -1,6 +1,6 @@
-# LoanWick
+# LoanWick's DealPilot - HackUTD
 
-LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
+DealPilot is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
 This tree combines the shared contracts and deterministic checks, the SpacetimeDB module, and the officer/borrower/reviewer frontend. The live adapter has passed a browser workflow against a disposable database with separate authorized role sessions. Connected NVIDIA investigation, document intake, and original-source downloads remain pending. See docs/DATABASE-TESTS.md for the tested database limits.
 
