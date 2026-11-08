@@ -18,9 +18,19 @@ test('evidence workspace, real source viewer, and fixture tool activity', async 
   await expect(page.getByRole('heading', { name: 'Equipment EX-0042' })).toBeVisible();
   await expect(page.getByText('excavator-a.json', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('excavator-b.json', { exact: true }).first()).toBeVisible();
+  const comparison = page.getByRole('region', { name: 'Application comparison' });
+  await expect(comparison.getByText('Borrower says they fully own it', { exact: true })).toHaveCount(2);
+  await expect(comparison.getByText('Written as “ex-0042” in the document.', { exact: false })).toBeHidden();
+  await expect(comparison.getByText('$.collateral.identifier', { exact: true }).first()).toBeHidden();
   mkdirSync('../../.impeccable/review', { recursive: true });
   await capture(page, 'desktop.png');
-  await page.getByRole('button', { name: 'Open source document' }).first().click();
+  await comparison.screenshot({ path: '../../.impeccable/review/comparison-desktop.png', animations: 'disabled' });
+  await comparison.getByText('View original wording', { exact: true }).first().click();
+  await expect(comparison.getByText('$.collateral.identifier', { exact: true }).first()).toBeVisible();
+  await expect(comparison.getByText('"exclusiveOwnershipClaim": true', { exact: true }).first()).toBeVisible();
+  await comparison.getByText('View original wording', { exact: true }).last().click();
+  await expect(comparison.getByText('Written as “ex-0042” in the document.', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Open full document' }).first().click();
   await expect(page.getByRole('dialog', { name: 'excavator-a.json' })).toContainText('SYNTHETIC DEMO DOCUMENT');
   await capture(page, 'source-open.png');
   await page.keyboard.press('Escape');
@@ -80,6 +90,8 @@ test('complete role-switch demo, stale payment checks, and release after reload'
 });
 test('group clarification uses own-case financial copy without an equipment correction', async ({ page }) => {
   await page.goto('/cases/app-group-a');
+  await expect(page.getByRole('region', { name: 'Application comparison' })).toContainText('combined review limit');
+  await capture(page, 'comparison-group.png');
   await page.getByRole('button', { name: 'Request clarification', exact: true }).click();
   await expect(page.getByLabel('Message to borrower')).toHaveValue(/financial statement/);
   await expect(page.getByLabel('Message to borrower')).not.toHaveValue(/EX-0042/);
@@ -90,6 +102,19 @@ test('group clarification uses own-case financial copy without an equipment corr
   await role(page, 'borrower');
   await expect(page.getByRole('button', { name: 'Use synthetic corrected schedule' })).toHaveCount(0);
   await expect(page.getByText('No synthetic supporting document is configured for this request. You can send a written response.')).toBeVisible();
+});
+
+test('application comparison remains readable on a narrow phone with original excerpts available', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/cases/app-excavator-a');
+  const comparison = page.getByRole('region', { name: 'Application comparison' });
+  await expect(comparison.getByRole('heading', { name: 'Granite Demo Equipment' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await capture(page, 'comparison-mobile.png');
+  await comparison.getByText('View original wording', { exact: true }).first().click();
+  await expect(comparison.getByText('$.collateral.identifier', { exact: true }).first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await capture(page, 'comparison-mobile-expanded.png');
 });
 test('mobile borrower, private routes, failures, and empty filters', async ({ page }) => {
   await page.goto('/cases/app-excavator-a'); await page.getByRole('button', { name: 'Request clarification', exact: true }).click();

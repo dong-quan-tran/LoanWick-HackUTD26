@@ -1,19 +1,18 @@
 ---
-name: LoanWick
-description: A simple contract-verification flow with evidence available on demand.
+name: "LoanWick"
+description: "A warm, compact evidence workspace with a preserved espresso dossier cover."
 colors:
-  rail: "#392b23"
-  accent: "#725032"
-  focus: "#426b80"
-  navigation-hover: "#4b3d2d"
-  navigation-current: "#574938"
-  navigation-text: "#d6cfc7"
-  white: "#fff"
+  rail: "#3b2c23"
   workspace: "#f8f5f0"
-  body-ink: "#342a23"
-  ink: "#342a23"
-  muted: "#756556"
-  line: "#dfd3c4"
+  surface: "#fff"
+  ink: "#392b23"
+  muted: "#7a6958"
+  line: "#e5d9cb"
+  accent: "#84603f"
+  focus: "#52778e"
+  navigation-hover: "#4b3d2e"
+  navigation-current: "#5b4d39"
+  navigation-text: "#e0d5c9"
   control-line: "#d8d4cf"
   input-line: "#d5d1cc"
   button-hover: "#f2efed"
@@ -23,59 +22,59 @@ colors:
   disabled-background: "#eee7dc"
   disabled-ink: "#726e68"
   disabled-line: "#e3e1de"
-  status-neutral-background: "#f1f0ee"
-  status-neutral-ink: "#635e57"
-  concern-background: "#fbece7"
-  concern-ink: "#973c28"
+  activity-background: "#e9eff7"
+  activity-ink: "#3e5e85"
+  concern-background: "#fcece6"
+  concern-ink: "#a23824"
+  clear-background: "#eaf2e6"
+  clear-ink: "#486d3c"
   pending-background: "#fbf1d9"
   pending-ink: "#846116"
   current-background: "#f1ede7"
   current-ink: "#65523c"
-  activity-background: "#e9eff7"
-  activity-ink: "#3e5e85"
+  amount-bar: "#a17a50"
+  amount-track: "#f0eae1"
+  reviewing-stage: "#7293b8"
   evidence-highlight: "#fcf0c9"
   evidence-highlight-ink: "#5c4a21"
-  verification-ground: "#f8f5f0"
-  upload-line: "#c9b796"
-  upload-drag: "#f7efdf"
-  verification-primary-hover: "#593c25"
-  verification-disabled-background: "#eee7dc"
-  verification-disabled-ink: "#7b6f61"
-  verification-disabled-line: "#ddd1c0"
-  message-done-background: "#f1e7d2"
-  message-done-ink: "#725032"
-  message-working-background: "#e9f0f3"
-  message-working-ink: "#446b7c"
-  message-attention-background: "#f8edce"
-  message-attention-ink: "#77521b"
-  inline-evidence-background: "#f0e9dc"
-  connection-online: "#426b80"
-  connection-offline: "#916d32"
-  reconciliation-background: "#fbf1dd"
+  inline-evidence: "#f0e9dc"
+  espresso: "#18120d"
+  mahogany: "#231a14"
+  gold: "#c89d5c"
+  bronze: "#b68b4c"
+  cover-ivory: "#fbf9f5"
+  parchment: "#f3ece0"
+  cover-blue: "#5b7a94"
+  upload-drag: "#f4ede3"
 typography:
+  portfolio-total:
+    fontFamily: "\"Source Serif 4\", Georgia, serif"
+    fontSize: "30px"
+    fontWeight: 400
+    lineHeight: 1.22
   headline:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "28px"
     fontWeight: 650
     lineHeight: 1.25
     letterSpacing: "-0.025em"
   title:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "17px"
     fontWeight: 650
     lineHeight: 1.4
     letterSpacing: "-0.015em"
   body:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.55
   label:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "12px"
     fontWeight: 600
   metadata:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "11px"
     fontWeight: 400
     lineHeight: 1.6
@@ -84,77 +83,58 @@ typography:
     fontSize: "11px"
     fontWeight: 400
     lineHeight: 2
-  verification-headline:
-    fontFamily: '"Source Serif 4", Georgia, serif'
-    fontSize: "38px"
+  dossier-display:
+    fontFamily: "\"Source Serif 4\", Georgia, serif"
+    fontSize: "clamp(25px, 5.5vw, 84px)"
     fontWeight: 400
-    lineHeight: 1.2
-    letterSpacing: "-0.025em"
-  verification-introduction:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: "16px"
-    fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.14
+    letterSpacing: "-0.035em"
   verification-message:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.6
-  verification-message-detail:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: "12px"
-    fontWeight: 400
-    lineHeight: 1.65
-  verification-result-title:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: "19px"
-    fontWeight: 600
-    lineHeight: 1.4
 rounded:
   badge: "4px"
   field: "5px"
   control: "6px"
-  surface: "7px"
-  dialog: "10px"
-  upload: "12px"
-  reconciliation: "8px"
+  surface: "8px"
+  upload: "9px"
+  metric: "10px"
+  concern: "20px"
+  dossier-entry: "100px"
 spacing:
   xs: "4px"
   sm: "8px"
   compact: "12px"
-  md: "18px"
-  lg: "24px"
-  xl: "34px"
-  verification-gap: "20px"
-  verification-section: "32px"
-  verification-header-space: "48px"
+  md: "16px"
+  form: "18px"
+  panel: "22px"
+  section: "24px"
+  canvas: "32px"
 components:
   button-primary:
     backgroundColor: "{colors.accent}"
-    textColor: "{colors.white}"
+    textColor: "{colors.surface}"
     rounded: "{rounded.control}"
     padding: "9px 14px"
   button-primary-hover:
     backgroundColor: "{colors.primary-hover}"
-    textColor: "{colors.white}"
+    textColor: "{colors.surface}"
   button-primary-active:
     backgroundColor: "{colors.primary-active}"
   button-primary-disabled:
     backgroundColor: "{colors.disabled-background}"
     textColor: "{colors.disabled-ink}"
   button-secondary:
-    backgroundColor: "{colors.white}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
     padding: "9px 14px"
   button-secondary-hover:
     backgroundColor: "{colors.button-hover}"
-  button-text:
-    backgroundColor: "transparent"
-    textColor: "#5a4e40"
-    padding: "5px 0 5px 12px"
   input:
-    backgroundColor: "{colors.white}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     padding: "9px 11px"
@@ -162,49 +142,38 @@ components:
     backgroundColor: "{colors.rail}"
     textColor: "{colors.navigation-text}"
     rounded: "{rounded.control}"
-    padding: "11px 12px"
-  badge:
-    backgroundColor: "{colors.status-neutral-background}"
-    textColor: "{colors.status-neutral-ink}"
+    padding: "10px 12px"
+  badge-reviewing:
+    backgroundColor: "{colors.activity-background}"
+    textColor: "{colors.activity-ink}"
     rounded: "{rounded.badge}"
     padding: "3px 7px"
+  concern-pill:
+    backgroundColor: "{colors.concern-background}"
+    textColor: "{colors.concern-ink}"
+    rounded: "{rounded.concern}"
+    padding: "3px 8px"
+  clear-pill:
+    backgroundColor: "{colors.clear-background}"
+    textColor: "{colors.clear-ink}"
+    rounded: "{rounded.concern}"
+    padding: "3px 8px"
   surface:
-    backgroundColor: "{colors.white}"
+    backgroundColor: "{colors.surface}"
     rounded: "{rounded.surface}"
-  evidence-panel:
-    backgroundColor: "{colors.white}"
-    rounded: "{rounded.control}"
-  finding:
-    backgroundColor: "{colors.white}"
-    rounded: "{rounded.control}"
-    padding: "17px 16px 13px"
-  verification-primary:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.control}"
-    padding: "9px 19px"
-    height: "44px"
-  verification-primary-hover:
-    backgroundColor: "{colors.verification-primary-hover}"
-  verification-primary-disabled:
-    backgroundColor: "{colors.verification-disabled-background}"
-    textColor: "{colors.verification-disabled-ink}"
+  metric:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.metric}"
+    padding: "18px"
   contract-upload:
-    backgroundColor: "{colors.white}"
+    backgroundColor: "{colors.surface}"
     rounded: "{rounded.upload}"
-    padding: "24px 24px 30px"
-  verification-message-icon:
-    rounded: "50%"
-    size: "26px"
-  inline-evidence:
-    backgroundColor: "{colors.inline-evidence-background}"
-    rounded: "{rounded.field}"
-    padding: "15px 18px"
-  source-dialog:
-    backgroundColor: "{colors.white}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.dialog}"
-    padding: "26px"
+    padding: "32px"
+  dossier-entry:
+    backgroundColor: "{colors.bronze}"
+    textColor: "{colors.espresso}"
+    rounded: "{rounded.dossier-entry}"
+    padding: "15px 27px"
 ---
 
 # Design System: LoanWick
@@ -213,166 +182,124 @@ components:
 
 **Creative North Star: "The Evidence Workspace"**
 
-LoanWick is a welcoming institutional interface for non-technical loan officers. Espresso brown, antique gold, ivory, and restrained dusty blue replace the earlier green palette across the application. A calm Source Serif 4 heading sits above familiar system text and generous message sizing. The primary officer screen is one page: a compact Menu, one illustrated upload target, actual verification updates, and expandable results.
+LoanWick uses a narrow warm-brown rail, an ivory canvas, and compact white bordered panels for application scanning and evidence work. System UI text carries controls and headings; bundled Source Serif 4 gives portfolio totals a distinct numerical voice. Bronze amount bars, dusty-blue stages, clay concerns, and green Clear indicators carry meaning alongside written labels.
 
-The project-owned generated leather contract-folio cutout supplies a familiar document-handling cue. Goldman Sachs is a visual reference, not the product brand or an endorsement; no borrowed bank logo is used. Denser evidence, borrower, and reviewer surfaces remain compatibility routes and share the warm palette without dictating the primary screen's hierarchy. This documents implemented styling, not live PDF/DOCX integration or whole-product accessibility conformance.
+The existing espresso dossier cover is an explicit surface exception. Its serif statement, antique-gold framing, artwork, and Menu remain intact before the shared verification desk opens. The desk uses the same workspace materials as Applications. Existing generated rasters are reused with provenance; decorative paper never stands in for source evidence.
 
 **Key Characteristics:**
-- Espresso actions and text, ivory ground, gold-toned boundaries, and dusty-blue focus.
-- A restrained serif page heading above plain-language system-text updates.
-- One compact Menu and a single reading column for upload, messages, and inline evidence.
-- One generated transparent contract-folio illustration with recorded provenance.
+- Warm-brown navigation and an ivory ground across role-appropriate workspaces.
+- Compact white panels with fine warm borders and flat evidence surfaces.
+- System UI headings and controls; Source Serif 4 totals and dossier statement.
+- Text-backed semantic states, visible keyboard focus, and contained mobile overflow.
 
 ## Colors
 
-Warm neutral surfaces and espresso actions frame the contract; gold and dusty blue identify operational states without implying a lending decision.
+The palette combines warm operational neutrals with restrained, literal status colors; frontmatter contains the source-derived values.
 
 ### Primary
-- **Espresso Rail** anchors the wordmark and retained secondary navigation.
-- **Contract Brown** identifies primary actions and links; deeper hover and pressed shades provide feedback.
-- **Gold Boundary** defines the upload target and Menu panel; **Upload Drag** supplies a warmer drag-over fill.
-- Verification-specific hover and disabled variants preserve clear action hierarchy.
+- **Rail Brown** anchors navigation; **Contract Brown** is the shared action/link accent. Navigation hover and current tones distinguish state without adding depth.
+- **Bronze Amount** fills relative requested-amount bars over their pale track.
 
 ### Secondary
-- **Dusty Blue Focus** supplies keyboard outlines and the primary connected indicator.
-- **Source Highlight** remains a pale yellow mark around actual cited source text.
+- **Activity Blue** marks reviewing, sent, and running badges. **Reviewing Stage** supplies the pipeline segment; **Focus Blue** supplies keyboard outlines.
+- **Source Highlight** marks actual cited text; its paired ink keeps excerpts readable.
 
 ### Tertiary
-- **Concern Clay** identifies high-priority, contradicted, or failed states on secondary routes.
-- **Pending Ochre** identifies pending, stale, unknown, and review-needed states.
-- **Current Warm Neutral** identifies current, answered, resolved, passed, and released-demo states.
-- **Activity Blue** identifies sent, running, and reviewing states.
-- **Message Done** pairs gold-tinted fill with brown icons; **Message Working** uses dusty blue; **Message Attention** uses ochre. These local message-state tints remain separate from secondary badges.
-- **Connection Offline** supports the written connection label; **Reconciliation Background** distinguishes uncertain upload feedback.
+- **Concern Clay** and **Clear Green** are application-table concern pills. Legacy high/failed case badges retain their existing clay pair (`#fbece7` / `#973c28`).
+- **Pending Ochre** supports pending, stale, unknown, and review-needed states. **Current Warm Neutral** supports current, passed, answered, resolved, and released-demo badges.
+- **Espresso**, **Mahogany**, **Antique Gold**, **Bronze**, **Cover Ivory**, **Parchment**, and **Cover Blue** belong to the preserved dossier palette and its existing local accents.
 
 ### Neutral
-- **Ivory Ground** supplies primary and secondary backgrounds; white supplies headers, fields, upload, and connection containers.
-- **Inline Evidence Background** softly groups excerpts without shadow.
-- **Body Ink** and **Ink** are dark warm text; **Muted** supports metadata. Fine Line, Control Line, and Input Line boundaries distinguish containers and editable controls.
-- Disabled background, ink, and line colors keep unavailable actions distinct across interaction states.
+- **Workspace Ivory** is the shared canvas; **Surface White** is the panel and field ground. **Warm Ink**, **Muted**, and **Line** establish text and boundaries.
+- Control, input, hover, active, and disabled tokens keep native interactions explicit. **Upload Drag** tints the white intake panel during drag-over; **Inline Evidence** groups verification excerpts.
 
-**The Literal Status Rule.** Pair semantic color with a written status; a concern is an item for human investigation, never a visual fraud verdict.
+**The Literal Status Rule.** Pair semantic color with a written status. A concern is an item for human investigation, never a fraud verdict.
 
 ## Typography
 
-**Display Font:** Bundled Source Serif 4 Regular with Georgia and serif fallbacks, limited to the primary page heading. The local `src/assets/source-serif4-regular.ttf` uses `font-display: swap`; its OFL license is retained in `src/assets/SourceSerif4-OFL.txt`. Source: [Google Fonts Source Serif 4](https://fonts.google.com/specimen/Source+Serif+4).
-**Body Font:** Native system stack with Segoe UI and sans-serif fallbacks.
-**Label/Mono Font:** The same system stack for labels; native monospace with SFMono-Regular and Consolas fallbacks for source text.
+**Display Font:** Bundled Source Serif 4 Regular, with Georgia and serif fallbacks, for portfolio totals and the preserved dossier statement. The font uses `font-display: swap`; its OFL license remains beside the TTF in `src/assets/`.
 
-**Character:** A calm serif heading establishes the banking tone; familiar system text keeps instructions and operational updates easy to read. Dense secondary evidence retains its compact analytical type.
+**Body Font:** Native system UI stack, including Segoe UI and sans-serif fallbacks. Source readers use native monospace.
 
 ### Hierarchy
-- **Verification headline:** Source Serif 4 at (38px), weight (400), line height (1.2), and tracking (-0.025em); it becomes (31px) at the primary mobile breakpoint.
-- **Verification introduction:** Supporting copy at (16px), with line height (1.6) on mobile.
-- **Verification message:** Operational text at (16px), line height (1.6), with (12px) details at (1.65) and a (68ch) cap. Mobile messages become (16px), with (13px) details.
-- **Verification result:** (19px) outcome heading, (14px) concern summaries, and (13px) proportional-font excerpts. Primary excerpts preserve whitespace; secondary source readers retain monospace.
-- **Secondary headline:** The page heading; it reduces at the two narrower responsive breakpoints, reaching (23px) on mobile.
-- **Title:** Default section heading; evidence titles use (18px), while compact panel headings use (14px).
-- **Body:** Base reading text; dense staff explanations use (11–13px) and line lengths around (70–74ch). Borrower messages use (16px), reducing to (15px) on mobile, with (1.8) line height.
-- **Label:** Mixed-case field labels. Control text uses (13px) and weight (600); mobile panel labels increase to (13px).
-- **Metadata:** Filenames, versions, status, and timestamps use the small text role. Do not promote this dense staff role to borrower form input text.
-- **Source:** Monospaced source excerpts preserve whitespace and wrap long values; mobile excerpts increase to (12px).
+- **Portfolio total:** The serif total role reduces to (26px) at 1250px and returns to (30px) at 599px. Table amounts use the same face at (13px).
+- **Headline:** Shared page headings use the frontmatter role; compact desktop headings reduce to (24px), and workspace mobile headings to (23px). The verification desk keeps a (24px) mobile heading.
+- **Title:** Section headings use the title role; panel headings commonly use (14px), verification upload/result headings (19px).
+- **Body / label / metadata:** Compact system text serves dense staff work. Metric captions are short uppercase data labels at (10px), (9px) on compact desktop, and (11px) on small mobile; these are not a general heading template.
+- **Verification message:** Plain-language activity text remains (16px), with (12px) details and a (68ch) limit; mobile details use (13px).
+- **Source:** Monospaced excerpts preserve whitespace and wrap long values; mobile evidence excerpts use (12px).
+- **Borrower:** Main requests use (16px) text and (1.8) line height, reducing to (15px) on mobile. Mobile form fields use (16px).
+- **Dossier display:** The existing fluid serif statement remains cover-only; at 600px it uses (clamp(22px, 6.15vw, 37px)) and (1.25) line height.
 
-**The Comparable Numbers Rule.** Use tabular numerals for amounts, case metadata, facts, and revision summaries.
+**The Comparable Numbers Rule.** Use tabular numerals for comparable totals, amounts, case metadata, facts, and revision summaries.
 
 ## Layout
 
-The primary verification screen uses an (80px) white header with a fine lower rule. Header content aligns within an approximately (1120px) frame. The centered main box has a maximum outer width of (804px), including (24px) side padding, yielding (756px) of reading width. Desktop top padding is (48px). Title, case context, upload, activity, results, and footer share that single alignment. A plain selected-loan line supplies context. The native Menu in the header contains loan selection and session actions; the primary flow has no tabs, case-history links, or secondary-page navigation.
+The shared shell has a fixed desktop rail with width (clamp(160px, 14.25vw, 216px)), a flexible content frame, a white status header, and a synthetic-data strip. Main content is bounded at (1760px) with (30px 32px 22px) padding. At 1250px, gutters become (26px) and the header becomes denser. At 700px, the rail becomes a full-width top navigation with an expandable Menu, the frame loses its left margin, and main gutters become (18px). Escape closes the mobile navigation and restores toggle focus.
 
-After submission the large upload target is replaced by a compact file summary and the activity list. Message rows have a (12px) icon/text gap and (24px) vertical gap. Result sections follow a divider; native details expand each concern and its cited excerpts inline. This is progressive disclosure, not a grid of dashboard panels.
+Portfolio summaries use four columns with a (14px) gap, two columns at 999px, and one at 599px. The compact stage strip follows them. The application table uses a (740px) minimum width in a focusable contained horizontal-scroll region. Filters stack at 700px, where native search/select controls have (44px) minimum height and (16px) text. Table filters affect rows while the summaries remain portfolio-wide.
 
-At the primary breakpoint of (600px), the header becomes (68px) high with (18px) gutters and main padding becomes (30px 20px 26px). Upload padding becomes (20px 18px 24px). The Menu keeps a (44px) trigger and a viewport-bounded panel; its select uses (16px) text. The visual header role label is hidden at this size while the Menu retains the written session context. Primary actions retain a minimum (44px) height. Filenames, messages, and fingerprint details wrap rather than force horizontal scrolling. The footer wraps naturally.
+Case evidence uses a findings column (277px) beside flexible evidence, with (25px) between them; the findings column narrows at 1250px and 1050px. Paired evidence stacks at 1050px; findings and evidence stack at 700px. General staff grids use (1.15fr / 1fr), then one column at 1050px. Borrower content is capped at (780px).
 
-The following density and breakpoints apply to the retained secondary workspace, not the primary verification route:
-
-The desktop shell has a fixed rail (216px), a flexible content frame, a session header with a minimum height of (70px), and a persistent synthetic-data strip. Main content has a maximum width of (1760px) and padding of (28px 34px 22px). Spacing uses small, repeated steps rather than oversized blank sections.
-
-At full desktop width the findings list is (277px), with a flexible evidence workspace and a (25px) gap. The evidence workspace holds two equal panels with a (17px) gap. Other staff views use a two-column (1.15fr / 1fr) grid with a (24px) gap. The borrower page is capped at (780px).
-
-At (1250px), the rail narrows to (180px), the findings column to (235px), page gutters to (24px), and the evidence gap to (12px). At (1050px), the rail narrows again to (165px), findings to (210px), and evidence and general two-column views stack. At (700px), navigation becomes a compact top row, the frame fills the viewport, main gutters become (18px), and findings join the single-column layout. Tables and tabs retain horizontal overflow rather than compressing their content. Mobile panel inputs use (16px) text and borrower buttons have a minimum height of (44px); the main borrower submission spans its form width.
+The verification desk is bounded at (1120px), with the shared shell outside it. A selected-loan dropdown sits above the upload panel; file summary, messages, result disclosures, and evidence stay on the same page. Its cover remains in normal flow above the mounted desk. Cover layout, copy, bypass paths, and stage behavior are recorded in `.impeccable/surfaces/apps-web-src-app-tsx.md`.
 
 ## Elevation & Depth
 
-Ordinary panels, findings, and controls are flat. Cool page ground, white containers, fine borders, and lightly tinted selected or response surfaces establish separation. Shadows are reserved for the source dialog; focus is an outline rather than elevation.
+Shared cards, metric panels, upload, findings, and evidence use flat white fills and warm borders. Metric cards add a short colored bottom boundary. Depth is reserved for the native source dialog and the preserved cover Menu/entry action; no paper-lift shadow remains on the desk upload.
 
-### Shadow Vocabulary
-- **Source dialog:** (`0 15px 65px #3c2f1f30`) separates the modal source reader from the workspace, with a dark translucent backdrop (`#2b221970`).
+- **Source dialog:** (`0 15px 65px #3c2f1f30`), with backdrop (`#2b221970`).
+- **Cover Menu:** (`0 18px 40px #18120d14`).
+- **Cover entry:** (`0 10px 38px #c89d5c26`), becoming (`0 12px 40px #c89d5c38`) on hover.
 
-**The Flat Evidence Rule.** Keep ordinary evidence surfaces shadow-free; preserve modal depth for the source reader.
+**The Cover Boundary Rule.** Keep the dossier’s gold framing, engraved-banknote margins, and ceremonial entry treatment on its cover. Shared operating panels stay flat, white, and bordered.
 
 ## Shapes
 
-Corners are gently squared. Badges use the smallest radius, fields slightly more, controls and evidence panels share a moderate radius, and outer surfaces and the source dialog are slightly softer. Thin solid borders carry structure. Small circular connection indicators, message-state icons, and the secondary avatar are local exceptions; do not turn general controls into pills.
-
-Source marks follow wrapped text using cloned box decoration. Icons are inline, stroked SVGs with rounded caps and joins; most are (16–20px), with decorative SVGs hidden from assistive technology.
+Small rounded rectangles define controls, fields, badges, and panels; the frontmatter records their distinct existing radii. Concern pills are rounder than stage badges. Metric icons use compact softly squared fields; connection dots and message icons are circular. Fine one-pixel borders carry ordinary structure. Cover double hairlines, edge labels, and the pill-shaped entry action are preserved exceptions, not reusable desk framing.
 
 ## Components
 
 ### Buttons
-
-Compact and explicit, with icon and text arranged inline.
-- **Primary verification:** Contract Brown with white text, a minimum (44px) height, and (19px) inline padding; its hover and disabled variants use the verification-specific palette.
-- **Primary secondary-workspace:** Contract Brown with white text; standard padding and control radius are defined in frontmatter. Hover and active darken it.
-- **Secondary:** White, Ink, and a thin control border. Hover tints the fill and strengthens the border; active uses a deeper warm neutral.
-- **Text:** Transparent, compact, and used for low-emphasis navigation such as “View checks.”
-- **Focus:** A global (3px) Dusty Blue Focus outline with (3px) offset.
-- **Disabled:** Solid muted colors and a not-allowed cursor, without opacity reduction. Disabled primary controls retain their disabled palette on hover and active.
-- **Motion:** Background and border color transition over (160ms ease-out); reduced-motion preference removes transition duration and animation.
-
-### Contract-folio illustration
-
-Use the bundled transparent `src/assets/contract-folio.webp` (about 36KB), generated for LoanWick. Its espresso leather, ivory pages, antique-gold clip, and small dusty-blue tab support document handling. It occupies a (192px × 128px) contain box on desktop and (174px × 116px) on mobile, with empty alt text because the neighboring heading names the action. Preserve transparency and restrained material shading; it is a single visual cue, not evidence or an approval symbol. The exact generation prompt is recorded in `.impeccable/assets/contract-folio.prompt.txt`, with asset provenance alongside the WebP. Do not introduce a bank logo, seal, currency, or endorsement claim.
-
-### Contract upload and file summary
-
-One broad white target has a fine dashed Gold Boundary and the upload radius. The generated folio illustration, short format/size hint, and brown action establish its hierarchy. Desktop target padding is (24px 24px 30px). Drag-over uses the pale Upload Drag fill and accent border; focus within strengthens the boundary while the visible action retains the global focus outline. File selection and submitted-file summary wrap long names. The large target gives way to the summary and activity after submission. The sample is a separate, low-emphasis text action with a written sample-data label. Both contract submission in the sample workspace and sample runs step through staged verification updates before presenting plain-language results.
-
-### Verification activity and results
-
-A flat ordered list uses circular (26px) icon fields; done, working, and attention states pair a check, clock, or alert with written messages. Working steps pulse gently when motion is permitted. Supporting text is quieter and bounded in length. The stream is a polite accessible log with progressive stage updates. The result uses a small brown heading, written qualification, native expandable plain-language concern summaries, and pale, gently squared record blocks that translate raw JSON fields and JSONPath locators into non-technical labels, values, business names, and document sections. It stays in the same reading column.
-
-Disconnected fixture mode uses a bordered white connection container and a Retry action. Authorized live credential fields are shown only when the adapter supports connecting. Unconfirmed intake remains explicit attention feedback; preliminary file checks do not imply upload, extraction, approval, or successful verification.
+Shared primary actions use Contract Brown with white text, a control radius, and (40px) minimum height; hover/active deepen the brown. Secondary actions use white, Warm Ink, and the control border. Verification primary actions use the same accent with (46px) minimum height and (24px) inline padding; their local hover is (`#443126`). The preserved dossier entry keeps its Bronze/Gold treatment and (54px) minimum height, reducing to (50px) on mobile. Disabled states retain solid muted colors. Global focus is a (3px) outline with (3px) offset. Background/border transitions use (160ms ease-out); reduced motion removes transitions and animation.
 
 ### Chips
-
-Status badges are compact rectangles with text, a small radius, and no border. They are informational rather than filters or buttons. Semantic background and ink travel together; neutral is the fallback for unmapped states.
+Application stages use compact rectangular text badges; Reviewing uses Activity Blue. Open concern pills combine a clay fill, dot, and count; Clear uses green with its written label. They are informational, not filtering controls. Existing case badges retain their domain-state mappings.
 
 ### Cards / Containers
-
-Secondary white surfaces have a fine Line border and no ordinary shadow. General panels use a surface radius, header padding of (19px 22px), and body padding of (22px). Mobile headers use (17px) padding and bodies use (18px). Evidence panels use the control radius and clip their contents within the boundary.
+Shared white surfaces use a warm border and no ordinary shadow. General panel bodies use (22px) padding, decreasing to (18px) on mobile. Metrics have (18px) padding, a (3px) bottom boundary, a small icon field, serif total, and explanatory detail. Their compact-desktop padding is (12px 16px). Loading totals use quiet solid skeletons; errors and empty states use explicit text.
 
 ### Inputs / Fields
-
-Native fields are white with Ink text, a thin Input Line border, and a field radius. They have a minimum height of (40px), use the global focus outline, and retain visible labels. Textareas resize vertically. Disabled fields use a pale fill and muted text. Errors appear in separate written alert feedback, rather than relying on a border color alone. Mobile panel fields increase their font size to preserve usable native editing.
+Native fields are white with Warm Ink, a one-pixel Input Line boundary, field radius, and (40px) minimum height. Labels remain visible; textareas resize vertically. Disabled fields use pale fills and muted text. Written alerts communicate errors. Search combines a stroked SVG icon with a borderless input inside the bordered field shell.
 
 ### Navigation
+The rail pairs stroked SVG icons with text; current and hover states use distinct warm-brown fills and white text. The white header shows connection/data mode and role/session controls; the strip below states synthetic data and no money movement. Borrowers receive their own-case navigation. Mobile Menu uses `aria-expanded` and `aria-controls`; current links use `aria-current`. Case tabs remain horizontally scrollable with a selected bottom rule and arrow/Home/End keyboard behavior. The cover retains its own native Menu until entry.
 
-The primary header pairs the wordmark and session indicator with one native Menu disclosure. Its bordered trigger gains a warm fill while open; the white panel is (304px) wide at most, anchored to the right with a fine gold boundary, (12px) radius, and (20px) padding. Loan selection and session actions live inside. The page has no rail, tabs, or extra-page links. Secondary rail navigation pairs SVG icons and (13px) text. Links use soft warm-gray text at rest, white text on hover/current state, and distinct brown background tones. Mobile navigation retains accessible names while showing icons. Case tabs are flat, horizontally scrollable buttons; the selected tab has a brown text treatment and bottom rule. They support arrow keys, Home, and End.
+### Contract upload and activity
+A flat white bordered upload panel contains the small generated folio in a (116px × 80px) box, system-text title, requirements, and actions. Drag-over tints the surface and strengthens its border. A selected file becomes a compact summary. The separate sample action is explicitly synthetic. Activity uses written messages and (26px) circular state icons; expandable results keep source versions and locators beside evidence. The four-stage ruler follows supported events; cover milestones are orientation only.
 
-### Findings and paired evidence
+### Evidence and supporting documents
+Evidence panels keep application context, filename, document version, exact marked excerpt, locator, and source action together. The native source dialog has a title, close control, bounded size, and written access failure. Borrower synthetic-document explanation and action remain grouped in a pale tinted container; its text child can shrink without overflow. Generated folio and engraved-paper assets keep their adjacent provenance and prompt records. Banknote decoration appears only on the cover, masked away from text, and drifts over (24s/29s) only when motion is allowed.
 
-A finding is a full-width outlined button with a title, source count, identifier, and written status. Selection changes its border and pale fill. Its evidence uses adjacent source panels containing application context, filename, document version, exact marked excerpt, and locator. “Open source document” occupies a full-width panel footer. The excerpt is evidence, not generated decorative copy.
+Case comparisons lead with a plain-language concern and “What each application says.” White application panels show readable (15px) values under (12px) labels, including “Equipment number” and “Who owns the equipment?” Exact excerpts and recorded locations sit under the keyboard-accessible “View original wording” disclosure; “Open full document” opens the cited version with pending/error feedback. A document count describes distinct files, rather than counting individual extracted fields. Original capitalization remains in the disclosure when the equipment number is displayed consistently for comparison.
 
-### Source dialog
+“Records need checking” replaces the internal contradicted label on this surface. Missing information stays explicitly unknown; a statement that a borrower does not claim full ownership does not establish a lease or shared ownership. Requested amounts use the currency from the same document version. “What this means” and “What to do next” use (13px) body text, reducing to (12px) on mobile. On phones, the comparison status sits beneath the full-width introduction, and application panels stack. Resolved concerns and changed application details retain explicit notices.
 
-The native dialog has an accessible title, a visible close control, a bounded viewport width and height, and monospaced source content. Its shadow and backdrop are the only substantial elevation. A source-access failure is displayed as written feedback.
+### Workspace entrances
+`src/motion.module.css` adapts the entrance language from `claude/visual-polish` (`a18838c`): an (8px) fade-and-rise with `cubic-bezier(.2, .8, .2, 1)`. The four portfolio summaries enter over (500ms), staggered by (70ms) with a maximum (210ms) delay. Pipeline segments grow from the left over (800ms); proportional requested-amount bars use (900ms). These bars describe portfolio distribution and requested amounts, not verification progress.
+
+The application table panel, borrower view, entered verification desk, and newly selected case tab use the same rise over (450ms). Case-tab entrance restarts on a tab change; ordinary subscription updates and typing keep the active view mounted. The shell stays still. Default content is visible; entrance styles apply only with `prefers-reduced-motion: no-preference`. Animations release their styles after arrival so popovers and dialogs retain their normal stacking. The dossier cover and its existing drift remain scoped exceptions.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** preserve the quiet single-column verification hierarchy and keep dense case navigation secondary.
-- **Do** preserve the espresso navigation anchor on compatibility routes and warm light surfaces throughout.
-- **Do** keep filenames, versions, locators, and highlights beside the source text they describe.
-- **Do** pair status colors with literal text and retain visible keyboard focus.
-- **Do** use tabular numerals for comparable money and revision values.
-- **Do** keep mobile borrower fields legible and submission controls easy to reach.
-- **Do** display fixture, connection, synthetic-data, and failure feedback honestly.
-- **Do** keep current-stage messages and expandable results aligned to the primary reading column.
+- **Do** extend the shared warm-brown rail, ivory canvas, and white bordered panel language.
+- **Do** pair stage and concern colors with literal text and preserve visible keyboard focus.
+- **Do** preserve per-currency money, exact accessible totals, and source versions beside evidence.
+- **Do** keep the cover exception scoped and the small folio inside upload.
+- **Do** keep mobile filters usable, tables in contained scroll regions, and borrower fields legible.
 
 ### Don't:
-- **Don't** add ornamental dashboard metrics or competing illustration styles to the operating workspace.
-- **Don't** use a concern color or label to imply a confirmed fraud verdict.
-- **Don't** add shadows to ordinary evidence panels or replace rectangular controls with pills.
-- **Don't** make disabled primary actions look enabled when hovered or pressed.
-- **Don't** present fixture behavior as proof of live integration.
-- **Don't** style preliminary file checks or a completed synthetic sample as approval of an uploaded contract.
+- **Don't** reintroduce parchment double frames, overlapping gold loan pills, or floating banknotes into the operating desk.
+- **Don't** use concern or Clear styling to imply fraud proof, lending approval, or server release authorization.
+- **Don't** give ordinary panels ornamental shadows or use decorative imagery as evidence.
+- **Don't** present fixture behavior, preliminary file checks, or a completed sample as live extraction or model verification.

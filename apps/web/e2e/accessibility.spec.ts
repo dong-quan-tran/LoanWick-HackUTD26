@@ -1,4 +1,4 @@
-import { capture } from './capture';
+import { capture, settleMotion } from './capture';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync } from 'node:fs';
@@ -6,6 +6,7 @@ import { mkdirSync } from 'node:fs';
 test('staff accessibility, keyboard tabs, and 1280px evidence comparison', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 }); await page.goto('/cases/app-excavator-a');
   await expect(page.getByRole('heading', { name: 'Equipment EX-0042' })).toBeVisible();
+  await settleMotion(page);
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary })) }))).toEqual([]);
   await page.getByRole('tab', { name: 'Findings & evidence' }).focus();
@@ -24,6 +25,7 @@ test('borrower accessibility at tablet width', async ({ page }) => {
   await page.getByRole('button', { name: 'Send this request' }).click();
   await page.getByLabel('Demo role').selectOption('borrower');
   await expect(page.getByLabel('Your response')).toBeVisible();
+  await settleMotion(page);
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary })) }))).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(768);

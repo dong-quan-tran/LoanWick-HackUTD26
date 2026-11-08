@@ -77,7 +77,8 @@ test('separate authorized sessions, stored evidence, clarification, stale review
       const sourceText = readFileSync(join(source, `fixtures/database/application-${number}.txt`), 'utf8');
       expect(createHash('sha256').update(sourceText).digest('hex')).toBe(record.sha256);
       const panel = officer!.getByRole('article').filter({ hasText: record.filename });
-      await expect(panel.getByText(`Version ${record.version}`, { exact: true })).toBeVisible();
+      await expect(panel.getByText(`Version ${record.version}`, { exact: true }).first()).toBeVisible();
+      await panel.getByText('View original wording', { exact: true }).click();
       for (const excerpt of record.excerpts) {
         expect(sourceText).toContain(excerpt.text);
         expect(sourceText.split('\n')[Number(excerpt.locator.slice(5)) - 1]).toContain(excerpt.text);
@@ -87,8 +88,8 @@ test('separate authorized sessions, stored evidence, clarification, stale review
     }
     mkdirSync(captures, { recursive: true });
     await officer!.screenshot({ path: join(captures, 'live-database-evidence.png'), fullPage: true });
-    await expect(officer!.getByRole('button', { name: 'Open source document' })).toHaveCount(2);
-    await officer!.getByRole('button', { name: 'Open source document' }).first().click();
+    await expect(officer!.getByRole('button', { name: 'Open full document' })).toHaveCount(2);
+    await officer!.getByRole('button', { name: 'Open full document' }).first().click();
     await expect(officer!.getByText('Source downloads are unavailable for this connection. Stored evidence excerpts remain available.')).toBeVisible();
     await officer!.getByRole('button', { name: 'Request clarification', exact: true }).click();
     await expect(officer!.getByLabel('Message to borrower')).toBeDisabled();

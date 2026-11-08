@@ -1,4 +1,5 @@
 @layer reset, base;
+@font-face { font-family: "Source Serif 4"; src: url('./assets/source-serif4-regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
 @layer reset {
   *, *::before, *::after { box-sizing: border-box; }
   body, h1, h2, h3, p { margin: 0; }
@@ -7,7 +8,7 @@
   svg { flex-shrink: 0; }
 }
 @layer base {
-  :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #342a23; background: #f8f5f0; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --rail: #392b23; --ink: #342a23; --muted: #756556; --line: #dfd3c4; --accent: #725032; --focus: #426b80; }
+  :root { --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-family: var(--font-ui); color: #392b23; background: #f8f5f0; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --rail: #3b2c23; --workspace: #f8f5f0; --ink: #392b23; --muted: #7a6958; --line: #e5d9cb; --accent: #84603f; --focus: #52778e; }
   body { min-width: 320px; font-size: 14px; line-height: 1.55; }
   button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
   ::selection { background: #ead9b7; color: #392b23; }
