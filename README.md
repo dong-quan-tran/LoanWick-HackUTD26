@@ -2,7 +2,7 @@
 
 LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
-This branch includes Person 4's shared foundation and Person 1's frontend: TypeScript contracts/runtime schemas, deterministic checks, eight canonical applications, source-backed evidence, and a complete synthetic officer/borrower/reviewer demo. A live database adapter is implemented against Person 2's generated bindings; actual database, worker, document-intake, and authenticated browser integration remain unverified here.
+This branch includes Person 4's shared foundation and Person 1's frontend: TypeScript contracts/runtime schemas, deterministic checks, eight canonical applications, source-backed evidence, and a complete synthetic officer/borrower/reviewer demo. The live adapter has also passed a browser workflow against a disposable real database with separate authorized role sessions and Person 4's deterministic test bridge. Connected NVIDIA investigation, document intake, and original-source downloads remain pending.
 
 ## Frontend
 

@@ -6,7 +6,7 @@
 
 The complete **fixture** workflow is runnable. Its single-window identity switch is explicitly synthetic and does not authenticate a real person. All canonical records remain synthetic. The fixture adapter runs the shared deterministic analysis helpers; no live model calls or tool traces are invented.
 
-The **live** adapter compiles against unchanged Person 2 bindings from database commit `09288ebcad82fbb5c8fb867281794082ed924131` (SpacetimeDB 2.14.0). It subscribes to `my_user`, then only the permitted staff or borrower projections. Live workflow acceptance is not established by compilation or fixture tests.
+The **live** adapter uses unchanged Person 2 bindings from database commit `09288ebcad82fbb5c8fb867281794082ed924131` (SpacetimeDB 2.14.0). It subscribes to `my_user`, then only the permitted staff or borrower projections. A real loopback database browser test now verifies the subset below; compilation and the offline fixture suite do not establish live worker/document integration.
 
 ## Run and verify
 
@@ -28,6 +28,31 @@ npm run test:e2e --workspace @loanwick/web
 ```
 
 `check` retains the shared-package typecheck, 84 existing tests, and fixture evaluator, and adds frontend typechecking and 22 frontend adapter/workflow/upload tests. The seven-test browser suite exercises the complete synthetic round trip and release, opening the corrected response source before the human decision, responsive borrower forms, forbidden routes, connection recovery, empty filters, keyboard tabs, live connection failure without fixture fallback, and two automated WCAG AA scans. Screenshots are generated under the repository's `.impeccable/review/` directory. These scans do not establish whole-product accessibility conformance.
+
+## Repeatable real database browser check
+
+Use an isolated checkout of Person 4's source-backed test branch at `c4d78e8af25d4343b464fbb1e3f3189169a1b986`, which contains Person 2's `09288eb` database interface. In that checkout, install its dependencies with `npm ci` and `npm ci --prefix spacetimedb`. Keep this frontend checkout on `1-frontend`; no combined branch merge is required. Obtain the official portable SpacetimeDB 2.14.0 CLI and standalone server, with both executables in the same directory, then run from this frontend repository:
+
+```sh
+export LOANWICK_WEB_DATABASE_SOURCE=/absolute/path/to/isolated-database-checkout
+export LOANWICK_SPACETIME_CLI=/absolute/path/to/spacetimedb-cli
+npm run test:e2e:database
+```
+
+On Windows, use the corresponding `.exe` CLI path and environment-variable syntax. `LOANWICK_SPACETIME_SERVER` can select a separately stored standalone executable.
+
+The launcher builds both checkouts' shared packages, creates temporary signing keys and a new in-memory database on a free loopback port, provisions separate synthetic identities, starts the live frontend, runs one multi-session Playwright workflow, and stops its own server. It does not change an existing database/server. Tokens remain in the ignored backend session file and test-process memory; each browser context receives only its role's token. Browser tracing/video/failure screenshots are disabled during credential entry, and launcher output redacts the generated tokens. Successful source/review/release captures contain no credentials.
+
+Executed successfully on macOS arm64 with Node 26.12.0 and CLI/server/SDK 2.14.0. CI is configured to run this check on Node 24/Linux against the same pinned backend commit; that CI result is not claimed here. This check verifies:
+
+- Officer/reviewer subscriptions render eight real applications. A separate borrower receives its own sent request; another borrower cannot load that case or request.
+- A UI-created live job receives a terminal `MODEL_UNAVAILABLE` result from the test driver and displays failure. No provider call or success is invented.
+- The authenticated worker test driver runs Person 4's actual deterministic checks in **fixture execution mode** and waits for accepted terminal outcomes. Both ownership-conflict documents, stored hashes, versions, excerpts, and exact line locators agree with the published source files and rendered evidence panels. Original-source download remains visibly unavailable.
+- A standard request is previewed/sent, answered by a distinct borrower, and escalated by the officer with rationale. The text-only response is not treated as proof that the active ownership conflict vanished.
+- On the clean control case, current reviews permit release; a payment instruction update stales payment/document reviews. A direct reducer call also rejects release. A fresh deterministic investigation and reverified checks permit one simulated release; same-key retry, different-key rejection, and reconnect persistence are checked.
+- Explicit disconnect clears the displayed case and credential form. Web storage contains no session tokens. This is browser integration evidence, not a comprehensive authorization or concurrency audit.
+
+The test-only driver imports Person 4's bridge in Node from the isolated checkout. Neither its worker identity nor its implementation enters the web bundle. This does not prove Person 3's model loop, document transport, extraction, or corrected-document resolution. The default seven-test browser suite remains independent of the database tooling.
 
 ## Fixture demo sequence
 
@@ -61,7 +86,7 @@ Before calling the live frontend complete:
 
 | Owner | Required remaining evidence or interface |
 | --- | --- |
-| Person 2 | A provisioned running database and separate officer/borrower/reviewer identities; verify safe reads, correlated mutations, current-investigation gates, direct-call release rejection, and exactly one release. |
+| Person 2 | Revalidate against the final database commit. Local browser coverage now proves separate role sessions, correlated workflow writes, stale-investigation/review gates, direct-call rejection, and one persisted release; the owner's comprehensive authorization/concurrency suite remains separate. |
 | Person 2 | Add authorized draft-update support for message and requested document type, with the sent content bound to the reviewed draft. The current backend supports standard templates, so the live UI exposes that limitation and never substitutes edited copy. Regenerate bindings rather than hand-editing them. |
 | Person 3 | Run and wire the supplied HTTPS upload handler with storage/extraction and a worker identity. The frontend client implements the current capability protocol; actual worker-service execution remains pending. `LiveAdapter` accepts a typed `DocumentTransport` for source retrieval. No download protocol is supplied on the inspected branch, so opening original live source bytes reports unavailable; no guessed endpoint or fake source is returned. |
 | Person 3 | Prove a worker claims a real investigation, persists actual tool events and accepted findings, processes the supported JSON/CSV response, and reports actual provider/model metadata. A standalone live clock smoke does not satisfy this gate. |
@@ -71,7 +96,7 @@ Browser release controls require reviewer role and server `canRelease`. Mutation
 
 ## Current verification boundary
 
-The deterministic foundation, frontend unit tests, fixture browser journey, responsive captures, automated accessibility checks, and fixture/live production builds have executed successfully during implementation. No running database endpoint, live authenticated browser integration, connected investigation worker, or source/upload service has been verified from this checkout. Milestones A–D in the team plan remain pending until their real integration evidence exists.
+The deterministic foundation, frontend unit tests, fixture browser journey, responsive captures, automated accessibility checks, fixture/live production builds, and the real database browser check described above have executed successfully. Person 3's isolated typecheck, 13 tests, and fixture clock-tool smoke also pass at `cd9cf5f`; its smoke explicitly reports `connectedDatabase: false`. No connected NVIDIA investigation, original-source download service, or running production upload/extraction service has been verified. The full A–D milestones remain pending; the local database subset does not stand in for their missing worker/document evidence.
 
 ## Current branch compatibility audit
 
@@ -81,6 +106,6 @@ Inspected after refreshing origin on November 8, 2026:
 | --- | --- |
 | Person 2: `1-loanwick-database`, `09288ebcad82fbb5c8fb867281794082ed924131` | Web SDK matches 2.14.0. Received all 56 generated files unchanged. The adapter uses actual role projections/reducer arguments, maps `extracted` to `succeeded`, preserves `fixture` extraction provenance and server currentness/blockers, includes own and related source revisions, and supports server-length IDs including payment IDs. Current payment-source selection must match actual token evidence. The HTTPS upload client matches the new grant/digest/scope/claim/receipt interface. Editable drafts and live source downloads remain unsupported by the inspected server surface. |
 | Person 4 test bridge: `1-analysis-database-test`, `c4d78e8af25d4343b464fbb1e3f3189169a1b986` | The source-backed database seed uses different IDs and equipment from the offline fixture set; the live UI does not assume EX-0042 or the canonical JSON IDs. This branch contains the authorized worker analysis adapter and a real HTTPS integration test. Its reported 95 shared and 22 live checks are separate from this frontend's executed test counts. It is an unmerged combined test branch, not the frontend's base. |
-| Person 3 worker | No `apps/worker` files exist on any published origin ref fetched for this audit. Signal reports NVIDIA/Nemotron clock smoke only, with `connectedDatabase: false`. Its implementation and compatibility cannot be source-verified until a worker commit is published. A smoke result does not prove job consumption, terminal-outcome handling, upload serving, or extraction. |
+| Person 3: `1-ai-worker-and-ingestion`, `cd9cf5f` | Source reviewed directly. It contains NVIDIA/fixture providers and `read_worker_clock` orchestration, with no database imports, job consumer, upload/download server, extraction, or persisted investigation. Node 26.12.0 typecheck and all 13 isolated tests pass; an explicitly fixture clock smoke passes and reports `connectedDatabase: false`. Its live/fixture enum agrees with the shared contract and it refuses live-to-fixture fallback. No frontend-callable API is present to wire. Keep provider keys and calls inside this worker. Its package-local lockfile/tool versions also need coordination with Person 4 when merging the workspace. |
 
-Next shared integration: publish the worker branch; consume Person 4's authorized database adapter; claim real jobs and wait for `worker_job_outcomes`; run the HTTPS handler with the declared capability contract; supply an authorized download transport; then execute the real multi-session browser flow. Do not merge the combined database-test branch wholesale merely to make frontend checks green. Coordinate shared type/root-script changes with Person 4.
+Next shared integration: Person 3 should consume Person 4's authorized database adapter; claim real jobs and wait for `worker_job_outcomes`; map bounded provider errors to supported terminal database errors; run the HTTPS handler with the declared capability contract; and supply an authorized download transport. Then rerun the browser flow using that worker and real response documents. The standalone clock smoke must not be displayed as a case investigation or tool event. Do not merge the combined database-test branch wholesale merely to make frontend checks green. Coordinate shared type/root-script changes with Person 4.

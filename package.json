@@ -16,6 +16,7 @@
     "build:web": "npm run build && npm run build --workspace @loanwick/web",
     "test:web": "npm run build && npm test --workspace @loanwick/web",
     "test:e2e": "npm run build && npm run test:e2e --workspace @loanwick/web",
+    "test:e2e:database": "npm run test:e2e:database --workspace @loanwick/web",
     "check": "npm run typecheck && npm test && npm run evaluate && npm run typecheck --workspace @loanwick/web && npm run test:web"
   },
   "devDependencies": {

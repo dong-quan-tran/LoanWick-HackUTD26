@@ -10,7 +10,8 @@
     "build:live": "tsc --noEmit && vite build --mode live",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:database": "node scripts/test-database.mjs"
   },
   "dependencies": {
     "@loanwick/analysis": "*",

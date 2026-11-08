@@ -28,3 +28,37 @@ jobs:
             .impeccable/review/
             apps/web/test-results/
           include-hidden-files: true
+  database-browser:
+    name: Frontend against pinned database (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          ref: c4d78e8af25d4343b464fbb1e3f3189169a1b986
+          path: .integration-backend
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: .integration-backend
+      - run: npm ci --prefix spacetimedb
+        working-directory: .integration-backend
+      - run: npx playwright install --with-deps chromium
+      - name: Install pinned official database tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/loanwick-spacetime"
+          mkdir -p "$tool_dir"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.14.0/spacetime-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$tool_dir/tools.tar.gz"
+          tar -xzf "$tool_dir/tools.tar.gz" -C "$tool_dir"
+          echo "LOANWICK_SPACETIME_CLI=$tool_dir/spacetimedb-cli" >> "$GITHUB_ENV"
+          echo "LOANWICK_SPACETIME_SERVER=$tool_dir/spacetimedb-standalone" >> "$GITHUB_ENV"
+          echo "LOANWICK_WEB_DATABASE_SOURCE=$GITHUB_WORKSPACE/.integration-backend" >> "$GITHUB_ENV"
+      - run: npm run test:e2e:database
