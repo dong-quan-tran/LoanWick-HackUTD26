@@ -5,34 +5,44 @@ primary_target: "src/App.tsx"
 related_targets: ["src/ContractVerification.tsx","src/ContractVerification.module.css"]
 ---
 
-# Loan contract verification
+# Applications and investigation workspace
 
-Mode: Operate, with an expressive ceremonial cover. Bank loan officer, primarily desktop with a usable mobile layout. This approved extension keeps the existing one-page contract upload and pipeline-message workflow. PDF and DOCX remain the confirmed input formats.
+Mode: Operate. November 8, 2026 approved frontend revamp: Applications is the staff home screen. The supplied Applications screenshot is the visual authority for the shared workspace; the existing full-screen verification dossier is the explicit exception.
 
-## Direction contract
+## Approved direction contract
 
-THESIS: Introduce the selected loan as an espresso dossier, then give the officer a centered ivory desk for choosing a contract and following verification in plain language.
+THESIS: Give loan staff a clear view of their authorized applications, then keep investigation and verification in one familiar workspace.
 
-OWN-WORLD: Extend the established leather-and-paper banking world. User-pinned Espresso/Mahogany, Antique Gold/Bronze, Ivory/Parchment, and restrained dusty blue; bundled Source Serif 4, familiar system text, double hairlines, narrow edge labels, and soft material depth. Project-owned generated leather folio and fictional engraved-paper cutouts carry provenance; no borrowed bank logo or real-currency claim.
+OWN-WORLD: Warm brown navigation, ivory ground, white bordered surfaces, warm gray text, bronze amount bars, dusty blue stages, clay concerns, and green clear indicators. System text carries controls; Source Serif 4 carries dashboard totals and the preserved dossier.
 
-STORY: See the selected-loan dossier; enter the verification desk; choose a contract or run the labeled synthetic sample; follow factual messages; open the result and source details needed for review.
+STORY: Scan the portfolio totals and stage distribution, filter the applications, open a case, and review its evidence. Verify contract retains its dossier introduction before revealing the shared workspace.
 
-FIRST VIEWPORT: A nocturnal Espresso cover beneath LoanWick and one compact Menu. Selected-loan context sits above the two-line serif statement “EVERY LOAN CLAUSE, / TRACED TO THE SOURCE.”, with the second line in Antique Gold. One “Enter Verification Desk” action, double-hairline framing, side labels, five orientation milestones, and slow sepia/gold engraved-paper margins complete the cover.
+FIRST VIEWPORT: A narrow brown rail and white status header frame the Applications heading, four summary cards, a compact stage strip, and a searchable application table. Summaries cover the complete authorized portfolio; filters scope only the table.
 
-DESK: Entry reveals a centered warm-Ivory single column. A dark/gold selected-loan pill crosses a parchment upload frame with double hairlines and corner ticks. The leather folio and two-piece security-paper fan sit above the existing upload controls; the sample action stays separate below. Four dynamic stages sit above the footer. Existing file-summary, message, error, connection, and expandable-result behavior stays intact. Margin artwork remains outside the reading column and is hidden on the mobile desk.
-
-FORM: Precise user-supplied composition implemented directly in code within the established visual world. No seed, alternate composition, or dashboard-card system. This cover/desk composition is specific to this surface; DESIGN.md carries its reusable material and type rules.
+FORM: User-pinned screenshot, implemented directly in React/CSS. No alternate concept round or generated comp. Verification keeps its existing cover artwork and menu; entering or directly selecting a file reveals the workspace without remounting the desk or losing state.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
-## Protected behaviors
+## Protected behavior
 
-Only safe operational summaries are shown, never private model reasoning. File selection/format checks must not claim upload or verification. Live messages come from actual database job/tool/document states; no invented stage percentages or timer-driven success. The explicitly synthetic sample runs existing deterministic checks. PDF/DOCX service activation requires backend support. Keep source versions, role isolation, and existing review/release safeguards available behind case details.
+Preserve adapter contracts, borrower isolation, source citations, revisions, human review, release safeguards, explicit fixture/live states, and failure recovery. Aggregate money by currency. Release-ready totals describe application stages, not authorization to release. The sample remains deterministic; live progress follows actual service events.
 
-The cover stays in normal flow above a mounted desk, preserving direct upload and sample access. Local entry state resets on session changes; file selection, direct desk focus, and sample execution reveal the desk. Running, completed, failed, and disconnected states bypass the cover. The entry action and skip link focus the desk h1. Five cover milestones are orientation only. The four-stage desk ruler follows the unchanged synthetic stage events; live emphasis is limited to confirmed extraction and completion, without fabricated intermediate work. Reduced motion disables decoration and desk entrance animations.
+## Preserved dossier behavior
 
-## Reviewed implementation
+`/verify` remains an officer route with its existing full-screen espresso cover, two-line Source Serif 4 statement, Antique Gold emphasis, selected-loan context, double hairlines, edge labels, five orientation milestones, compact Menu, and generated engraved-banknote margins. These treatments are scoped to the cover. The shared operating desk below it has a system-font heading, selected-loan dropdown above a white bordered upload panel, small folio, message stream, and expandable results/evidence. It has no parchment double frame, overlapping gold pill, or floating banknotes.
 
-Final source: `src/ContractVerification.tsx`, `src/ContractVerification.module.css`, and `src/styles.css`; original App.tsx role/state routing remains intact. Decorative cutouts have adjacent prompt/date provenance under `src/assets/`, with prompt records under `.impeccable/assets/`.
+The cover stays in normal flow above the mounted desk. Entry and skip focus the desk heading; direct keyboard focus, file selection, and sample execution also reveal it without remounting or losing input state. Entry state resets on session changes. Running, completed, failed, and disconnected states bypass the cover. Five cover milestones are orientation only. The four-stage desk ruler follows existing synthetic events; live emphasis is limited to confirmed extraction and completion. Reduced motion disables decorative drift and entrance/message animations.
 
-Reviewed captures at repository root: `.impeccable/review/dossier-cover-desktop.png`, `dossier-cover-mobile.png`, `desk-desktop.png`, `desk-mobile.png`, and `user-728.png`. The cover/desk keyboard, direct-upload, stage-ruler, and reduced-motion browser checks cover this extension; accessibility scans at 1440px and 390px do not establish whole-product conformance.
+Only safe operational summaries are shown, never private model reasoning. Preliminary file checks do not claim upload, extraction, or verification. Actual live messages come from document/job/tool states; the explicitly synthetic sample runs existing deterministic checks. PDF/DOCX service activation requires backend support. Preserve source versions, role isolation, and review/release safeguards.
+
+## Implemented scope and validation
+
+Source: `src/App.tsx`, `src/App.module.css`, `src/ContractVerification.tsx`, `src/ContractVerification.module.css`, `src/styles.css`, `src/components/WorkspaceShell.*`, `src/components/PortfolioSummary.*`, and `src/portfolio.ts`. App owns one session subscription. Adapter APIs, backend, generated bindings, and deterministic fixture behavior are unchanged by the visual revamp.
+
+Metrics aggregate the complete authorized portfolio across table filters. Money uses per-currency sums/maxima; latest succeeded investigation status, open findings/flagged cases, and ready/released stages remain distinct. Canonical fixture: 8 applications; USD 1,980,000 shown as $2M with an exact accessible value; 4 open concerns across 4 cases; 8 Reviewing; 0 ready/releases. Stage readiness is not server authorization.
+
+The shared shell has expandable navigation at 700px and below. Metrics use 4/2/1 columns at desktop/999px/599px; mobile filters stack, and the table scrolls in a focusable contained region. Loading skeletons, empty/error states, and subscription updates are implemented.
+
+Validation: 32 web unit tests, all 21 Chromium browser tests, automated Axe scans, and fixture/live production builds passed after the revamp and borrower attachment-grouping fix. Screenshots under repository-root `.impeccable/review/`: `dashboard-reference.png`, `dashboard-desktop.png`, `dashboard-mobile.png`, `dossier-cover-desktop.png`, `dossier-cover-mobile.png`, `desk-desktop.png`, `desk-mobile.png`, `verification-evidence-desktop.png`, `mobile.png` (borrower), and `review-stale.png`. Existing shipping rasters retain adjacent provenance and prompt records; no new raster was generated. These checks do not establish whole-product WCAG conformance, worker/model/extraction completion, or a new cloud/database integration result.
+
+Finish review: the initial review confirmed reference fidelity and identified two material fixes: stale product/design documentation and the borrower attachment grouping. The verdict pass scored both resolved and returned `disposition: ship`. That verdict covers those two scored fixes.

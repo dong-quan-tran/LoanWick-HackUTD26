@@ -2,7 +2,13 @@
 
 ## Implemented on this branch
 
-The current primary screen at `/` (also `/verify`) follows the user's revised bank-verification workflow: choose one PDF/DOCX contract → follow current-stage messages → open verification results and source excerpts. It uses one page with a compact Menu for loan/session options, brown/gold/ivory styling with restrained blue accents, and generated contract-folio artwork. There is no sidebar, navigation tab, portfolio table, or case-history link in this primary flow. Results and evidence expand on the same page. Previous case/borrower/reviewer routes remain available directly for compatibility and separate authorized roles.
+The staff home at `/` redirects to `/applications`; borrowers retain their authorized own-case home. Applications follows the user-pinned reference: narrow warm-brown navigation, ivory canvas, compact white bordered panels, system UI text, Source Serif 4 totals, blue stages, clay concern pills, and green Clear indicators. The shared shell serves officer, borrower, reviewer, and entered verification screens; existing case/borrower/reviewer deep links remain supported. App owns one session subscription.
+
+Portfolio summaries aggregate the complete authorized `PortfolioItem[]`, independently of table search/stage/concern filters. They count applications, latest succeeded investigations, open findings and flagged cases, and ready/released stages. Money totals and row amount bars use per-currency sums/maxima with no FX summation. Release-ready is a stage count, not server permission to release. The canonical fixture shows 8 applications, USD 1,980,000 (displayed $2M with an exact accessible value), 4 open concerns across 4 cases, 8 Reviewing, and 0 ready/releases. Subscription updates, loading skeletons, empty results, and errors are covered.
+
+`/verify` remains an officer route. Its existing full-screen espresso dossier cover, copy, artwork, and Menu are preserved. The desk stays mounted below it; entry, skip, keyboard focus, direct file input, and sample access reveal the shared shell without losing input state. The selected-loan dropdown sits above a compact white upload panel. Upload, progress, results, and evidence remain on one page. The desk no longer uses the parchment double frame, gold loan pill, or floating banknotes; banknotes remain on the cover and the small folio remains in upload.
+
+At 700px and below, shared navigation expands from Menu and supports Escape; portfolio filters stack and the table scrolls within a focusable contained region. Metrics use four columns on desktop, two at 999px and below, and one at 599px and below. Borrower synthetic supporting-document content remains grouped in its tinted panel.
 
 Officer file checks cover a 10 MB limit, extension, PDF header/DOCX package markers, and the selected bytes' SHA-256. They do not extract contract text or certify authenticity. Both contract verification and sample runs progress through a staged sequence of plain-language status updates (reading contract pages, comparing equipment IDs and sole-ownership claims, calculating connected borrower limits, and preparing the summary) before revealing non-technical concern titles, explanations, and human-readable document records that translate raw JSON/JSONPath locators into clear business labels and application context. Default PDF/DOCX intake reports unavailable and explicitly says the file was not uploaded.
 
@@ -25,7 +31,7 @@ npm ci
 npm run dev:web
 ```
 
-Open http://127.0.0.1:5173. The fixture app opens Cedar Demo Excavation. Demo controls provide reset, disconnection, and investigation-failure scenarios. Synthetic scenario state and the synthetic identity persist in session storage; no live case data or credentials are stored there.
+Open http://127.0.0.1:5173. The fixture app opens Applications; open Cedar Demo Excavation for the case journey. Demo controls provide reset, disconnection, and investigation-failure scenarios. Synthetic scenario state and the synthetic identity persist in session storage; no live case data or credentials are stored there.
 
 ```sh
 npm run check
@@ -35,7 +41,9 @@ npx playwright install chromium
 npm run test:e2e --workspace @loanwick/web
 ```
 
-`check` runs the shared-package typecheck, 95 shared/database-adapter/source-seed tests, the fixture evaluator and database-source freshness check, frontend typechecking, and 29 frontend adapter/workflow/upload/file tests. The worker's separate suite contains 13 tests. The ten-test browser suite covers the simplified contract entry, real sample messages/results, preliminary PDF/DOCX checks and truthful unavailable intake, plus the retained synthetic round trip and release, corrected response source, responsive borrower forms, forbidden routes, connection recovery, empty filters, keyboard tabs, and live connection failure without fixture fallback. Four automated WCAG AA scans cover the primary/secondary screens. Screenshots are generated under the repository's `.impeccable/review/` directory. These scans do not establish whole-product accessibility conformance.
+`check` runs the shared-package typecheck, 95 shared/database-adapter/source-seed tests, the fixture evaluator and database-source freshness check, frontend typechecking, and 32 frontend adapter/workflow/upload/file/portfolio tests. The worker's separate suite contains 13 tests. The current 21-test Chromium suite covers the dashboard at 1131×713, 1440×900, and 390×844; table filtering and subscription updates; role-specific homes; mobile Menu/Escape; dossier keyboard/direct-input/sample/reset/reduced-motion behavior; uploads/messages/disconnection; the borrower/reviewer round trip; stale checks and release persistence; and live connection failure without fixture fallback. All 32 web unit tests (including three aggregation tests), all 21 browser tests, and both fixture/live production builds passed after the revamp. Automated Axe scans passed within the browser suite; this does not establish whole-product accessibility conformance. The revamp did not rerun cloud or real-database integration checks.
+
+Current captures under repository-root `.impeccable/review/` include `dashboard-reference.png`, `dashboard-desktop.png`, `dashboard-mobile.png`, `dossier-cover-desktop.png`, `dossier-cover-mobile.png`, `desk-desktop.png`, `desk-mobile.png`, `verification-evidence-desktop.png`, `mobile.png` (borrower), and `review-stale.png`. Existing shipping rasters are reused with adjacent provenance; no new raster was generated. The dated integration reports below retain their original test counts and limits.
 
 ## Repeatable real database browser check
 
@@ -60,7 +68,7 @@ Executed successfully on macOS arm64 with Node 26.12.0 and CLI/server/SDK 2.14.0
 - On the clean control case, current reviews permit release; a payment instruction update stales payment/document reviews. A direct reducer call also rejects release. A fresh deterministic investigation and reverified checks permit one simulated release; same-key retry, different-key rejection, and reconnect persistence are checked.
 - Explicit disconnect clears the displayed case and credential form. Web storage contains no session tokens. This is browser integration evidence, not a comprehensive authorization or concurrency audit.
 
-The test-only driver imports Person 4's bridge in Node from the isolated checkout. Neither its worker identity nor its implementation enters the web bundle. This does not prove Person 3's model loop, document transport, extraction, or corrected-document resolution. The default ten-test browser suite remains independent of the database tooling.
+The test-only driver imports Person 4's bridge in Node from the isolated checkout. Neither its worker identity nor its implementation enters the web bundle. This does not prove Person 3's model loop, document transport, extraction, or corrected-document resolution. The ten-test browser suite used for this historical integration check was independent of the database tooling; the current frontend suite has 21 tests.
 
 ## Fixture demo sequence
 

@@ -5,25 +5,27 @@
 web
 
 ## Stack
-Planned TypeScript monorepo using npm workspaces: React/Vite frontend, SpacetimeDB application database, and a Node/TypeScript worker with NVIDIA/Nemotron orchestration. Shared contracts and deterministic analysis belong in separate packages. Coordinate root tooling and the frontend styling approach with Person 4; Person 2 must verify and pin compatible database tooling before integration.
+TypeScript monorepo using npm workspaces: React/Vite frontend, SpacetimeDB application database, and a Node/TypeScript worker with NVIDIA/Nemotron orchestration. Shared contracts and deterministic analysis belong in separate packages. Coordinate root tooling and the frontend styling approach with Person 4; Person 2 must verify and pin compatible database tooling before integration.
 
 ## Current State
-Current user direction (November 8, 2026): the primary frontend is a bank loan-contract verification tool. A loan officer selects a PDF or DOCX contract, starts verification, and follows a simple series of operational pipeline messages. Results and source evidence use progressive disclosure. The officer interface is one page with two visual stages: an initial espresso dossier cover opens onto a warm-ivory operating desk with a compact menu, contract upload, and verification messages/results in the same view. The cover is an introduction, not an extra workflow route. Earlier portfolio, borrower, and reviewer routes remain available only for compatibility with existing role workflows; they are not primary navigation.
+Current user direction (November 8, 2026): Applications is the staff home screen (`/` redirects to `/applications`); borrowers retain their authorized own-case home. The shared workspace follows the user-pinned Applications reference: a narrow warm-brown sidebar, ivory canvas, compact white bordered panels, system UI text, serif totals, blue stages, clay concern pills, and green Clear indicators. Staff can scan their authorized portfolio, filter the application table, and open the case workspace. Existing case, borrower, and reviewer deep links remain supported.
+
+`/verify` is an officer route with an explicit visual exception: its existing full-screen espresso dossier cover, copy, artwork, and compact Menu remain intact. Entering, using the skip link, focusing the desk, selecting a file, or starting the sample reveals the shared workspace. The desk remains mounted below the cover to preserve input state. Its selected-loan dropdown sits above a compact white upload panel; upload, messages, results, and evidence remain on the same page. The cover is an introduction, not a separate workflow route.
 
 The new upload screen checks file type/signature, size, and SHA-256 locally. In the sample workspace (or when running a sample verification), verification steps progress through a staged sequence of plain-language updates (reading contract pages, comparing equipment IDs and ownership claims, calculating connected borrower limits, and preparing the summary) before presenting non-technical concern titles, explanations, next steps, and human-readable document records. Real live officer intake uses the application-scoped capability transport only when explicitly enabled for a PDF/DOCX-capable worker.
 
-This checkout now contains the shared contracts and deterministic analysis packages, eight canonical synthetic applications and their source documents, and a runnable React frontend in `apps/web`. The complete fixture officer/borrower/reviewer workflow has passed frontend unit and browser tests. Responsive staff/borrower captures and two automated accessibility scans have been checked; this does not establish whole-product WCAG conformance.
+This checkout now contains the shared contracts and deterministic analysis packages, eight canonical synthetic applications and their source documents, and a runnable React frontend in `apps/web`. The complete fixture officer/borrower/reviewer workflow and dashboard aggregation have passed 32 frontend unit tests and 21 Chromium browser tests. Responsive staff/borrower captures and automated Axe accessibility scans have been checked; this does not establish whole-product WCAG conformance.
 
 The live frontend boundary uses unchanged Person 2 bindings from database commit `09288ebcad82fbb5c8fb867281794082ed924131`. A disposable real database has verified distinct-session browser clarification, current/stale reviews, server release rejection, and release retry/persistence, using Person 4's deterministic analysis bridge. Person 3's published `1-ai-worker-and-ingestion` branch currently implements only a clock-tool smoke with `connectedDatabase: false`. Connected investigation/model execution, source/download/upload transport, and editable live draft persistence remain incomplete. Requirements below must not be presented as fully completed live functionality. See `docs/FRONTEND.md` for executed checks and integration gates.
 
 ## Users
-- **Primary**: **Bank Loan Officer**: Uploads a loan contract in PDF or DOCX format, follows current verification stages as concise messages, and reviews the returned concerns and their source evidence.
+- **Primary**: **Bank Loan Officer**: Scans authorized applications, opens a case, investigates source-backed concerns, and requests clarification. The officer can also upload a PDF or DOCX contract, follow concise verification messages, and review returned concerns and evidence.
 - **Secondary**:
   - **Borrower**: Reviews clarification requests via a strictly isolated projection; submits explanations and supporting documents (JSON/CSV); tracks document extraction status without exposure to internal bank notes or other borrowers.
   - **Loan Reviewer**: Examines required pre-disbursement checks against active revision vectors; simulates payment-instruction updates (verifying stale-check invalidation); executes simulated fund release protected by idempotency keys.
 
 ## Product Purpose
-LoanWick is a bank loan-contract verification prototype. Its primary workflow is contract upload → current-stage messages → verification results. It helps the officer follow what the pipeline is doing and open supporting evidence when attention is required. Operational summaries are shown, never private model reasoning.
+LoanWick is a synthetic commercial-loan investigation and contract-verification prototype. Staff begin with their authorized application portfolio, then investigate a case or enter contract verification. The verification workflow remains contract upload → current-stage messages → results and supporting evidence on one page. Operational summaries are shown, never private model reasoning.
 
 A completed check is not approval of a loan, a legal-compliance certification, or proof of fraud. Actual upload, extraction, model use, and verification completion must be confirmed by the corresponding service/database events.
 
@@ -31,20 +33,25 @@ A completed check is not approval of a loan, a legal-compliance certification, o
 Deterministic checks establish traceable concerns from stored evidence; model orchestration assists with tool use, supported explanations, and clarification drafts. Side-by-side source excerpts, preserved document versions, audit history, and revision-aware release controls support human investigation. A finding is a concern to investigate, not a fraud verdict or automatic lending decision.
 
 ## Operating Context
-The officer first sees a dossier cover with the selected loan, one “Enter Verification Desk” action, and five orientation milestones. Entry reveals a single-column verification desk; choosing a file, starting a sample, or focusing the desk directly also reveals it. Running, completed, failed, and disconnected states bypass the cover. Entry state is local to the current session and resets with session changes. One contract upload remains the primary operating action. A compact Menu contains the existing-loan selector and session actions. The selected loan remains visible in a pill crossing the parchment upload frame, while upload, messages, and expandable evidence stay on the same page. Four stages above the footer reflect the existing synthetic sample events; live stage emphasis is limited to confirmed extraction and completion, without invented intermediate work. There are no tabs or case-history links in the officer's main flow. Borrower clarification and reviewer release tools retain their existing authorized routes but do not clutter the primary verification screen.
+Staff begin on Applications with four portfolio summaries, a stage distribution, and a searchable table. Summaries use the complete authorized `PortfolioItem[]`; search, stage, and concern filters affect only table rows. Totals preserve currency, investigation counts use the latest succeeded status, and open concerns sum open findings while separately counting flagged cases. Release-ready and released totals count application stages; release-ready is not server authorization. The canonical fixture shows eight applications, USD 1,980,000 (compact display $2M with an exact accessible value), four open concerns across four cases, eight Reviewing, and zero ready/released applications. Subscription changes update these values; loading, empty, and error states remain explicit.
+
+The shared shell serves officer, borrower, and reviewer screens. Borrowers receive only their authorized own-case navigation and projections. On narrow screens its navigation expands from a Menu control; application-table scrolling stays inside a focusable region and filters stack.
+
+On `/verify`, the preserved cover introduces the selected loan and five orientation milestones. The mounted desk below it opens through the entry action, skip link, direct keyboard focus, file selection, or sample action. Running, completed, failed, and disconnected states bypass the cover. Entry state resets with session changes. Once entered, the selected-loan dropdown, upload, factual messages, and expandable evidence share the standard shell and one reading column. The desk has no parchment double frame, overlapping gold loan pill, or floating banknotes; the small folio remains in upload and engraved banknotes remain on the cover only. Four desk stages follow existing sample events; live stage emphasis is limited to confirmed extraction and completion.
 
 ## Workflow Priorities
-The current user direction supersedes the earlier dashboard-first hierarchy in `docs/team-plans/01-FRONTEND.md`:
 
-1. Choose or drop one PDF or DOCX loan contract, with clear file requirements and meaningful failure feedback.
-2. Start verification and display safe, factual messages for upload, extraction, queued/running checks, actual tool output, failure, and completion as supported by real events.
-3. Show a concise outcome and expandable concerns/source excerpts. Keep uncertainty and human review explicit.
-4. Retain deeper case investigation, clarification, and revision/release controls as secondary surfaces compatible with the rest of the project.
+The November 8 approved Applications reference supersedes the earlier verification-first hierarchy:
+
+1. Scan the complete authorized application portfolio and stage distribution, then filter the table or open a case.
+2. Investigate source evidence, request clarification, and use the existing role-appropriate review workflow.
+3. From Verify contract, choose one PDF or DOCX contract and follow safe, factual service-supported messages on the same page as results.
+4. Keep uncertainty, current source revisions, human review, and server release safeguards visible across all surfaces.
 
 Do not invent successful uploads or verification stages while the worker is unavailable. The explicitly labeled sample uses the existing synthetic case; it never analyzes the officer's selected file.
 
 ## Capabilities and Constraints
-- **Simple Primary Surface**: The initial dossier cover uses a two-line serif statement, one entry action, fine gold framing, and workflow orientation. The centered desk has one parchment upload area, which becomes a compact file summary and readable pipeline message stream. The user-pinned palette is espresso, mahogany, antique gold, bronze, warm ivory, parchment, and restrained dusty blue. A generated leather folio with a security-paper fan supports intake; fictional engraved-banknote cutouts move slowly in the margins and remain decorative. Larger plain-language messages serve non-technical loan officers. Dense comparisons belong in secondary case details.
+- **Shared Staff Workspace**: Applications is the staff home, with compact portfolio summaries, a stage strip, and a filterable table. Warm-brown navigation and an ivory canvas frame white bordered panels across case, borrower, reviewer, and entered verification screens. System UI text carries controls and headings; bundled Source Serif 4 carries dashboard totals and the preserved dossier statement. Blue stages, clay concern pills, green Clear indicators, and bronze amount bars support literal text labels. The expressive espresso/gold dossier cover is a scoped exception. Its generated engraved-paper decoration stays on the cover; the small leather folio remains in the upload panel.
 - **Strict Evidence Grounding**: Every finding must point to concrete document excerpts, versions, and locators (no hallucinated page numbers or invented confidence scores).
 - **Deterministic Concerns**: Equipment conflicts require active conflicting exclusive ownership claims with source evidence. Similar names or shared addresses only suggest candidates; group exposure uses human-confirmed relationships and a named, versioned synthetic policy. Missing evidence remains unknown.
 - **Human-in-the-Loop Investigation**: Flags indicate potential concerns (clerical errors, outdated schedules, or potential conflicts) requiring human inquiry, not automated fraud verdicts. All finding resolutions and checklist sign-offs require written rationale.
@@ -65,9 +72,9 @@ Do not invent successful uploads or verification stages while the worker is unav
 
 ## Brand Commitments
 - **Name**: LoanWick
-- **Palette and imagery**: Brown/gold rather than green, with restrained institutional blue accents. Goldman Sachs is a design reference, not the product brand. Use the project's own generated leather-folio and fictional engraved-paper artwork; keep the officer workflow to one page with a compact menu. Decorative financial paper has no denomination or real-currency claim and never serves as evidence or an approval symbol.
+- **Palette and imagery**: The user-pinned Applications reference governs the shared workspace: warm brown, ivory, white, bronze, dusty blue, clay concerns, and green Clear indicators. Preserve the espresso/gold dossier cover as an explicit exception. Goldman Sachs is a design reference, not the product brand. Reuse the project-owned leather folio and fictional engraved-paper artwork with their provenance. Decorative financial paper has no denomination or real-currency claim and never serves as evidence or an approval symbol.
 - **Voice & Tone**: Conservative, objective, and analytical. Terminology must remain non-accusatory (e.g., use "conflicting ownership claim" or "potential concern" rather than "fraudster" or "fraud confirmed").
-- **Visual Status Banners**: Persistent shell header displays connection state, authenticated role, live/fixture execution mode, and a clear `SYNTHETIC DATA - NOT REAL MONEY` indicator.
+- **Visual Status Banners**: The shared shell shows connection state, live/fixture data mode, role/session controls, and `Synthetic data · No money moves`. Fixture role switching is explicitly labeled a demo, not authentication. The preserved dossier has its own session/Menu header until entry.
 
 ## Evidence on Hand
 - Shared scope, proposed architecture, operations, and revision agreement: `docs/team-plans/00-START-HERE.md`.
@@ -88,7 +95,7 @@ Do not invent successful uploads or verification stages while the worker is unav
 1. **Evidence Over Accusation**: Ground findings in exact document excerpts and normalized identifiers; treat discrepancies as items for human investigation.
 2. **Complete Auditability**: Preserve document versions and audit state transitions, clarification exchanges, reviewer decisions, and actual tool activity. Bind jobs, findings, and reviews to the relevant source revisions.
 3. **Revision-Locked Safety**: Release readiness is dynamic; any mutation to loan inputs automatically invalidates dependent reviews and requires re-verification before release.
-4. **Task Clarity**: Give the officer one primary action and a linear message stream. Reveal results and evidence on demand; keep the primary screen free of portfolio tables, role switches, and review/release controls.
+4. **Task Clarity**: Give staff an Applications home for portfolio scanning and a consistent shell for each case task. Keep verification upload, messages, results, and evidence on one page; retain borrower isolation and role-appropriate review/release controls.
 5. **Fail-Visible Resilience**: Connection losses, model errors, or extraction failures must remain visibly surfaced with retry actions; never hide errors behind infinite spinners or fake successes.
 
 ## Accessibility & Inclusion

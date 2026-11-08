@@ -4,7 +4,7 @@ test.use({ baseURL: 'http://127.0.0.1:5174' });
 test('live connection failure stays live and never loads fixture data or grants a role', async ({ page }) => {
   const fixtureRequests: string[] = [];
   page.on('request', request => { if (/adapters\/fixture|fixtures\/applications|payment-seed/.test(request.url())) fixtureRequests.push(request.url()); });
-  await page.goto('/');
+  await page.goto('/verify');
   await expect(page.getByRole('heading', { name: 'Connect your bank session' })).toBeVisible();
   await expect(page.getByLabel('Demo role')).toHaveCount(0);
   await expect(page.getByText('Cedar Demo Excavation')).toHaveCount(0);

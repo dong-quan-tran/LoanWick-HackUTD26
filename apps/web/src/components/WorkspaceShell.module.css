@@ -1,0 +1,77 @@
+.shell { --rail-width: clamp(160px, 14.25vw, 216px); --gutter: 32px; min-height: 100svh; background: var(--workspace); }
+.rail { width: var(--rail-width); position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; flex-direction: column; padding: 30px 14px 24px; background: var(--rail); color: #f4eee7; overflow-y: auto; }
+.railHeading { min-width: 0; }
+.brand { display: flex; align-items: center; gap: 10px; color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -.035em; text-decoration: none; white-space: nowrap; }
+.brand:hover { color: #fff; }
+.brandMark { width: 32px; height: 32px; display: grid; place-items: center; flex-shrink: 0; border-radius: 7px; color: #5e4d39; background: #ede8df; }
+.brandMark svg { width: 27px; height: 27px; }
+.railCaption { margin: 20px 0 32px; color: #d5c7b8; font-size: 11px; }
+.rail nav { display: grid; gap: 6px; }
+.rail nav a { min-height: 42px; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 6px; color: #e0d5c9; font-size: 13px; text-decoration: none; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.rail nav a:hover { background: #4b3d2e; color: #fff; }
+.rail nav a[aria-current="page"] { background: #5b4d39; color: #fff; }
+.railBottom { margin-top: auto; padding: 28px 10px 0; color: #d6c9ba; }
+.railBottom > svg { margin-bottom: 12px; }
+.railBottom p { font-family: "Source Serif 4", Georgia, serif; font-size: 12px; line-height: 1.75; color: #eee4d7; }
+.railBottom small { display: block; margin-top: 20px; color: #d6c9ba; font-size: 11px; line-height: 1.65; }
+.navigationToggle { display: none; }
+.frame { margin-left: var(--rail-width); min-width: 0; }
+.topbar { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px var(--gutter); background: #fff; border-bottom: 1px solid var(--line); }
+.connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.connection strong { font-weight: 500; color: #64584c; }
+.connectionDot { width: 6px; height: 6px; border-radius: 50%; background: #8e6e4d; }
+.disconnected { background: #a16c22; }
+.separator { color: #c2b8ac; margin-inline: 5px; }
+.sessionControls { display: flex; align-items: center; gap: 18px; }
+.sessionControls label { flex-direction: row; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.sessionControls select { min-height: 34px; padding: 6px 12px; min-width: 104px; font-size: 12px; }
+.sessionControls button { min-height: 34px; padding-block: 6px; font-size: 12px; }
+.role { color: var(--muted); font-size: 12px; }
+.avatar { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: #706254; background: #f0ece7; }
+.synthetic { display: flex; justify-content: space-between; gap: 16px; padding: 7px var(--gutter) 5px; background: #f2eeea; border-bottom: 3px solid #597d8d; color: #716252; font-size: 11px; }
+.demoTools { max-width: 1760px; margin: auto; padding: 10px var(--gutter) 24px; color: var(--muted); }
+.demoTools summary { font-size: 11px; font-weight: 450; }
+.demoTools details[open] { padding: 16px 20px; background: #eee8e1; border-radius: 7px; }
+.demoTools label { max-width: 280px; }
+.demoTools button { margin-block: 12px; }
+.demoTools small { display: block; }
+.skip { position: fixed; z-index: 20; top: -100px; left: calc(var(--rail-width) + 16px); padding: 12px 16px; background: #fff; color: var(--ink); }
+.skip:focus { top: 10px; }
+.withoutChrome { min-height: 0; }
+.withoutChrome .frame { margin-left: 0; }
+@media (max-width: 1250px) {
+  .shell { --gutter: 26px; }
+  .rail { padding: 28px 6px 24px; }
+  .brand { gap: 8px; font-size: 19px; }
+  .brandMark { width: 30px; height: 30px; }
+  .railCaption { margin-top: 18px; margin-bottom: 26px; }
+  .rail nav a { min-height: 38px; }
+  .rail nav a { gap: 10px; padding-inline: 10px; font-size: 12px; }
+  .topbar { min-height: 54px; padding-block: 9px; }
+  .synthetic { padding-top: 5px; padding-bottom: 3px; font-size: 10px; line-height: 1.3; }
+}
+@media (max-width: 1050px) { .synthetic span { display: none; } }
+@media (max-width: 700px) {
+  .shell { --gutter: 18px; }
+  .rail { position: static; width: 100%; padding: 14px 18px; overflow: visible; }
+  .railHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { font-size: 21px; }
+  .brandMark { width: 30px; height: 30px; }
+  .railCaption, .railBottom { display: none; }
+  .navigationToggle { display: inline-flex; min-height: 44px; padding: 8px 11px; background: transparent; border-color: #82705d; color: #f4eee7; font-size: 12px; }
+  .navigationToggle:hover { background: #5b4d39; border-color: #a58d71; }
+  .rail nav { display: none; padding-top: 14px; }
+  .rail nav.navigationOpen { display: grid; }
+  .rail nav a { min-height: 44px; font-size: 14px; }
+  .frame { margin-left: 0; }
+  .topbar { padding-block: 10px; min-height: 62px; gap: 10px; }
+  .connection { gap: 5px; font-size: 10px; }
+  .separator { margin-inline: 2px; }
+  .sessionControls { gap: 8px; }
+  .sessionControls label { font-size: 0; gap: 0; }
+  .sessionControls select { min-width: 0; width: 100px; min-height: 40px; font-size: 12px; }
+  .sessionControls button { min-height: 40px; }
+  .avatar { display: none; }
+  .synthetic { font-size: 11px; }
+  .skip { left: 16px; }
+}

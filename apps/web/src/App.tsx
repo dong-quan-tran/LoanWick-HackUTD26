@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { Link, Navigate, NavLink, Route, Routes, useNavigate, useParams, useSearchParams, useLocation } from 'react-router';
+import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams, useLocation } from 'react-router';
 import type { BorrowerCaseView, CheckType, ClarificationRequest, DocumentMetadata, DomainError, Evidence, PresentedFinding, OperationResult, PortfolioItem, StaffCaseView } from '@loanwick/contracts/domain';
 import { CHECK_TYPES } from '@loanwick/contracts/domain';
 import { Icon } from './components/Icon';
@@ -8,6 +8,9 @@ import { correlationId, readable } from './adapters/types';
 import type { BorrowerApplicationSummary, FrontendAdapter, SessionState } from './adapters/types';
 import styles from './App.module.css';
 import { ContractVerification } from './ContractVerification';
+import { WorkspaceShell } from './components/WorkspaceShell';
+import { PortfolioSummary } from './components/PortfolioSummary';
+import { summarizePortfolio } from './portfolio';
 
 const money = (cents: number, currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 const time = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
@@ -41,47 +44,30 @@ export function App({ adapter }: { adapter: FrontendAdapter }) {
   const route = useLocation();
   const [session, setSession] = useState<SessionState>({ status: 'connecting', user: null, message: null });
   useEffect(() => adapter.subscribeSession(setSession), [adapter]);
-  if ((route.pathname === '/' || route.pathname === '/verify') && session.user?.role !== 'borrower' && session.user?.role !== 'reviewer') return <ContractVerification adapter={adapter} session={session} />;
-  return <WorkspaceApp adapter={adapter} />;
+  if (route.pathname === '/verify' && session.user?.role !== 'borrower' && session.user?.role !== 'reviewer') {
+    return <ContractVerification adapter={adapter} session={session} />;
+  }
+  return <WorkspaceApp adapter={adapter} session={session} />;
 }
-function WorkspaceApp({ adapter }: { adapter: FrontendAdapter }) {
-  const [session, setSession] = useState<SessionState>({ status: 'connecting', user: null, message: null });
-  const navigate = useNavigate(); const route = useLocation();
+
+function WorkspaceApp({ adapter, session }: { adapter: FrontendAdapter; session: SessionState }) {
+  const route = useLocation();
   useEffect(() => { document.getElementById('main')?.focus({ preventScroll: true }); }, [route.pathname]);
-  useEffect(() => adapter.subscribeSession(setSession), [adapter]);
   const selectedCase = route.pathname.match(/\/(?:cases|borrower)\/([^/]+)/)?.[1] ?? session.defaultApplicationId ?? 'app-excavator-a';
-  const switchRole = (role: 'officer' | 'borrower' | 'reviewer') => {
-    adapter.selectIdentity?.(role, selectedCase);
-    navigate(role === 'borrower' ? `/borrower/${selectedCase}` : `/cases/${selectedCase}`);
-  };
-  return <div className={`${styles.app} ${session.user?.role === 'borrower' ? styles.borrowerShell : ''}`}>
-    <a className={styles.skip} href="#main">Skip to workspace</a>
-    <aside className={styles.rail} aria-label="Application navigation">
-      <Link to={session.user?.role === 'borrower' ? `/borrower/${selectedCase}` : '/applications'} className={styles.brand}><span className={styles.brandMark}><svg viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="m5 8 4 14 6-10 6 10 4-14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>LoanWick</Link>
-      <div className={styles.railCaption}>Investigation workspace</div>
-      <nav>{session.user?.role !== 'borrower' ? <>{session.user?.role === 'officer' && <NavLink to="/verify"><Icon name="document" />Verify contract</NavLink>}<NavLink to="/applications"><Icon name="grid" />Applications</NavLink><NavLink to={`/cases/${selectedCase}`}><Icon name="folder" />Case workspace</NavLink></> : <NavLink to={`/borrower/${selectedCase}`}><Icon name="folder" />Your application</NavLink>}</nav>
-      <div className={styles.railBottom}><Icon name="shield" /><p>Evidence first.<br />Human decisions.</p><small>Synthetic prototype<br />No real banking integrations.</small></div>
-    </aside>
-    <div className={styles.frame}>
-      <header className={styles.topbar}>
-        <div className={styles.connection}><span className={`${styles.connectionDot} ${session.status !== 'connected' ? styles.disconnected : ''}`} /><span>{readable(session.status)}</span><span className={styles.separator}>/</span><strong>{adapter.mode === 'fixture' ? 'Fixture data' : 'Live database'}</strong></div>
-        <div className={styles.sessionControls}>{adapter.selectIdentity && <label>Demo role<select aria-label="Demo role" value={session.user?.role ?? 'officer'} onChange={e => switchRole(e.target.value as 'officer' | 'borrower' | 'reviewer')}><option value="officer">Officer</option><option value="borrower">Borrower</option><option value="reviewer">Reviewer</option></select></label>}{!adapter.selectIdentity && session.user && <><Badge value={session.user.role} /><button onClick={() => adapter.disconnect()}>Disconnect</button></>}<span className={styles.avatar}><Icon name="user" size={17} /></span></div>
-      </header>
-      <div className={styles.synthetic}>Synthetic data · No money moves{adapter.mode === 'fixture' && <span>Role switching is a demo, not authentication.</span>}</div>
-      <main id="main" tabIndex={-1} className={styles.main}>
-        {adapter.startupNotice && <Feedback message={adapter.startupNotice} />}
-        {session.status !== 'connected' && <div className={styles.connectionWarning}><Feedback error message={session.message ?? 'Connecting to the authorized session…'} /><button onClick={() => adapter.retry()}><Icon name="refresh" />Retry connection</button></div>}
-        {session.user ? <Routes key={session.user.id}>
-          <Route path="/applications" element={session.user.role === 'borrower' ? <Navigate replace to={`/borrower/${selectedCase}`} /> : <Portfolio adapter={adapter} />} />
-          <Route path="/cases/:applicationId" element={session.user.role === 'borrower' ? <Forbidden /> : <CaseWorkspace adapter={adapter} role={session.user.role} />} />
-          <Route path="/borrower/:applicationId" element={session.user.role === 'borrower' ? <BorrowerWorkspace adapter={adapter} /> : <Forbidden />} />
-          <Route path="/" element={<Navigate replace to={session.user.role === 'borrower' ? `/borrower/${session.defaultApplicationId ?? selectedCase}` : adapter.mode === 'live' ? '/applications' : '/cases/app-excavator-a'} />} />
-          <Route path="*" element={<Empty title="Page not found">Open Applications to choose a case.</Empty>} />
-        </Routes> : adapter.mode === 'live' ? <LiveSetup adapter={adapter} /> : <div className={styles.loading}>Loading workspace…</div>}
-      </main>
-      {adapter.mode === 'fixture' && <footer className={styles.demoTools}><details><summary>Demo controls</summary><label>Failure scenario<select aria-label="Failure scenario" onChange={e => adapter.setFailure?.(e.target.value as 'none' | 'offline' | 'investigation')}><option value="none">None</option><option value="offline">Disconnected</option><option value="investigation">Investigation failure</option></select></label><button onClick={() => { if (window.confirm('Reset all synthetic cases, responses, checks, and releases?')) { adapter.reset?.(); navigate('/cases/app-excavator-a'); } }}><Icon name="refresh" size={16} />Reset synthetic demo</button><small>Local deterministic checks only. No model calls or real payments.</small></details></footer>}
-    </div>
-  </div>;
+  return <WorkspaceShell adapter={adapter} session={session} applicationId={selectedCase}>
+    <main id="main" tabIndex={-1} className={styles.main}>
+      {adapter.startupNotice && <Feedback message={adapter.startupNotice} />}
+      {session.status !== 'connected' && <div className={styles.connectionWarning}><Feedback error message={session.message ?? 'Connecting to the authorized session…'} /><button onClick={() => adapter.retry()}><Icon name="refresh" />Retry connection</button></div>}
+      {session.user ? <Routes key={session.user.id}>
+        <Route path="/applications" element={session.user.role === 'borrower' ? <Navigate replace to={`/borrower/${selectedCase}`} /> : <Portfolio adapter={adapter} />} />
+        <Route path="/cases/:applicationId" element={session.user.role === 'borrower' ? <Forbidden /> : <CaseWorkspace adapter={adapter} role={session.user.role} />} />
+        <Route path="/borrower/:applicationId" element={session.user.role === 'borrower' ? <BorrowerWorkspace adapter={adapter} /> : <Forbidden />} />
+        <Route path="/" element={<Navigate replace to={session.user.role === 'borrower' ? `/borrower/${session.defaultApplicationId ?? selectedCase}` : '/applications'} />} />
+        <Route path="/verify" element={<Navigate replace to={session.user.role === 'borrower' ? `/borrower/${selectedCase}` : '/applications'} />} />
+        <Route path="*" element={<Empty title="Page not found">Open Applications to choose a case.</Empty>} />
+      </Routes> : adapter.mode === 'live' ? <LiveSetup adapter={adapter} /> : <div className={styles.loading}>Loading workspace…</div>}
+    </main>
+  </WorkspaceShell>;
 }
 
 function Forbidden() { return <Empty title="This view is unavailable">Your current session does not have access. Return to your permitted application.</Empty>; }
@@ -89,11 +75,13 @@ function Portfolio({ adapter }: { adapter: FrontendAdapter }) {
   const [items, setItems] = useState<PortfolioItem[] | null>(null); const [error, setError] = useState<DomainError | null>(null);
   const [query, setQuery] = useState(''); const [stage, setStage] = useState('all'); const [findingFilter, setFindingFilter] = useState('all');
   useEffect(() => adapter.subscribePortfolio(value => { setItems(value); setError(null); }, e => { setItems(null); setError(e); }), [adapter]);
+  const totals = items ? summarizePortfolio(items) : null;
   const filtered = items?.filter(i => i.application.businessName.toLowerCase().includes(query.toLowerCase()) && (stage === 'all' || i.application.stage === stage) && (findingFilter === 'all' || (findingFilter === 'open' ? i.openFindingCount > 0 : i.openFindingCount === 0)));
   return <><div className={styles.pageTitle}><div><h1>Applications</h1><p>Review evidence, follow up, and keep each case moving.</p></div><span className={styles.recordCount}>{items?.length ?? '—'} applications</span></div>
     {error && <Feedback error message={error.message} />}
-    <section className={styles.surface} aria-label="Application portfolio"><div className={styles.filters}><label className={styles.search}><Icon name="search" size={18} /><input aria-label="Search applications" placeholder="Search businesses" value={query} onChange={e => setQuery(e.target.value)} /></label><label>Stage<select aria-label="Filter by stage" value={stage} onChange={e => setStage(e.target.value)}><option value="all">All stages</option>{['submitted', 'reviewing', 'clarification_needed', 'ready_for_release', 'released_demo'].map(v => <option key={v} value={v}>{readable(v)}</option>)}</select></label><label>Concerns<select aria-label="Filter by concerns" value={findingFilter} onChange={e => setFindingFilter(e.target.value)}><option value="all">All applications</option><option value="open">Open concerns</option><option value="clear">No open concerns</option></select></label></div>
-      <div className={styles.tableScroll}><table><thead><tr><th>Business</th><th>Requested amount</th><th>Stage</th><th>Open concerns</th><th>Last investigation</th><th><span className={styles.srOnly}>Open case</span></th></tr></thead><tbody>{filtered?.map(({ application: a, openFindingCount, lastInvestigationStatus }) => <tr key={a.id}><td><Link className={styles.businessLink} to={`/cases/${a.id}`}>{a.businessName}</Link><small>{a.id}</small></td><td className={styles.numeric}>{money(a.amountCents, a.currency)}</td><td><Badge value={a.stage} /></td><td>{openFindingCount ? <Badge value="review">{openFindingCount} open</Badge> : <span className={styles.muted}>None</span>}</td><td>{lastInvestigationStatus ? <Badge value={lastInvestigationStatus} /> : <span className={styles.muted}>Not run</span>}</td><td><Link className={styles.iconLink} aria-label={`Open ${a.businessName}`} to={`/cases/${a.id}`}><Icon name="arrow" size={18} /></Link></td></tr>)}</tbody></table></div>
+    {!error && <PortfolioSummary items={items} />}
+    <section className={`${styles.surface} ${styles.portfolio}`} aria-label="Application portfolio"><div className={styles.filters}><label className={styles.search}><Icon name="search" size={18} /><input aria-label="Search applications" placeholder="Search businesses" value={query} onChange={e => setQuery(e.target.value)} /></label><label>Stage<select aria-label="Filter by stage" value={stage} onChange={e => setStage(e.target.value)}><option value="all">All stages</option>{['submitted', 'reviewing', 'clarification_needed', 'ready_for_release', 'released_demo'].map(v => <option key={v} value={v}>{readable(v)}</option>)}</select></label><label>Concerns<select aria-label="Filter by concerns" value={findingFilter} onChange={e => setFindingFilter(e.target.value)}><option value="all">All applications</option><option value="open">Open concerns</option><option value="clear">No open concerns</option></select></label></div>
+      <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Scrollable applications"><table><thead><tr><th>Business</th><th>Requested amount</th><th>Stage</th><th>Open concerns</th><th>Last investigation</th><th><span className={styles.srOnly}>Open case</span></th></tr></thead><tbody>{filtered?.map(({ application: a, openFindingCount, lastInvestigationStatus }) => <tr key={a.id}><td><Link className={styles.businessLink} to={`/cases/${a.id}`}>{a.businessName}</Link><small>{a.id}</small></td><td className={styles.numeric}><span>{money(a.amountCents, a.currency)}</span><span className={styles.amountTrack} aria-hidden="true"><span style={{ width: `${(a.amountCents / (totals?.currencies.find(total => total.currency === a.currency)?.maxCents || 1)) * 100}%` }} /></span></td><td><Badge value={a.stage} /></td><td>{openFindingCount ? <span className={`${styles.concernPill} ${styles.concernOpen}`}><span aria-hidden="true" />{openFindingCount} open</span> : <span className={`${styles.concernPill} ${styles.concernClear}`}><Icon name="check" size={12} />Clear<span className={styles.srOnly}> · No open concerns</span></span>}</td><td>{lastInvestigationStatus ? <Badge value={lastInvestigationStatus} /> : <span className={styles.muted}>Not run</span>}</td><td><Link className={styles.iconLink} aria-label={`Open ${a.businessName}`} to={`/cases/${a.id}`}><Icon name="arrow" size={18} /></Link></td></tr>)}</tbody></table></div>
       {!items && !error && <div className={styles.loading}>Loading applications…</div>}{filtered?.length === 0 && <Empty title="No matching applications">Try another business name or clear the filters.</Empty>}
     </section></>;
 }

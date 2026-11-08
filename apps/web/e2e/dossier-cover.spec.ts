@@ -9,7 +9,7 @@ for (const viewport of [
 ]) {
   test(`dossier cover supports keyboard entry at ${viewport.name} size`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/');
+    await page.goto('/verify');
     const cover = page.getByRole('region', { name: /EVERY LOAN CLAUSE/ });
     const enter = page.getByRole('button', { name: 'Enter Verification Desk' });
     const heading = page.getByRole('heading', { name: 'Verify a loan contract', exact: true });
@@ -33,7 +33,7 @@ for (const viewport of [
 }
 
 test('the mounted upload input bypasses the cover without an entry click', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/verify');
   const enter = page.getByRole('button', { name: 'Enter Verification Desk' });
   await expect(enter).toBeVisible();
   await page.getByLabel('Loan contract', { exact: true }).setInputFiles({
@@ -47,7 +47,7 @@ test('the mounted upload input bypasses the cover without an entry click', async
 });
 
 test('loan selection updates the dossier and the desk without changing routes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/verify');
   const cover = page.getByRole('region', { name: /EVERY LOAN CLAUSE/ });
   await expect(cover).toContainText('Cedar Demo Excavation');
   await page.getByText('Menu', { exact: true }).click();
@@ -60,13 +60,15 @@ test('loan selection updates the dossier and the desk without changing routes', 
   await expect(cover).toContainText(nextName);
   await expect(select).not.toBeVisible();
   await page.getByRole('button', { name: 'Enter Verification Desk' }).click();
-  await expect(page.getByRole('region', { name: 'Contract upload', exact: true })).toContainText(`${nextName}· Commercial Facility`);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('combobox', { name: 'Loan application', exact: true })).toHaveValue(nextId!);
+  await expect(page.getByRole('navigation', { name: 'Workspace' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Contract upload', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/verify$/);
 });
 
 test('reduced motion disables decoration and desk entrance animations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/verify');
   await expect(page.getByRole('button', { name: 'Enter Verification Desk' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
   const decorativeImages = page.locator('img');
@@ -77,7 +79,7 @@ test('reduced motion disables decoration and desk entrance animations', async ({
 });
 
 test('the stage ruler follows sample progress and resets for the next verification', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/verify');
   await page.getByRole('button', { name: 'Enter Verification Desk' }).click();
   const ruler = page.getByRole('list', { name: 'Verification stages' });
   await expect(ruler.getByRole('listitem')).toHaveCount(4);
