@@ -231,6 +231,7 @@ export const FindingSummary = __t.object("FindingSummary", {
   get sources() {
     return __t.array(SourceRevision);
   },
+  crossCaseOwnershipVerified: __t.option(__t.bool()),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
   isCurrent: __t.bool(),
@@ -259,6 +260,7 @@ export const Findings = __t.object("Findings", {
   get sources() {
     return __t.array(SourceRevision);
   },
+  crossCaseOwnershipVerified: __t.option(__t.bool()),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
 });
@@ -286,6 +288,7 @@ export const InvestigationJobs = __t.object("InvestigationJobs", {
   startedAt: __t.option(__t.timestamp()),
   completedAt: __t.option(__t.timestamp()),
   errorCode: __t.option(__t.string()),
+  acceptedFindingIds: __t.option(__t.array(__t.string())),
 });
 export type InvestigationJobs = __Infer<typeof InvestigationJobs>;
 
@@ -527,6 +530,19 @@ export type Users = __Infer<typeof Users>;
 
 export const WorkerAvailableJobs = __t.object("WorkerAvailableJobs", {});
 export type WorkerAvailableJobs = __Infer<typeof WorkerAvailableJobs>;
+
+export const WorkerJobOutcome = __t.object("WorkerJobOutcome", {
+  id: __t.string(),
+  claimEpoch: __t.u32(),
+  status: __t.string(),
+  errorCode: __t.option(__t.string()),
+  completedAt: __t.timestamp(),
+  acceptedFindingIds: __t.array(__t.string()),
+});
+export type WorkerJobOutcome = __Infer<typeof WorkerJobOutcome>;
+
+export const WorkerJobOutcomes = __t.object("WorkerJobOutcomes", {});
+export type WorkerJobOutcomes = __Infer<typeof WorkerJobOutcomes>;
 
 export const WorkerSnapshot = __t.object("WorkerSnapshot", {
   id: __t.string(),

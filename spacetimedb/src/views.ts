@@ -1,6 +1,6 @@
 import { t } from 'spacetimedb/server'
 import { activeJob, readiness, revisions } from './domain'
-import { jobCollateral, jobEvidence, sourcesMatch } from './investigations'
+import { jobCollateral, jobEvidence, sourcesMatch } from './scope'
 import {
   applications, auditEvents, borrowerResponses, clarificationRequests, collateral, db, demoReleases, documentFields,
   entityRecords, evidence, findings, matchCandidates, reviewRecords, revisionVector, sourceRevision, toolEvents,
@@ -132,6 +132,19 @@ const availableJob = t.row('AvailableJob', {
 export const workerAvailableJobs = db.view({ name: 'worker_available_jobs', public: true }, t.array(availableJob), ctx =>
   workerJobs(ctx).filter(job => activeJob(job.status))
     .map(({ id, status, leaseExpiresAt, createdAt }) => ({ id, status, leaseExpiresAt, createdAt })))
+
+const jobOutcome = t.row('WorkerJobOutcome', {
+  id: t.string().primaryKey(), claimEpoch: t.u32(), status: t.string(), errorCode: t.option(t.string()),
+  completedAt: t.timestamp(), acceptedFindingIds: t.array(t.string()),
+})
+export const workerJobOutcomes = db.view({ name: 'worker_job_outcomes', public: true }, t.array(jobOutcome), ctx =>
+  workerJobs(ctx).flatMap(job => {
+    if (activeJob(job.status) || !job.completedAt || !job.workerIdentity?.isEqual(ctx.sender)) return []
+    const { id, claimEpoch, status, errorCode, completedAt } = job
+    const acceptedFindingIds = job.acceptedFindingIds ?? (status === 'succeeded'
+      ? [...ctx.db.findings.jobId.filter(id)].map(finding => finding.id) : [])
+    return [{ id, claimEpoch, status, errorCode, completedAt, acceptedFindingIds }]
+  }))
 
 const scopedApplication = t.object('ScopedApplication', {
   id: t.string(), businessName: t.string(), amountCents: t.u64(), currency: t.string(), stage: t.string(),

@@ -10,6 +10,8 @@ const database = process.env.LOANWICK_DB_NAME ?? 'loanwick-dev'
 const adminToken = process.env.LOANWICK_ADMIN_TOKEN
 const case1 = 'demo-case-1'
 const case2 = 'demo-case-2'
+const case3 = 'demo-case-3'
+const case4 = 'demo-case-4'
 const case5 = 'demo-case-5'
 const case6 = 'demo-case-6'
 const case7 = 'demo-case-7'
@@ -19,7 +21,7 @@ const staffViews = ['staff_applications', 'staff_documents', 'staff_evidence', '
   'staff_clarifications', 'staff_responses', 'staff_reviews', 'staff_readiness', 'staff_releases', 'staff_audit_events']
 const borrowerViews = ['borrower_applications', 'borrower_clarifications', 'borrower_documents', 'borrower_own_responses',
   'my_upload_grants', 'staff_applications', 'staff_findings', 'staff_evidence']
-const workerViews = ['worker_available_jobs', 'worker_snapshots', 'worker_upload_grants', 'staff_evidence']
+const workerViews = ['worker_available_jobs', 'worker_snapshots', 'worker_job_outcomes', 'worker_upload_grants', 'staff_evidence']
 
 async function eventually<T>(read: () => T | undefined | false, description: string): Promise<T> {
   const deadline = Date.now() + 5000
@@ -57,7 +59,6 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
   const ops = officer.client.reducers
   const review = reviewer.client.reducers
   const borrower = borrowerA.client.reducers
-  const caseRow = (id: string) => [...officer.client.db.staffApplications.iter()].find(row => row.id === id)
   const jobRow = (key: string) => [...officer.client.db.staffJobs.iter()].find(job => job.runKey === key)
   const releaseRow = (id: string) => [...reviewer.client.db.staffReleases.iter()].find(row => row.applicationId === id)
   const checkRow = (id: string) => [...reviewer.client.db.staffReadiness.iter()].find(row => row.applicationId === id)
@@ -65,19 +66,29 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await ops.requestInvestigation({ applicationId, runKey, executionMode: 'fixture' })
     return eventually(() => jobRow(runKey), `queued job ${runKey}`)
   }
+  const outcome = (client: DbConnection, id: string) => [...client.db.workerJobOutcomes.iter()].find(row => row.id === id)
+  const cleanRun = async (applicationId: string, runKey: string) => {
+    const job = await requestJob(applicationId, runKey)
+    await workerA.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })
+    await workerA.client.reducers.completeInvestigation({ jobId: job.id, claimEpoch: 1, findings: [] })
+    const terminal = await eventually(() => outcome(workerA.client, job.id), `outcome for ${runKey}`)
+    assert.equal(terminal.status, 'succeeded')
+    return terminal
+  }
+  const fixturePaymentEvidence = (id: string) => `demo-payment-evidence-${id.split('-').at(-1)}`
   const payment = (applicationId: string, expectedPaymentRevision: number) => ({
-    applicationId, expectedPaymentRevision, syntheticAccountToken: 'demo_replacement', maskedDisplay: '**** 2026',
-    beneficiaryName: 'Synthetic beneficiary', evidenceIds: [],
+    applicationId, expectedPaymentRevision, syntheticAccountToken: `demo_account_${applicationId.split('-').at(-1)}`, maskedDisplay: '**** 2026',
+    beneficiaryName: 'Synthetic beneficiary', evidenceIds: [fixturePaymentEvidence(applicationId)],
   })
-  const allReviews = async (applicationId: string, evidenceId: string) => {
-    const application = caseRow(applicationId)
+  const allReviews = async (applicationId: string, evidenceId: string, paymentEvidenceId = fixturePaymentEvidence(applicationId)) => {
+    const application = [...reviewer.client.db.staffApplications.iter()].find(row => row.id === applicationId)
     assert.ok(application)
     for (const [checkType, expectedRevision] of [
       ['collateral_review', application.collateralRevision], ['document_consistency_review', application.applicationRevision],
       ['payment_verification', application.paymentRevision],
     ] as const) {
       await review.recordReview({ applicationId, checkType, expectedRevision, status: 'passed',
-        rationale: 'Reviewed the current synthetic case.', evidenceIds: [evidenceId] })
+        rationale: 'Reviewed the current synthetic case.', evidenceIds: [checkType === 'payment_verification' ? paymentEvidenceId : evidenceId] })
     }
   }
 
@@ -121,24 +132,27 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
   })
 
   let findingId: string
+  let firstFindingJobId: string
+  const conflict = { type: 'collateral_conflict', severity: 'high', evidenceState: 'supported', title: 'Conflicting ownership claims',
+    explanation: 'Two schedules claim exclusive ownership of forklift FL-004821.', uncertainty: 'A schedule may be out of date.',
+    suggestedNextStep: 'Ask for an updated equipment schedule.', evidenceIds: ['demo-evidence-1', 'demo-evidence-2'],
+    relatedApplicationIds: [case2], ruleVersion: 'fixture-1', deduplicationKey: 'FL-004821' }
   await suite.test('competing workers produce one evidence-linked live finding and invalid results roll back', async () => {
     const job = await requestJob(case1, 'collateral-conflict')
+    firstFindingJobId = job.id
     await ops.requestInvestigation({ applicationId: case1, runKey: 'collateral-conflict', executionMode: 'fixture' })
     const contenders = [workerA, workerB]
     const claims = await Promise.allSettled(contenders.map(worker => worker.client.reducers.claimInvestigation({ jobId: job.id, leaseSeconds: 90 })))
     assert.equal(claims.filter(claim => claim.status === 'fulfilled').length, 1)
     const worker = contenders[claims.findIndex(claim => claim.status === 'fulfilled')]
     const snapshot = await eventually(() => [...worker.client.db.workerSnapshots.iter()].find(row => row.id === job.id), 'claimed job snapshot')
-    assert.deepEqual(snapshot.evidence.map(item => item.id).sort(), ['demo-evidence-1', 'demo-evidence-2'])
+    assert.deepEqual(snapshot.evidence.map(item => item.id).sort(), ['demo-evidence-1', 'demo-evidence-2', 'demo-payment-evidence-1'])
     assert.equal([...worker.client.db.staffEvidence.iter()].length, 0)
     const toolEvent = { jobId: job.id, claimEpoch: snapshot.claimEpoch, toolName: 'collateral_check', status: 'succeeded',
       inputSummary: '2 synthetic claims', outputSummary: '1 shared equipment identifier', durationMs: 1 }
     await assert.rejects(worker.client.reducers.recordToolEvent({ ...toolEvent, sequence: 2 }), /INVALID_INPUT/)
     await worker.client.reducers.recordToolEvent({ ...toolEvent, sequence: 1 })
-    const finding = { type: 'collateral_conflict', severity: 'high', evidenceState: 'supported', title: 'Conflicting ownership claims',
-      explanation: 'Two schedules claim exclusive ownership of forklift FL-004821.', uncertainty: 'A schedule may be out of date.',
-      suggestedNextStep: 'Ask for an updated equipment schedule.', evidenceIds: ['demo-evidence-1', 'demo-evidence-2'],
-      relatedApplicationIds: [case2], ruleVersion: 'fixture-1', deduplicationKey: 'FL-004821' }
+    const finding = conflict
     const completion = { jobId: job.id, claimEpoch: snapshot.claimEpoch, findings: [finding] }
     await assert.rejects(worker.client.reducers.completeInvestigation({ ...completion, findings: [finding,
       { ...finding, deduplicationKey: 'bad-source', evidenceIds: ['demo-evidence-8'] }] }), /INVALID_EVIDENCE/)
@@ -148,11 +162,29 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     }))
     await worker.client.reducers.completeInvestigation(completion)
     findingId = await liveFinding
+    const terminal = await eventually(() => outcome(worker.client, job.id), 'accepted worker result')
+    assert.equal(terminal.status, 'succeeded')
+    assert.deepEqual(terminal.acceptedFindingIds, [findingId])
+    const otherWorker = contenders.find(contender => contender !== worker)!
+    assert.equal(outcome(otherWorker.client, job.id), undefined)
     await worker.client.reducers.completeInvestigation(completion)
     await ops.requestInvestigation({ applicationId: case1, runKey: 'collateral-conflict', executionMode: 'fixture' })
     assert.equal([...officer.client.db.staffFindings.iter()].filter(row => row.jobId === job.id).length, 1)
     assert.equal([...borrowerA.client.db.staffFindings.iter()].length, 0)
     await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-blocked' }), /BLOCKING_FINDINGS/)
+  })
+
+  await suite.test('F4 missing and cancelled investigations and unresolved ownership conflicts block release', async () => {
+    const initial = await eventually(() => checkRow(case2), 'peer case readiness')
+    assert.ok(initial.reasons.includes('INVESTIGATION_MISSING'))
+    const cancelled = await requestJob(case2, 'cancelled-peer')
+    await ops.cancelInvestigation({ jobId: cancelled.id })
+    await allReviews(case2, 'demo-evidence-2')
+    await assert.rejects(review.simulateRelease({ applicationId: case2, idempotencyKey: 'cancelled-peer' }), /BLOCKING_FINDINGS/)
+    const blocked = await eventually(() => checkRow(case2)?.reasons.includes('INVESTIGATION_MISSING') && checkRow(case2), 'missing investigation reason')
+    assert.ok(blocked.reasons.includes('BLOCKING_FINDINGS'))
+    await cleanRun(case2, 'empty-peer-run')
+    await assert.rejects(review.simulateRelease({ applicationId: case2, idempotencyKey: 'cross-case-peer' }), /BLOCKING_FINDINGS/)
   })
 
   await suite.test('borrower clarification and a scoped replacement document reach the officer live', async () => {
@@ -164,6 +196,17 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     const request = await eventually(() => [...borrowerA.client.db.borrowerClarifications.iter()].find(row => row.id === requestId), 'borrower request')
     assert.ok(!('findingId' in request))
     assert.equal([...borrowerB.client.db.borrowerClarifications.iter()].length, 0)
+    const rerun = await requestJob(case1, 'dedup-with-open-clarification')
+    await workerA.client.reducers.claimInvestigation({ jobId: rerun.id, leaseSeconds: 90 })
+    await workerA.client.reducers.completeInvestigation({ jobId: rerun.id, claimEpoch: 1, findings: [conflict] })
+    const refreshed = await eventually(() => [...officer.client.db.staffFindings.iter()].find(row => row.jobId === rerun.id), 'refreshed finding')
+    assert.equal(refreshed.id, findingId)
+    assert.equal(refreshed.status, 'awaiting_response')
+    assert.equal([...officer.client.db.staffFindings.iter()].filter(row => row.deduplicationKey === conflict.deduplicationKey && row.status !== 'resolved').length, 1)
+    const history = [...officer.client.db.staffAuditEvents.iter()].find(event => event.action === 'finding_refreshed')
+    assert.equal(history && JSON.parse(history.safeDetails).jobId, firstFindingJobId)
+    const accepted = await eventually(() => outcome(workerA.client, rerun.id), 'deduplicated worker outcome')
+    assert.deepEqual(accepted.acceptedFindingIds, [findingId])
     await assert.rejects(borrowerB.client.reducers.submitBorrowerResponse({ requestId, message: 'Unauthorized', documentIds: [] }), /NOT_FOUND_OR_FORBIDDEN/)
     const upload = { grantId: 'demo-grant-1', applicationId: case1, requestId, workerUserId: 'worker-a', documentType: 'collateral_schedule' }
     await assert.rejects(borrowerB.client.reducers.authorizeUpload(upload), /NOT_FOUND_OR_FORBIDDEN/)
@@ -182,14 +225,18 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     const openFinding = [...officer.client.db.staffFindings.iter()].find(row => row.id === findingId)
     assert.equal(openFinding?.status, 'awaiting_response')
     assert.equal(openFinding?.isCurrent, false)
+    assert.ok(checkRow(case2)?.reasons.includes('BLOCKING_FINDINGS'), 'a correction still requires human resolution')
     await assert.rejects(workerA.client.reducers.decideFinding({ findingId, decision: 'resolve', rationale: 'Invalid actor', evidenceIds: [] }), /UNAUTHORIZED/)
     await ops.decideFinding({ findingId, decision: 'resolve', rationale: 'The corrected schedule removes the disputed equipment.',
       evidenceIds: ['demo-evidence-correction'] })
+    await eventually(() => checkRow(case2) && !checkRow(case2)?.reasons.includes('BLOCKING_FINDINGS'), 'resolution clears the peer block')
   })
 
   await suite.test('review revisions and release uniqueness are enforced by the database', async () => {
     await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-missing' }), /MISSING_REVIEW/)
     await allReviews(case1, 'demo-evidence-correction')
+    await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'pre-clarification-result' }), /INVESTIGATION_STALE/)
+    await cleanRun(case1, 'post-clarification')
     await eventually(() => checkRow(case1)?.canRelease === true, 'all three checks pass')
     await review.recordReview({ applicationId: case1, checkType: 'payment_verification', expectedRevision: 1,
       status: 'needs_review', rationale: 'Additional verification required.', evidenceIds: ['demo-evidence-correction'] })
@@ -207,6 +254,7 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
       status: 'passed', rationale: 'Old payment approval.', evidenceIds: ['demo-evidence-correction'] }), /STALE_REVIEW/)
     await assert.rejects(review.simulateRelease({ applicationId: case1, idempotencyKey: 'test-stale' }), /STALE_REVIEW/)
     await allReviews(case1, 'demo-evidence-correction')
+    await cleanRun(case1, 'post-payment-change')
     const attempts = await Promise.allSettled([
       review.simulateRelease({ applicationId: case1, idempotencyKey: 'payout-a' }),
       reviewerPeer.client.reducers.simulateRelease({ applicationId: case1, idempotencyKey: 'payout-b' }),
@@ -234,9 +282,77 @@ test('LoanWick policy and live views on a real SpacetimeDB server', { timeout: 4
     await review.changePaymentInstructions(payment(case6, 1))
     await eventually(() => [...workerB.client.db.workerSnapshots.iter()].some(row => row.id === job.id && !row.inputsCurrent), 'related revision invalidation')
     await workerB.client.reducers.completeInvestigation({ jobId: job.id, claimEpoch: second.claimEpoch, findings: [] })
+    const terminal = await eventually(() => outcome(workerB.client, job.id), 'worker sees rejected completion')
+    assert.equal(terminal.status, 'failed')
+    assert.equal(terminal.claimEpoch, second.claimEpoch)
+    assert.equal(terminal.errorCode, 'STALE_RESULTS')
+    assert.deepEqual(terminal.acceptedFindingIds, [])
+    assert.equal(outcome(workerA.client, job.id), undefined)
     await eventually(() => jobRow('related-revision')?.errorCode === 'STALE_RESULTS', 'persisted stale outcome')
     assert.equal(jobRow('related-revision')?.status, 'failed')
     assert.ok(![...officer.client.db.staffFindings.iter()].some(row => row.jobId === job.id))
+  })
+
+  await suite.test('F1 worker sees terminal failure and stale rejection at claim time', async () => {
+    const worker = workerA.client.reducers
+    const failedJob = await requestJob(case4, 'worker-failure')
+    await worker.claimInvestigation({ jobId: failedJob.id, leaseSeconds: 90 })
+    await worker.failInvestigation({ jobId: failedJob.id, claimEpoch: 1, errorCode: 'MODEL_UNAVAILABLE' })
+    const failure = await eventually(() => outcome(workerA.client, failedJob.id), 'worker failure outcome')
+    assert.equal(failure.status, 'failed')
+    assert.equal(failure.errorCode, 'MODEL_UNAVAILABLE')
+    const staleJob = await requestJob(case4, 'stale-before-claim')
+    await review.changePaymentInstructions(payment(case4, 1))
+    await worker.claimInvestigation({ jobId: staleJob.id, leaseSeconds: 90 })
+    const stale = await eventually(() => outcome(workerA.client, staleJob.id), 'stale claim outcome')
+    assert.equal(stale.status, 'failed')
+    assert.equal(stale.claimEpoch, 1)
+    assert.equal(stale.errorCode, 'STALE_RESULTS')
+    const cancelled = await requestJob(case4, 'cancelled-before-success')
+    await ops.cancelInvestigation({ jobId: cancelled.id })
+    await allReviews(case4, 'demo-evidence-4')
+    await assert.rejects(review.simulateRelease({ applicationId: case4, idempotencyKey: 'never-successful' }), /INVESTIGATION_MISSING/)
+  })
+
+  await suite.test('F4 a completed investigation becomes ineligible when a related source changes', async () => {
+    await cleanRun(case6, 'completed-with-related-source')
+    await allReviews(case6, 'demo-evidence-6')
+    await eventually(() => checkRow(case6)?.canRelease === true, 'current dependent investigation')
+    await review.changePaymentInstructions(payment(case5, 1))
+    await eventually(() => checkRow(case6)?.reasons.includes('INVESTIGATION_STALE') === true, 'dependent readiness invalidated')
+    assert.equal(jobRow('completed-with-related-source')?.status, 'succeeded')
+    await assert.rejects(review.simulateRelease({ applicationId: case6, idempotencyKey: 'stale-related-source' }), /INVESTIGATION_STALE/)
+    await cleanRun(case6, 'reinvestigate-related-source')
+    await review.simulateRelease({ applicationId: case6, idempotencyKey: 'current-related-source' })
+  })
+
+  await suite.test('F6 new payment evidence invalidates the old approval and must support the new instruction', async () => {
+    await cleanRun(case3, 'pre-payment-document')
+    const approvePayment = (expectedRevision: number, evidenceIds: string[]) => review.recordReview({
+      applicationId: case3, checkType: 'payment_verification', expectedRevision, status: 'passed',
+      rationale: 'Confirmed the synthetic payment destination.', evidenceIds,
+    })
+    await assert.rejects(approvePayment(1, ['demo-evidence-3']), /INVALID_EVIDENCE/)
+    await allReviews(case3, 'demo-evidence-3')
+    await eventually(() => checkRow(case3)?.canRelease === true, 'shared address does not block case 3')
+    await ops.authorizeUpload({ grantId: 'new-payment-grant', applicationId: case3, workerUserId: 'worker-a',
+      documentType: 'payment_instructions' })
+    const excerpt = 'Synthetic payment account token: demo_replacement.'
+    const newEvidence = 'new-payment-evidence'
+    await workerA.client.reducers.attachDocument({ grantId: 'new-payment-grant', documentId: 'new-payment-doc',
+      sha256: createHash('sha256').update(excerpt).digest('hex'), displayFilename: 'payment.txt',
+      storageKey: 'demo-payment', extractionStatus: 'extracted', evidence: [{ id: newEvidence, excerpt,
+        fieldName: 'syntheticAccountToken', fieldValue: 'demo_replacement', extractionMethod: 'fixture', locator: 'line 1', pageNumber: undefined }] })
+    const stale = await eventually(() => checkRow(case3)?.reasons.includes('STALE_REVIEW') && checkRow(case3), 'payment attachment stales approval')
+    assert.equal(stale.checks.find(check => check.checkType === 'payment_verification')?.status, 'stale')
+    await assert.rejects(review.simulateRelease({ applicationId: case3, idempotencyKey: 'pre-upload-approval' }), /STALE_REVIEW/)
+    await assert.rejects(approvePayment(2, [newEvidence]), /INVALID_EVIDENCE/)
+    await review.changePaymentInstructions({ ...payment(case3, 2), syntheticAccountToken: 'demo_replacement', evidenceIds: [newEvidence] })
+    await assert.rejects(approvePayment(3, [fixturePaymentEvidence(case3)]), /INVALID_EVIDENCE/)
+    await allReviews(case3, 'demo-evidence-3', newEvidence)
+    await assert.rejects(review.simulateRelease({ applicationId: case3, idempotencyKey: 'pre-upload-run' }), /INVESTIGATION_STALE/)
+    await cleanRun(case3, 'post-payment-document')
+    await review.simulateRelease({ applicationId: case3, idempotencyKey: 'verified-new-payment' })
   })
 
   await suite.test('hostile source text grants no authority and an own-case edit makes the job stale', async () => {

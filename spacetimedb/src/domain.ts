@@ -1,6 +1,7 @@
 import { Timestamp } from 'spacetimedb'
 import { SenderError } from 'spacetimedb/server'
 import type { Application, ReadableDb, RevisionVector, User, WriteContext } from './schema'
+import { sourcesMatch, verifiesOwnershipConflict } from './scope'
 
 export const roles = ['officer', 'borrower', 'reviewer', 'worker'] as const
 export type Role = (typeof roles)[number]
@@ -61,11 +62,6 @@ export function revisions(application: Application): RevisionVector {
   }
 }
 
-export function matchesRevisions(actual: RevisionVector, expected: RevisionVector) {
-  return actual.applicationRevision === expected.applicationRevision &&
-    actual.collateralRevision === expected.collateralRevision && actual.paymentRevision === expected.paymentRevision
-}
-
 export function deadline(ctx: WriteContext, seconds: number) {
   return new Timestamp(ctx.timestamp.microsSinceUnixEpoch + BigInt(seconds) * 1_000_000n)
 }
@@ -82,6 +78,18 @@ export function currentRevision(application: Application, checkType: string) {
   return application.applicationRevision
 }
 
+export function hasCurrentPaymentEvidence(db: ReadableDb, application: Application, evidenceIds: string[]) {
+  const instruction = db.paymentInstructions.id.find(`${application.id}/${application.paymentRevision}`)
+  return instruction?.evidenceIds.some(id => {
+    if (!evidenceIds.includes(id)) return false
+    const item = db.evidence.id.find(id)
+    const document = item && db.documents.id.find(item.documentId)
+    return item?.applicationId === application.id && document?.applicationId === application.id &&
+      document.version === item.documentVersion && document.current && document.type === 'payment_instructions' &&
+      item.fieldName === 'syntheticAccountToken' && item.fieldValue === instruction.syntheticAccountToken
+  }) ?? false
+}
+
 export function readiness(db: ReadableDb, application: Application) {
   const reviews = Array.from(db.reviewRecords.applicationId.filter(application.id))
     .filter(review => !review.superseded)
@@ -90,6 +98,8 @@ export function readiness(db: ReadableDb, application: Application) {
     const revision = currentRevision(application, checkType)
     let status = review?.status ?? 'pending'
     if (review && revision !== review.observedRelevantRevision) status = 'stale'
+    else if (review && status === 'passed' && checkType === 'payment_verification' &&
+      !hasCurrentPaymentEvidence(db, application, review.evidenceIds)) status = 'needs_review'
     return { checkType, revision, status }
   })
   const reasons: string[] = []
@@ -98,19 +108,31 @@ export function readiness(db: ReadableDb, application: Application) {
   } else if (application.stage === 'draft' || application.stage === 'submitted') {
     reasons.push('INVALID_STATE')
   }
-  if (Array.from(db.findings.applicationId.filter(application.id))
-    .some(finding => finding.severity === 'high' && finding.status !== 'resolved')) {
+  const blockingFinding = Array.from(db.applications.organizationId.filter(application.organizationId)).some(owner =>
+    Array.from(db.findings.applicationId.filter(owner.id)).some(finding => {
+      if (finding.severity !== 'high' || finding.status === 'resolved') return false
+      if (owner.id === application.id) return true
+      return finding.type === 'collateral_conflict' && finding.evidenceState !== 'unknown' &&
+        finding.relatedApplicationIds.includes(application.id) &&
+        (finding.crossCaseOwnershipVerified ?? verifiesOwnershipConflict(db,
+          [owner.id, ...finding.relatedApplicationIds], finding.evidenceIds, true))
+    }))
+  if (blockingFinding) {
     reasons.push('BLOCKING_FINDINGS')
   }
   const clarificationPending = Array.from(db.clarificationRequests.applicationId.filter(application.id))
     .some(request => request.state === 'sent' || request.state === 'answered')
   if (clarificationPending) reasons.push('CLARIFICATION_PENDING')
-  if (Array.from(db.investigationJobs.applicationId.filter(application.id)).some(job => activeJob(job.status))) {
+  const jobs = Array.from(db.investigationJobs.applicationId.filter(application.id))
+  if (jobs.some(job => activeJob(job.status))) {
     reasons.push('INVESTIGATION_PENDING')
   }
   if (checks.some(check => check.status === 'stale')) reasons.push('STALE_REVIEW')
   if (checks.some(check => check.status === 'pending')) reasons.push('MISSING_REVIEW')
   if (checks.some(check => check.status === 'needs_review')) reasons.push('REVIEW_REQUIRED')
+  const successes = jobs.filter(job => job.status === 'succeeded')
+  if (!successes.length) reasons.push('INVESTIGATION_MISSING')
+  else if (!successes.some(job => sourcesMatch(db, application, job))) reasons.push('INVESTIGATION_STALE')
   return { applicationId: application.id, checks, reasons, canRelease: reasons.length === 0, clarificationPending }
 }
 

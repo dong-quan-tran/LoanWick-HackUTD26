@@ -70,6 +70,13 @@ export const attachDocument = db.reducer({
       }
     }
   }
+  if (grant.documentType === 'payment_instructions') {
+    for (const prior of ctx.db.documents.applicationId.filter(application.id)) {
+      if (prior.type !== 'payment_instructions') continue
+      version = Math.max(version, prior.version + 1)
+      if (prior.current) ctx.db.documents.id.update({ ...prior, current: false })
+    }
+  }
   ctx.db.documents.insert({
     id: args.documentId, applicationId: application.id, type: grant.documentType, version,
     sha256: args.sha256.toLowerCase(), displayFilename: args.displayFilename.trim(), extractionStatus: args.extractionStatus,
@@ -86,7 +93,9 @@ export const attachDocument = db.reducer({
     ctx.db.evidence.insert({ ...item, applicationId: application.id, documentId: args.documentId, documentVersion: version, createdAt: ctx.timestamp })
   }
   ctx.db.uploadGrants.id.update({ ...grant, used: true })
-  changeRevisions(ctx, application, grant.documentType === 'collateral_schedule' ? 'collateral' : 'other')
+  const scope = grant.documentType === 'collateral_schedule' ? 'collateral'
+    : grant.documentType === 'payment_instructions' ? 'payment' : 'other'
+  changeRevisions(ctx, application, scope)
   audit(ctx, application.id, worker.id, 'document_attached', args.documentId)
 })
 

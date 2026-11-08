@@ -40,6 +40,17 @@ const fixtures = [
   ['Harbor Produce', 'Harbor Produce pledges refrigerated trailer RT-009113.', '8fcf8c6956de19c01796053f8c2a38b7af6032afb35d8eb6631ba37314b51e09'],
 ] as const
 
+const paymentHashes = [
+  '0ca7fbde2acc0a93fca36082e40e6085ac7f19a84c7c4bbbecdf821353065397',
+  'dd03359922ba2d4b8636dc42161aefac353e1af1d14a8154d7ae4f5e5ae7ac91',
+  '19c0b1ebb2770a6a8ef8f410ff730df86734f35560bbcf36221de949a6532d31',
+  '66ce619cb0cadd8c5957848b186303f7fe7510a82599af579b062842f9f2e47c',
+  '9f899ba440f8b679442a7bf17a70d583985019f658c0f642dc2fd614c680db75',
+  '78e0596072e703151af7f6f988303006daffa67cdb9e0bc178c6cbca926b9d37',
+  'c20ff8e2b3d6ec0b2d929e4e7af96c039311931527eabdd220737d5fdabb336e',
+  'f9ccece09ca35a1b9ac9a749fc8c34118f9757a9b79686eb5472e046f9a45487',
+]
+
 export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.string(), borrowerBId: t.string() }, (ctx, args) => {
   requireAdmin(ctx)
   requireCondition(args.borrowerAId !== args.borrowerBId, 'INVALID_INPUT')
@@ -85,9 +96,24 @@ export const seedDemo = db.reducer({ organizationId: t.string(), borrowerAId: t.
       externalIdentifier: `DEMO-BUSINESS-${number}`, address: [3, 4].includes(number) ? 'Suite 200, 80 Demo Parkway' : undefined,
       evidenceIds: [evidenceId],
     })
+    const paymentDocumentId = `demo-payment-doc-${number}`
+    const paymentEvidenceId = `demo-payment-evidence-${number}`
+    const syntheticAccountToken = `demo_account_${number}`
+    ctx.db.documents.insert({
+      id: paymentDocumentId, applicationId: id, type: 'payment_instructions', version: 1,
+      sha256: paymentHashes[index], displayFilename: `synthetic-payment-${number}.txt`, extractionStatus: 'extracted',
+      uploadedBy: borrowerUserId, requestId: undefined, storageKey: `demo-inline-payment-${number}`,
+      current: true, createdAt: ctx.timestamp,
+    })
+    ctx.db.evidence.insert({
+      id: paymentEvidenceId, applicationId: id, documentId: paymentDocumentId, documentVersion: 1,
+      excerpt: `Synthetic payment account token: ${syntheticAccountToken}.`, fieldName: 'syntheticAccountToken',
+      fieldValue: syntheticAccountToken, extractionMethod: 'fixture', pageNumber: undefined, locator: 'line 1',
+      createdAt: ctx.timestamp,
+    })
     ctx.db.paymentInstructions.insert({
-      id: `${id}/1`, applicationId: id, version: 1, syntheticAccountToken: `demo_account_${number}`, maskedDisplay: `**** 400${number}`,
-      beneficiaryName: businessName, evidenceIds: [], createdAt: ctx.timestamp,
+      id: `${id}/1`, applicationId: id, version: 1, syntheticAccountToken, maskedDisplay: `**** 400${number}`,
+      beneficiaryName: businessName, evidenceIds: [paymentEvidenceId], createdAt: ctx.timestamp,
     })
     audit(ctx, id, 'demo-admin', 'demo_application_seeded', '')
   }

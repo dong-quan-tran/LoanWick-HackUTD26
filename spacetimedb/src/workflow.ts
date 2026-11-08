@@ -1,6 +1,6 @@
 import { t } from 'spacetimedb/server'
 import {
-  actor, audit, caseFor, changeRevisions, currentRevision, readiness, requireCondition, requireDistinct,
+  actor, audit, caseFor, changeRevisions, currentRevision, hasCurrentPaymentEvidence, readiness, requireCondition, requireDistinct,
   requireEditable, requireId, requiredChecks, requireText, syncStage, validateEvidence,
 } from './domain'
 import { db } from './schema'
@@ -150,7 +150,7 @@ export const recordReview = db.reducer({
   if (args.status === 'passed') {
     requireCondition(evidence.length > 0 && evidence.every(item => ctx.db.documents.id.find(item.documentId)?.current), 'INVALID_EVIDENCE')
     if (args.checkType === 'payment_verification') {
-      requireCondition(ctx.db.paymentInstructions.id.find(`${application.id}/${application.paymentRevision}`), 'INVALID_STATE')
+      requireCondition(hasCurrentPaymentEvidence(ctx.db, application, args.evidenceIds), 'INVALID_EVIDENCE')
     }
   }
   for (const review of ctx.db.reviewRecords.applicationId.filter(application.id)) {
@@ -198,7 +198,6 @@ export const simulateRelease = db.reducer({ applicationId: t.string(), idempoten
   }
   const result = readiness(ctx.db, application)
   requireCondition(result.canRelease, result.reasons[0] ?? 'INVALID_STATE')
-  requireCondition(application.stage === 'ready_for_release', 'INVALID_STATE')
   ctx.db.demoReleases.insert({
     id: ctx.newUuidV7().toString(), applicationId: application.id, idempotencyKey: args.idempotencyKey,
     releasedBy: reviewer.id, releasedAt: ctx.timestamp, syntheticAmountCents: application.amountCents, currency: application.currency,

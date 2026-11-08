@@ -85,6 +85,7 @@ import StaffResponsesRow from "./staff_responses_table";
 import StaffReviewsRow from "./staff_reviews_table";
 import StaffToolEventsRow from "./staff_tool_events_table";
 import WorkerAvailableJobsRow from "./worker_available_jobs_table";
+import WorkerJobOutcomesRow from "./worker_job_outcomes_table";
 import WorkerSnapshotsRow from "./worker_snapshots_table";
 import WorkerUploadGrantsRow from "./worker_upload_grants_table";
 
@@ -253,6 +254,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, WorkerAvailableJobsRow),
+  workerJobOutcomes: __table({
+    name: 'worker_job_outcomes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, WorkerJobOutcomesRow),
   workerSnapshots: __table({
     name: 'worker_snapshots',
     indexes: [

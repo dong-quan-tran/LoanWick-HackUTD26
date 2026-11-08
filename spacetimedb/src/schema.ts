@@ -70,7 +70,7 @@ export const investigationJobs = table({ name: 'investigation_jobs' }, {
   status: t.string(), workerIdentity: t.option(t.identity()), claimEpoch: t.u32(),
   leaseExpiresAt: t.option(t.timestamp()), executionMode: t.string(), modelId: t.option(t.string()),
   createdAt: t.timestamp(), startedAt: t.option(t.timestamp()), completedAt: t.option(t.timestamp()),
-  errorCode: t.option(t.string()),
+  errorCode: t.option(t.string()), acceptedFindingIds: t.option(t.array(t.string())),
 })
 
 export const leaseTimers = table({ name: 'lease_timers' }, {
@@ -91,6 +91,7 @@ export const findingInputFields = {
 export const findings = table({ name: 'findings' }, {
   ...findingInputFields, id: id(), applicationId: indexedId(), jobId: indexedId(),
   status: t.string(), revisions: revisionVector, sources: t.array(sourceRevision),
+  crossCaseOwnershipVerified: t.option(t.bool()),
   createdAt: t.timestamp(), updatedAt: t.timestamp(),
 })
 

@@ -1,71 +1,12 @@
 import { ScheduleAt } from 'spacetimedb'
 import { t } from 'spacetimedb/server'
 import {
-  activeJob, actor, audit, caseFor, deadline, matchesRevisions, requireCondition, requireDistinct,
+  activeJob, actor, audit, caseFor, deadline, requireCondition, requireDistinct,
   requireEditable, requireId, requireText, revisions, syncStage, validateEvidence,
 } from './domain'
-import { db, findingInputFields, leaseTimers, type Application, type InvestigationJob, type ReadableDb, type WriteContext } from './schema'
+import { db, findingInputFields, leaseTimers, type InvestigationJob, type WriteContext } from './schema'
 
-function confirmedNeighbors(store: ReadableDb, applicationId: string) {
-  const candidates = [
-    ...store.matchCandidates.leftApplicationId.filter(applicationId),
-    ...store.matchCandidates.rightApplicationId.filter(applicationId),
-  ]
-  return candidates.filter(edge => edge.decision === 'confirmed_same_entity' || edge.decision === 'confirmed_related')
-}
-
-function relatedSources(store: ReadableDb, application: Application) {
-  const ids = new Set<string>()
-  for (const claim of store.collateral.applicationId.filter(application.id)) {
-    if (!claim.active) continue
-    for (const match of store.collateral.normalizedIdentifier.filter(claim.normalizedIdentifier)) {
-      const source = match.active && store.applications.id.find(match.applicationId)
-      if (source && source.organizationId === application.organizationId) ids.add(source.id)
-    }
-  }
-  const group = new Set([application.id])
-  for (const member of group) {
-    for (const edge of confirmedNeighbors(store, member)) {
-      const source = store.applications.id.find(edge.leftApplicationId === member ? edge.rightApplicationId : edge.leftApplicationId)
-      if (source?.organizationId === application.organizationId) group.add(source.id)
-    }
-    if (group.size > 64) break
-  }
-  for (const id of group) ids.add(id)
-  ids.delete(application.id)
-  return [...ids].sort()
-}
-
-export function sourcesMatch(store: ReadableDb, application: Application, snapshot: Pick<InvestigationJob, 'revisions' | 'sources'>) {
-  if (!matchesRevisions(application, snapshot.revisions)) return false
-  const sourceIds = relatedSources(store, application)
-  return sourceIds.length === snapshot.sources.length && snapshot.sources.every((source, index) => {
-    const current = store.applications.id.find(source.applicationId)
-    return sourceIds[index] === source.applicationId && current && matchesRevisions(current, source.revisions)
-  })
-}
-
-export function jobCollateral(store: ReadableDb, applicationId: string, sourceId: string) {
-  const claims = Array.from(store.collateral.applicationId.filter(sourceId)).filter(claim => claim.active)
-  if (applicationId === sourceId) return claims
-  const identifiers = new Set(Array.from(store.collateral.applicationId.filter(applicationId))
-    .filter(claim => claim.active).map(claim => claim.normalizedIdentifier))
-  return claims.filter(claim => identifiers.has(claim.normalizedIdentifier))
-}
-
-export function jobEvidence(store: ReadableDb, applicationId: string, sourceId: string, scope: ReadonlySet<string>) {
-  const candidates = Array.from(store.evidence.applicationId.filter(sourceId))
-    .filter(item => store.documents.id.find(item.documentId)?.current)
-  if (applicationId === sourceId) return candidates
-  const ids = new Set(jobCollateral(store, applicationId, sourceId).flatMap(claim => claim.evidenceIds))
-  for (const edge of confirmedNeighbors(store, sourceId)) {
-    const isLeft = edge.leftApplicationId === sourceId
-    if (!scope.has(isLeft ? edge.rightApplicationId : edge.leftApplicationId)) continue
-    const entity = store.entityRecords.id.find(isLeft ? edge.leftEntityId : edge.rightEntityId)
-    for (const evidenceId of entity?.evidenceIds ?? []) ids.add(evidenceId)
-  }
-  return candidates.filter(item => ids.has(item.id))
-}
+import { jobEvidence, matchesRevisions, relatedSources, sourcesMatch, verifiesOwnershipConflict } from './scope'
 
 function jobFor(ctx: WriteContext, jobId: string, organizationId: string) {
   const job = ctx.db.investigationJobs.id.find(jobId)
@@ -123,7 +64,7 @@ export const requestInvestigation = db.reducer({
   ctx.db.investigationJobs.insert({
     ...args, modelId: args.modelId, id, requestKey, organizationId: officer.organizationId, revisions: revisions(application), sources: [],
     status: 'queued', workerIdentity: undefined, claimEpoch: 0, leaseExpiresAt: undefined,
-    createdAt: ctx.timestamp, startedAt: undefined, completedAt: undefined, errorCode: undefined,
+    createdAt: ctx.timestamp, startedAt: undefined, completedAt: undefined, errorCode: undefined, acceptedFindingIds: undefined,
   })
   const next = application.stage === 'submitted'
     ? ctx.db.applications.id.update({ ...application, stage: 'reviewing', updatedAt: ctx.timestamp }) : application
@@ -142,7 +83,7 @@ export const claimInvestigation = db.reducer({ jobId: t.string(), leaseSeconds: 
   const application = caseFor(ctx.db, worker, job.applicationId)
   requireEditable(application)
   if (!matchesRevisions(application, job.revisions)) {
-    stopJob(ctx, job, 'failed', 'STALE_RESULTS')
+    stopJob(ctx, { ...job, workerIdentity: ctx.sender, claimEpoch: job.claimEpoch + 1 }, 'failed', 'STALE_RESULTS')
     audit(ctx, application.id, worker.id, 'investigation_stale', job.id)
     return
   }
@@ -216,6 +157,7 @@ export const completeInvestigation = db.reducer({
   requireDistinct(args.findings.map(finding => finding.deduplicationKey), 20)
   const scope = new Set([application.id, ...job.sources.map(source => source.applicationId)])
   const visibleEvidence = new Set([...scope].flatMap(id => jobEvidence(ctx.db, application.id, id, scope).map(item => item.id)))
+  const acceptedFindingIds: string[] = []
   for (const finding of args.findings) {
     requireId(finding.type)
     requireText(finding.title, 140)
@@ -233,12 +175,50 @@ export const completeInvestigation = db.reducer({
     const citedScope = new Set([application.id, ...finding.relatedApplicationIds])
     validateEvidence(ctx.db, finding.evidenceIds, citedScope)
     requireCondition(finding.evidenceIds.every(id => visibleEvidence.has(id)), 'INVALID_EVIDENCE')
-    ctx.db.findings.insert({
-      ...finding, id: ctx.newUuidV7().toString(), applicationId: application.id, jobId: job.id, status: 'open',
-      revisions: job.revisions, sources: job.sources, createdAt: ctx.timestamp, updatedAt: ctx.timestamp,
-    })
+    const crossCaseOwnershipVerified = finding.type === 'collateral_conflict' && finding.severity === 'high' &&
+      finding.relatedApplicationIds.length > 0
+    if (crossCaseOwnershipVerified) {
+      requireCondition(verifiesOwnershipConflict(ctx.db, [...citedScope], finding.evidenceIds), 'INVALID_EVIDENCE')
+    }
+    const active = [...ctx.db.findings.applicationId.filter(application.id)]
+      .filter(prior => prior.status !== 'resolved' && prior.deduplicationKey === finding.deduplicationKey)
+      .sort((a, b) => Number(b.status === 'awaiting_response') - Number(a.status === 'awaiting_response') || a.id.localeCompare(b.id))
+    const [prior, ...duplicates] = active
+    const id = prior?.id ?? ctx.newUuidV7().toString()
+    const next = {
+      ...finding, id, applicationId: application.id, jobId: job.id, status: prior?.status ?? 'open',
+      revisions: job.revisions, sources: job.sources, crossCaseOwnershipVerified,
+      createdAt: prior?.createdAt ?? ctx.timestamp, updatedAt: ctx.timestamp,
+    }
+    if (prior) {
+      requireCondition(active.every(item => item.type === finding.type &&
+        (item.severity !== 'high' || (finding.severity === 'high' &&
+          item.relatedApplicationIds.every(caseId => finding.relatedApplicationIds.includes(caseId))))), 'INVALID_INPUT')
+      const priorJob = ctx.db.investigationJobs.id.find(prior.jobId)
+      if (priorJob?.status === 'succeeded' && priorJob.acceptedFindingIds === undefined) {
+        ctx.db.investigationJobs.id.update({ ...priorJob,
+          acceptedFindingIds: [...ctx.db.findings.jobId.filter(priorJob.id)].map(item => item.id) })
+      }
+      audit(ctx, application.id, worker.id, 'finding_refreshed', JSON.stringify({
+        ...prior, createdAt: prior.createdAt.toISOString(), updatedAt: prior.updatedAt.toISOString(),
+      }))
+      ctx.db.findings.id.update(next)
+    } else {
+      ctx.db.findings.insert(next)
+    }
+    for (const duplicate of duplicates) {
+      for (const request of ctx.db.clarificationRequests.findingId.filter(duplicate.id)) {
+        if (request.state !== 'closed') ctx.db.clarificationRequests.id.update({ ...request, findingId: id })
+      }
+      ctx.db.findings.id.update({ ...duplicate, status: 'resolved', updatedAt: ctx.timestamp })
+      audit(ctx, application.id, worker.id, 'finding_superseded', JSON.stringify({
+        prior: { ...duplicate, createdAt: duplicate.createdAt.toISOString(), updatedAt: duplicate.updatedAt.toISOString() },
+        replacementId: id,
+      }))
+    }
+    acceptedFindingIds.push(id)
   }
-  stopJob(ctx, { ...job, modelId }, 'succeeded')
+  stopJob(ctx, { ...job, modelId, acceptedFindingIds }, 'succeeded')
   audit(ctx, application.id, worker.id, 'investigation_completed', job.id)
 })
 

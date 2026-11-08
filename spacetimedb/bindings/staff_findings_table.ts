@@ -37,6 +37,7 @@ export default __t.row({
   get sources() {
     return __t.array(SourceRevision);
   },
+  crossCaseOwnershipVerified: __t.option(__t.bool()).name("cross_case_ownership_verified"),
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
   isCurrent: __t.bool().name("is_current"),
