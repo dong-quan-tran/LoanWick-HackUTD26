@@ -1,0 +1,115 @@
+/* Visual layer (prototype). Palette extends the existing brown/gold brand with clear risk colors. */
+.overview { --risk: #b5432c; --risk-bg: #fbece7; --warn: #b07d16; --warn-bg: #fbf1d9; --ok: #4f7a4a; --ok-bg: #e9f2e6; --info: #3e5e85; margin-bottom: 22px; }
+
+/* KPI tiles */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.tile { display: flex; gap: 14px; align-items: flex-start; padding: 18px 18px 16px; background: white; border: 1px solid #e6dccf; border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(57, 43, 35, .04), 0 8px 24px -18px rgba(57, 43, 35, .35); animation: rise .5s cubic-bezier(.2, .8, .2, 1) both; position: relative; overflow: hidden; }
+.tile::after { content: ''; position: absolute; inset: auto 0 0 0; height: 3px; background: #d9c7ab; }
+.tileIcon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: #f3ece2; color: #725032; flex-shrink: 0; }
+.tileLabel { display: block; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: #8a7a6a; font-weight: 600; }
+.tileValue { display: block; font-family: "Source Serif 4", Georgia, serif; font-size: 30px; line-height: 1.15; margin: 4px 0 2px; color: #2f251f; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile small { color: #7a6c5e; font-size: 12px; }
+.tone_risk .tileIcon { background: var(--risk-bg); color: var(--risk); }
+.tone_risk::after { background: linear-gradient(90deg, var(--risk), #e08a6f); }
+.tone_risk .tileValue { color: var(--risk); }
+.tone_ok .tileIcon { background: var(--ok-bg); color: var(--ok); }
+.tone_ok::after { background: linear-gradient(90deg, var(--ok), #9cc28f); }
+
+/* Pipeline bar */
+.stageBar { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; margin-top: 14px; padding: 14px 18px; background: white; border: 1px solid #e6dccf; border-radius: 10px; }
+.stageTitle { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #8a7a6a; font-weight: 600; }
+.stageTrack { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: #f1ebe2; gap: 2px; }
+.stageSeg { min-width: 10px; animation: grow .8s cubic-bezier(.2, .8, .2, 1) both; transform-origin: left; }
+.stageLegend { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; font-size: 12px; color: #6f6153; }
+.stageLegend b { color: #2f251f; font-weight: 600; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.stage_submitted { background: #c9b9a4; }
+.stage_reviewing { background: #6f8fb4; }
+.stage_clarification_needed { background: #d9a440; }
+.stage_ready_for_release { background: #6d9b62; }
+.stage_released_demo { background: #725032; }
+
+/* Table helpers */
+.amountBar { display: block; height: 4px; margin-top: 6px; width: 120px; background: #f1ebe2; border-radius: 99px; overflow: hidden; }
+.amountBar > span { display: block; height: 100%; background: linear-gradient(90deg, #a07a52, #725032); border-radius: inherit; animation: grow .9s cubic-bezier(.2, .8, .2, 1) both; transform-origin: left; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+.chipRisk { background: #fbece7; color: #a33b26; }
+.chipClear { background: #e9f2e6; color: #4f7a4a; }
+.pulseDot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 0 rgba(181, 67, 44, .55); animation: pulse 1.8s infinite; }
+
+/* Conflict graph */
+.graph { --edge: #b5432c; margin-bottom: 20px; padding: 18px 20px 14px; border-radius: 12px; background: radial-gradient(120% 140% at 50% 0%, #fffaf3 0%, #fbf4ea 55%, #f6ece0 100%); border: 1px solid #ecd9c4; animation: rise .55s cubic-bezier(.2, .8, .2, 1) both; }
+.graphReview { --edge: #b07d16; }
+.graphHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.graphHeading h3 { font-size: 15px; font-weight: 650; color: #2f251f; }
+.graphHeading p { font-size: 12px; color: #7a6c5e; margin-top: 2px; }
+.graphTag { font-size: 11px; font-weight: 650; color: var(--edge); background: color-mix(in srgb, var(--edge) 12%, white); padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+.graphSvg { display: block; width: 100%; height: auto; margin: 6px 0 4px; color: var(--edge); overflow: visible; }
+.edgeBase { fill: none; stroke: var(--edge); stroke-opacity: .18; stroke-width: 6; stroke-linecap: round; }
+.edgeFlow { fill: none; stroke: var(--edge); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 7 9; animation: flow 1.4s linear infinite, draw 1.1s cubic-bezier(.2, .8, .2, 1) both; }
+.edgeLabel { font-size: 11px; fill: #8a5a45; font-weight: 600; letter-spacing: .01em; paint-order: stroke; stroke: #fbf4ea; stroke-width: 5px; }
+.glow { animation: breathe 2.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.assetNode rect { fill: #2f251f; stroke: var(--edge); stroke-width: 2.5; filter: drop-shadow(0 6px 14px rgba(47, 37, 31, .28)); }
+.assetKind { font-size: 9.5px; letter-spacing: .14em; fill: #d9c7ab; font-weight: 700; }
+.assetId { font-size: 19px; font-weight: 700; fill: #fff; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+.appNode rect { fill: white; stroke: #dcc8b1; stroke-width: 1.5; filter: drop-shadow(0 4px 10px rgba(57, 43, 35, .12)); }
+.appSelf rect { stroke: #725032; stroke-width: 2.2; }
+.appRole { font-size: 9px; letter-spacing: .12em; fill: #9b8a78; font-weight: 700; }
+.appName { font-size: 14px; font-weight: 700; fill: #2f251f; }
+.appAmount { font-size: 11px; fill: #7a6c5e; }
+.graphNote { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #6f6153; margin-top: 4px; }
+
+/* Release gate */
+.gate { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; margin: -14px 0 28px; padding: 16px 20px; background: white; border: 1px solid #e6dccf; border-radius: 10px; }
+.gateLock { display: flex; gap: 12px; align-items: center; padding-right: 22px; border-right: 1px solid #eee4d8; }
+.gateLock > svg { width: 40px; height: 40px; padding: 9px; border-radius: 10px; background: #fbece7; color: #b5432c; transition: background .4s, color .4s; }
+.gateLock strong { display: block; font-size: 13px; }
+.gateLock small { color: #7a6c5e; font-size: 12px; }
+.gateOpen .gateLock > svg { background: #e9f2e6; color: #4f7a4a; }
+.gateTrack { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
+.gateTrack li { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; min-width: 0; }
+.gateBar { display: block; height: 8px; border-radius: 99px; background: #f1ebe2; overflow: hidden; }
+.gateBar > span { display: block; height: 100%; width: 0; border-radius: inherit; transition: width .6s cubic-bezier(.2, .8, .2, 1), background .4s; }
+.gateLabel { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; font-weight: 650; color: #3a2f27; white-space: nowrap; }
+.gateTrack small { display: block; font-size: 11px; color: #8a7a6a; margin-top: 1px; }
+.gate_ok .gateBar > span { width: 100%; background: linear-gradient(90deg, #4f7a4a, #7fae73); }
+.gate_ok .gateLabel { color: #3f6a3a; }
+.gate_warn .gateBar > span { width: 100%; background: repeating-linear-gradient(135deg, #d9a440 0 8px, #e8bf6b 8px 16px); }
+.gate_warn .gateLabel, .gate_warn small { color: #8a6211; }
+.gate_blocked .gateBar > span { width: 100%; background: #b5432c; }
+.gate_blocked .gateLabel, .gate_blocked small { color: #a33b26; }
+.gate_working .gateBar > span { width: 55%; background: linear-gradient(90deg, #6f8fb4, #a8bfd9, #6f8fb4); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+.gate_todo .gateBar > span { width: 0; }
+
+/* Verification stepper */
+.stepper { margin: 18px 0 6px; }
+.stepTrack { height: 6px; border-radius: 99px; background: #eee5d8; overflow: hidden; }
+.stepTrack > span { display: block; height: 100%; background: linear-gradient(90deg, #a07a52, #725032); border-radius: inherit; transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+.stepper ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; margin: 12px 0 0; padding: 0; gap: 8px; }
+.stepper li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9b8a78; font-weight: 600; min-width: 0; }
+.stepDot { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: #f1ebe2; font-size: 11px; transition: background .3s, color .3s; }
+.stepLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step_working { color: #446b7c; }
+.step_working .stepDot { background: #e2edf3; color: #446b7c; box-shadow: 0 0 0 0 rgba(68, 107, 124, .5); animation: pulse 1.4s infinite; }
+.step_done { color: #725032; }
+.step_done .stepDot { background: #725032; color: white; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes flow { to { stroke-dashoffset: -32; } }
+@keyframes draw { from { opacity: 0; } to { opacity: 1; } }
+@keyframes breathe { 0%, 100% { opacity: .7; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); } 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+@media (max-width: 900px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gate { grid-template-columns: 1fr; }
+  .gateLock { border-right: 0; padding-right: 0; }
+  .gateTrack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile, .stageSeg, .amountBar > span, .graph, .edgeFlow, .glow, .gateTrack li, .pulseDot, .step_working .stepDot, .gate_working .gateBar > span { animation: none !important; }
+  .gateBar > span, .stepTrack > span { transition: none; }
+}
