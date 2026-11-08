@@ -78,6 +78,22 @@ describe("case investigation", () => {
     expect(result.toolEvents.every((event) => event.status === "succeeded")).toBe(true);
   });
 
+  it("continues after a bad evidence id and still stores the collateral finding", async () => {
+    const provider = scriptedProvider([
+      { id: "e", name: "get_application_evidence", arguments: { applicationId: snapshot.applicationId, evidenceIds: ["missing-evidence"] } },
+      { id: "c", name: "run_collateral_check", arguments: { applicationId: snapshot.applicationId } },
+      { id: "g", name: "run_group_threshold_check", arguments: { applicationId: snapshot.applicationId } },
+    ], "Equipment EX-0042 is listed on two applications. A typo could explain it.");
+    const result = await runCaseInvestigation({
+      provider,
+      snapshot,
+      maxSteps: 8,
+      signal: new AbortController().signal,
+    });
+    expect(result.findings.some((finding) => finding.type === "collateral_conflict")).toBe(true);
+    expect(result.toolEvents[0]).toMatchObject({ toolName: "get_application_evidence", status: "failed" });
+  });
+
   it("rejects a tool aimed at a different application", async () => {
     const provider: ModelProvider = {
       executionMode: "live",

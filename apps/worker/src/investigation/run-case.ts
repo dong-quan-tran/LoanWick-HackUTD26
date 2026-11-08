@@ -106,7 +106,13 @@ async function runLive(input: {
       const attempt = attemptTool(input.snapshot, call.name, call.arguments);
       toolEvents.push(attempt.event);
       if (!attempt.ok) {
-        throw new WorkerRunError(attempt.error.code, attempt.error.message, toolEvents);
+        const recoverable = attempt.error.code === "INVALID_ARGUMENTS" && !REQUIRED_TOOLS.includes(call.name as (typeof REQUIRED_TOOLS)[number]);
+        if (!recoverable) {
+          throw new WorkerRunError(attempt.error.code, attempt.error.message, toolEvents);
+        }
+        messages.push({ role: "assistant", content: turn.message.content, toolCalls: [call] });
+        messages.push({ role: "tool", toolCallId: call.id, content: attempt.event.modelContent });
+        continue;
       }
       if (call.name === "draft_clarification" && isRecord(call.arguments) && typeof call.arguments.requestedEvidence === "string") {
         clarificationTemplateName = clarificationTemplate(call.arguments.requestedEvidence);
