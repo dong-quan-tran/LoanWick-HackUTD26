@@ -3,15 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.12.0" },
-  "workspaces": ["packages/*", "apps/*"],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "build": "tsc -b packages/contracts packages/analysis",
+    "build": "tsc -b packages/contracts packages/analysis packages/database-adapter",
     "typecheck": "npm run build && tsc -p tsconfig.tests.json --noEmit",
     "test": "npm run build && vitest run",
     "evaluate": "npm run build && node scripts/evaluate.mjs",
     "fixtures:views": "npm run build && node scripts/export-demo-views.mjs",
-    "check": "npm run typecheck && npm test && npm run evaluate"
+    "check": "npm run typecheck && npm test && npm run evaluate",
+    "test:database": "npm run build && node scripts/test-database.mjs"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

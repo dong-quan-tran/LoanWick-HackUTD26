@@ -101,3 +101,7 @@ The inspected database branch uses SDK-native fields. Keep conversion in adapter
 | readiness also blocks pending jobs/clarifications | pure policy currently covers checks/findings/stage/releases | Treat server readiness as authoritative; extend shared input rules before claiming full parity |
 
 The database worker projection currently limits related-case evidence to linked collateral/entities. Above-threshold group output also needs amount/currency evidence for every counted case; request an authorized projection change rather than fetching unrelated private documents. The database normalizes identifiers independently; align its policy with the shared hyphen/namespace rules before using its candidate scope.
+
+## Real database test update
+
+The separate `1-analysis-database-test` branch now exercises shared checks against database commit `0bc9396`. The existing database suite (12 tests), bridge suite (8 tests), and shared checks (92 tests) pass locally. See DATABASE-TESTS.md. Database source and generated bindings were not edited. The worker projection is handled by a separate adapter and minimal analysis-input schema; missing seed evidence remains explicit. Frontend/live model checks remain pending.

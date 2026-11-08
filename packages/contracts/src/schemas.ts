@@ -29,7 +29,7 @@ export const EvidenceSchema = z.strictObject({
   id: IdSchema, applicationId: IdSchema, documentId: IdSchema, documentVersion: z.number().int().positive(),
   pageNumber: z.number().int().positive().nullable(), locator: text.nullable(), excerpt: text,
   fieldName: text.nullable(), extractedValue: z.string().max(8_000).nullable(),
-  extractionMethod: z.enum(['structured', 'csv', 'pdf_text', 'manual']), createdAt: UtcTimestampSchema,
+  extractionMethod: z.enum(['structured', 'csv', 'pdf_text', 'manual', 'fixture']), createdAt: UtcTimestampSchema,
 }).superRefine((e, ctx) => {
   if (e.extractionMethod !== 'pdf_text' && e.pageNumber !== null) ctx.addIssue({ code: 'custom', message: 'Only PDF evidence may use pageNumber', path: ['pageNumber'] });
   if (e.pageNumber === null && e.locator === null) ctx.addIssue({ code: 'custom', message: 'Evidence needs an actual source locator' });
@@ -152,11 +152,12 @@ export const ToolArgumentsSchemas = {
   draft_clarification: z.strictObject({ applicationId: IdSchema, findingId: IdSchema, requestedEvidence: text }),
 };
 
-export const InvestigationSnapshotSchema = z.strictObject({
+const snapshotShape = {
   applicationId: IdSchema, applications: z.array(ApplicationSchema).min(1).max(1_000), documents: z.array(DocumentMetadataSchema).max(10_000),
   evidence: z.array(EvidenceSchema).max(20_000), collateral: z.array(CollateralSchema).max(10_000),
   relationships: z.array(ApplicationRelationshipSchema).max(10_000), reviews: z.array(ReviewRecordSchema).max(10_000),
-}).superRefine((s, ctx) => {
+};
+function validateSnapshot(s: D.AnalysisSnapshot, ctx: z.RefinementCtx) {
   const issue = (message: string) => ctx.addIssue({ code: 'custom', message });
   for (const key of ['applications', 'documents', 'evidence', 'collateral', 'relationships', 'reviews'] as const) {
     if (new Set(s[key].map(v => v.id)).size !== s[key].length) issue(`Duplicate IDs in ${key}`);
@@ -164,7 +165,7 @@ export const InvestigationSnapshotSchema = z.strictObject({
   const apps = new Map(s.applications.map(a => [a.id, a]));
   const target = apps.get(s.applicationId);
   if (!target) issue('Snapshot target application does not exist');
-  if (target && s.applications.some(a => a.organizationId !== target.organizationId)) issue('Snapshot mixes organizations');
+  if (new Set(s.applications.map(a => a.organizationId).filter(id => id !== undefined)).size > 1) issue('Snapshot mixes organizations');
   const docs = new Map(s.documents.map(d => [d.id, d]));
   const evidence = new Map(s.evidence.map(e => [e.id, e]));
   for (const d of s.documents) if (!apps.has(d.applicationId)) issue(`Document ${d.id} has an unknown application`);
@@ -192,11 +193,28 @@ export const InvestigationSnapshotSchema = z.strictObject({
     sequences.add(key);
     for (const id of r.evidenceIds) if (evidence.get(id)?.applicationId !== r.applicationId) issue(`Review ${r.id} references foreign/missing evidence`);
   }
-}) satisfies z.ZodType<D.InvestigationSnapshot>;
+}
+export const InvestigationSnapshotSchema = z.strictObject(snapshotShape).superRefine(validateSnapshot) satisfies z.ZodType<D.InvestigationSnapshot>;
+export const AnalysisApplicationSchema = z.strictObject({
+  id: IdSchema, businessName: text, amountCents: CentsSchema, currency: CurrencySchema,
+  stage: z.enum(APPLICATION_STAGES), ...revisionShape, organizationId: IdSchema.optional(),
+}) satisfies z.ZodType<D.AnalysisApplication>;
+const projectedRelationshipSchema = z.strictObject({
+  id: IdSchema, leftApplicationId: IdSchema, rightApplicationId: IdSchema,
+  decision: z.enum(['confirmed_related', 'confirmed_same_entity']), reason: text,
+  evidenceIds: ids.min(1), confirmationSource: z.literal('authorized_projection'),
+}).superRefine((r, ctx) => {
+  if (r.leftApplicationId === r.rightApplicationId) ctx.addIssue({ code: 'custom', message: 'Relationship endpoints must differ' });
+});
+export const AnalysisSnapshotSchema = z.strictObject({
+  ...snapshotShape,
+  applications: z.array(z.union([ApplicationSchema, AnalysisApplicationSchema])).min(1).max(1_000),
+  relationships: z.array(z.union([ApplicationRelationshipSchema, projectedRelationshipSchema])).max(10_000),
+}).superRefine(validateSnapshot) satisfies z.ZodType<D.AnalysisSnapshot>;
 
 // Boundary validation only; it cannot authenticate a caller or prove source text true.
 export function validateCheckResults(snapshotInput: unknown, resultsInput: unknown): D.CheckResult[] {
-  const snapshot = InvestigationSnapshotSchema.parse(snapshotInput);
+  const snapshot = AnalysisSnapshotSchema.parse(snapshotInput);
   const results = z.array(CheckResultSchema).max(1_000).parse(resultsInput);
   const apps = new Map(snapshot.applications.map(a => [a.id, a]));
   const evidence = new Map(snapshot.evidence.map(e => [e.id, e]));

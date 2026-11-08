@@ -13,7 +13,7 @@ flowchart LR
   F[Synthetic sources and expected results] --> A
 ```
 
-Solid application connections are intended architecture, not already connected services. This branch implements shared contracts, analysis, fixtures, and local verification only.
+Solid application connections are intended architecture, not already connected services. The foundation implements shared contracts, analysis, fixtures, and local verification. This separate integration branch also tests database jobs and persistence through a narrow adapter; the web app and live model are not connected.
 
 SpacetimeDB owns authoritative application state, authorization, job claims, findings, revisions, human decisions, and atomic simulated release. The worker owns model/extraction execution and private local development bytes. The browser uses generated bindings behind a domain adapter. A byte-upload transport must not duplicate business CRUD or bypass database authorization.
 

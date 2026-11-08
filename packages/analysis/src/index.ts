@@ -1,5 +1,5 @@
 import { CHECK_TYPES } from '@loanwick/contracts/domain';
-import type { AnalysisToolResult, Application, CheckResult, CheckType, Collateral, DemoRelease, Finding, GroupReviewPolicy, InvestigationSnapshot, PolicyReadiness, ReviewRecord, RevisionVector, SourceRevision, VerificationState } from '@loanwick/contracts/domain';
+import type { AnalysisApplication, AnalysisSnapshot, AnalysisToolResult, Application, CheckResult, CheckType, Collateral, DemoRelease, Finding, GroupReviewPolicy, PolicyReadiness, ReviewRecord, RevisionVector, SourceRevision, VerificationState } from '@loanwick/contracts/domain';
 
 export const COLLATERAL_RULE_VERSION = 'collateral-1.0.0';
 export const GROUP_RULE_VERSION = 'group-review-1.0.0';
@@ -33,14 +33,13 @@ export function normalizeIdentifier(raw: string | null | undefined, policy: Iden
   if (policy.ignoreHyphens) value = value.replaceAll('-', '');
   return { state: 'valid', normalized: value };
 }
-function applications(snapshot: InvestigationSnapshot): Map<string, Application> {
+function applications(snapshot: AnalysisSnapshot): Map<string, AnalysisApplication> {
   const map = new Map(snapshot.applications.map(a => [a.id, a]));
   if (map.size !== snapshot.applications.length || !map.has(snapshot.applicationId)) throw new AnalysisInputError('INVALID_INPUT', 'Duplicate application IDs or missing target');
-  const organizationId = map.get(snapshot.applicationId)!.organizationId;
-  if ([...map.values()].some(a => a.organizationId !== organizationId)) throw new AnalysisInputError('INVALID_INPUT', 'Mixed organization snapshot');
+  if (new Set([...map.values()].map(a => a.organizationId).filter(id => id !== undefined)).size > 1) throw new AnalysisInputError('INVALID_INPUT', 'Mixed organization snapshot');
   return map;
 }
-export function captureSourceRevisions(apps: readonly Application[]): SourceRevision[] {
+export function captureSourceRevisions(apps: readonly Pick<Application, 'id' | keyof RevisionVector>[]): SourceRevision[] {
   if (new Set(apps.map(a => a.id)).size !== apps.length) throw new AnalysisInputError('INVALID_INPUT', 'Duplicate source applications');
   return apps.map(a => ({ applicationId: a.id, applicationRevision: a.applicationRevision, collateralRevision: a.collateralRevision, paymentRevision: a.paymentRevision })).sort((a, b) => a.applicationId < b.applicationId ? -1 : a.applicationId > b.applicationId ? 1 : 0);
 }
@@ -53,7 +52,7 @@ export function getChangedSourceIds(captured: readonly SourceRevision[], current
     return !a || !b || a.applicationRevision !== b.applicationRevision || a.collateralRevision !== b.collateralRevision || a.paymentRevision !== b.paymentRevision;
   });
 }
-function revisionsFor(ids: string[], apps: Map<string, Application>): SourceRevision[] {
+function revisionsFor(ids: string[], apps: Map<string, AnalysisApplication>): SourceRevision[] {
   return captureSourceRevisions(ids.map(id => {
     const app = apps.get(id);
     if (!app) throw new AnalysisInputError('INVALID_INPUT', 'Unknown source application');
@@ -61,7 +60,7 @@ function revisionsFor(ids: string[], apps: Map<string, Application>): SourceRevi
   }));
 }
 
-export function checkCollateralConflicts(snapshot: InvestigationSnapshot, policy: IdentifierPolicy = DEMO_IDENTIFIER_POLICY): CheckResult[] {
+export function checkCollateralConflicts(snapshot: AnalysisSnapshot, policy: IdentifierPolicy = DEMO_IDENTIFIER_POLICY): CheckResult[] {
   const apps = applications(snapshot);
   const evidence = new Map(snapshot.evidence.map(e => [e.id, e]));
   const groups = new Map<string, { identifier: string; assetType: string; claims: Collateral[] }>();
@@ -114,7 +113,7 @@ export function checkCollateralConflicts(snapshot: InvestigationSnapshot, policy
   return results;
 }
 
-export function checkGroupThreshold(snapshot: InvestigationSnapshot, policy: GroupReviewPolicy = DEMO_GROUP_POLICY): CheckResult[] {
+export function checkGroupThreshold(snapshot: AnalysisSnapshot, policy: GroupReviewPolicy = DEMO_GROUP_POLICY): CheckResult[] {
   const apps = applications(snapshot);
   if (!Number.isSafeInteger(policy.thresholdCents) || policy.thresholdCents < 0) throw new AnalysisInputError('INVALID_INPUT', 'Invalid threshold cents');
   const stages = new Set(policy.activeStages);
@@ -123,7 +122,7 @@ export function checkGroupThreshold(snapshot: InvestigationSnapshot, policy: Gro
   // inactive members still establish the group. Capture their revisions as well.
   const edges = snapshot.relationships.filter(r => {
     if (!apps.has(r.leftApplicationId) || !apps.has(r.rightApplicationId)) throw new AnalysisInputError('INVALID_INPUT', 'Unknown relationship endpoint');
-    return (r.decision === 'confirmed_related' || r.decision === 'confirmed_same_entity') && r.reviewedBy !== null && r.reviewedAt !== null && r.evidenceIds.length > 0 && r.evidenceIds.every(id => {
+    return (r.decision === 'confirmed_related' || r.decision === 'confirmed_same_entity') && ('confirmationSource' in r ? r.confirmationSource === 'authorized_projection' : r.reviewedBy !== null && r.reviewedAt !== null) && r.evidenceIds.length > 0 && r.evidenceIds.every(id => {
       const e = evidence.get(id); return !!e && [r.leftApplicationId, r.rightApplicationId].includes(e.applicationId);
     });
   });
@@ -178,7 +177,7 @@ export function getVerificationState(checkType: CheckType, currentRevision: numb
 export function getPaymentVerificationState(currentRevision: number, reviews: readonly ReviewRecord[] = []): VerificationState {
   return getVerificationState('payment_verification', currentRevision, reviews);
 }
-export function analyzeSnapshot(snapshot: InvestigationSnapshot): AnalysisToolResult {
+export function analyzeSnapshot(snapshot: AnalysisSnapshot): AnalysisToolResult {
   const apps = applications(snapshot);
   const evidence = new Map(snapshot.evidence.map(e => [e.id, e]));
   const skippedCollateralIds = sortedUnique(snapshot.collateral.filter(c => {

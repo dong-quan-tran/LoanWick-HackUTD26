@@ -2,7 +2,7 @@
 
 LoanWick is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
-This branch implements Person 4's shared foundation: TypeScript contracts/runtime schemas, pure deterministic checks, eight application fixtures, source-backed evidence, sample frontend projections, regression tests, and a fixture evaluator. The database, web app, live model worker, and their integration are separate teammates' work and are not implemented or verified here.
+This branch implements Person 4's shared foundation: TypeScript contracts/runtime schemas, pure deterministic checks, eight application fixtures, source-backed evidence, sample frontend projections, regression tests, and a fixture evaluator. This test branch also includes Person 2's database for local integration checks. The web app and live model worker remain separate work. See docs/DATABASE-TESTS.md for the tested database commit and limits.
 
 ## Local setup
 
@@ -22,6 +22,7 @@ PowerShell users can use `npm.cmd` if local execution policy blocks npm.ps1.
 | npm test | Build and run Vitest regression/fixture checks |
 | npm run evaluate | Compare deterministic outputs with independent expected fixtures and verify source hashes/excerpts |
 | npm run fixtures:views | Regenerate explicitly synthetic staff/borrower view samples |
+| npm run test:database | Run the real analysis/database bridge against a ready loopback server |
 | npm run check | Typecheck, tests, and evaluation |
 
 Run build before importing the packages from Node. Package dist files are generated and ignored; do not edit or commit them. Dependency versions are pinned in package-lock.json. No credentials or SpacetimeDB installation are required for these shared checks.
@@ -54,3 +55,5 @@ Use `@loanwick/contracts/domain` for SDK-independent types/constants without loa
 No web/worker/database startup commands are advertised until their owners implement and verify them. Database identity bootstrap, private file storage, and NVIDIA secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
 
 Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON uses LF line endings so document hashes stay stable across platforms. CI covers these shared packages, not the unfinished database/browser/model integration.
+
+Database bridge results and setup: [docs/DATABASE-TESTS.md](docs/DATABASE-TESTS.md). Do not merge this combined test branch before the database owner is ready.
