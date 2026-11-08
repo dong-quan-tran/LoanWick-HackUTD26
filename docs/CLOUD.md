@@ -47,6 +47,8 @@ The `Backend QA` workflow fails a pull request when either copy is stale.
 
 ## Your identity (one-time, per role)
 
+New teammates: follow the short step-by-step guide in [ONBOARDING.md](ONBOARDING.md). Summary below.
+
 Each person uses their own identity. Never share tokens, and never ask for the owner's login.
 
 1. Create the folder for your private token, outside the repository:

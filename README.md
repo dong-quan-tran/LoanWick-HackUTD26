@@ -7,8 +7,8 @@ This tree combines the shared contracts and deterministic checks, the SpacetimeD
 ## Shared cloud database
 
 The team uses one SpacetimeDB Maincloud database: `loanwick-hackutd26-dev` at `https://maincloud.spacetimedb.com`
-(backend `09288eb`, schema-identical to `main`). Get your own authorized identity, configure the frontend, and follow the
-GitHub workflow in [docs/CLOUD.md](docs/CLOUD.md). Publishing is manual and owner-only ([spacetimedb/DEPLOYMENT.md](spacetimedb/DEPLOYMENT.md)).
+(backend `09288eb`, schema-identical to `main`). New teammates: [docs/ONBOARDING.md](docs/ONBOARDING.md) (10-minute setup).
+Team workflow: [docs/CLOUD.md](docs/CLOUD.md). Publishing is manual and owner-only ([spacetimedb/DEPLOYMENT.md](spacetimedb/DEPLOYMENT.md)).
 
 ## Frontend
 
