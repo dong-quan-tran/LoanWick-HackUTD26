@@ -8,6 +8,7 @@ import type { FrontendAdapter, SessionState } from './adapters/types';
 import { inspectContractFile } from './adapters/contract-file';
 import type { ContractFile } from './adapters/contract-file';
 import styles from './ContractVerification.module.css';
+import motion from './motion.module.css';
 import contractFolio from './assets/contract-folio.webp';
 import engravedBanknote from './assets/engraved-banknote.webp';
 
@@ -392,7 +393,7 @@ export function ContractVerification({ adapter, session }: { adapter: FrontendAd
     </section>}
     <WorkspaceShell adapter={adapter} session={session} applicationId={applicationId} chromeVisible={!coverActive} mainId="verification">
     <div className={styles.deskShell}>
-    <main id="verification" tabIndex={-1} className={styles.main} onFocusCapture={event => { if (coverActive && event.target.matches(':focus-visible')) enterDesk(false); }}>
+    <main id="verification" tabIndex={-1} className={`${styles.main} ${!coverActive ? motion.enter : ''}`} onFocusCapture={event => { if (coverActive && event.target.matches(':focus-visible')) enterDesk(false); }}>
       <div className={styles.title}><h1 ref={deskHeading} tabIndex={-1}>{heading}</h1><p>{complete ? 'Review the returned checks and supporting evidence.' : messages.length ? 'Follow the verification as each stage reports back.' : 'Upload your contract. We’ll guide you through the checks.'}</p></div>
       {connected && !coverActive && <div className={styles.loanToolbar}><label>Loan application<select disabled={running || !!documentId || !!jobId} value={applicationId} onChange={event => { reset(); setApplicationId(event.target.value); }}>{applications.map(item => <option key={item.application.id} value={item.application.id}>{item.application.businessName}</option>)}</select></label><span><Icon name="folder" size={16} />Commercial Facility</span><button onClick={() => adapter.disconnect()}>{adapter.mode === 'fixture' ? 'Pause demo' : 'Sign out'}</button></div>}
       {!connected ? !canConnect ? <section className={styles.connection}><h2>{adapter.mode === 'fixture' ? 'Demo connection paused' : 'Connection unavailable'}</h2><p>{adapter.mode === 'fixture' ? 'Reconnect to continue with the synthetic verification demo.' : session.message ?? 'Retry the authorized connection before continuing.'}</p><button className={styles.primary} onClick={() => adapter.retry()}>Retry connection</button></section> : <section className={styles.connection}><h2>Connect your bank session</h2><p>{session.message ?? 'Use your individually authorized officer session.'}</p><form onSubmit={event => { event.preventDefault(); adapter.connect?.(uri, database, token); }}><label>Database endpoint<input required value={uri} onChange={e => setUri(e.target.value)} /></label><label>Database name<input required value={database} onChange={e => setDatabase(e.target.value)} /></label><label>Individual session token<input required type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label><button className={styles.primary} disabled={session.status === 'connecting'}>Connect authorized session</button></form>{session.status === 'disconnected' && <button onClick={() => adapter.retry()}>Retry connection</button>}</section> : <>

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { capture } from './capture';
+import { capture, settleMotion } from './capture';
 
 test('Applications is the staff home and filters leave portfolio summaries intact', async ({ page }) => {
   await page.goto('/');
@@ -36,6 +36,7 @@ for (const viewport of [
     await page.goto('/applications');
     await expect(page.getByRole('table').getByRole('row')).toHaveCount(9);
     await page.evaluate(() => document.fonts.ready);
+    await settleMotion(page);
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
     const overflow = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, elements: Array.from(document.body.querySelectorAll('*')).filter(element => element.getBoundingClientRect().right > innerWidth && !element.closest('table')).map(element => ({ tag: element.tagName, className: element.className, width: element.getBoundingClientRect().width })).slice(0, 12) }));
     expect(overflow.width, JSON.stringify(overflow.elements)).toBeLessThanOrEqual(viewport.width);
@@ -76,4 +77,23 @@ test('portfolio updates after an investigation and borrower home stays isolated'
   await page.goto('/');
   await expect(page).toHaveURL(/\/applications$/);
   await expect(page.getByRole('link', { name: 'Verify contract', exact: true })).toHaveCount(0);
+});
+
+test('reduced motion leaves arrivals visible and keyboard case tabs usable', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/applications');
+  await expect(page.getByRole('table').getByRole('row')).toHaveCount(9);
+  expect(await page.locator('main').evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
+  await expect(page.getByLabel('Total requested summary')).toContainText('$2M');
+  await page.getByRole('link', { name: 'Cedar Demo Excavation', exact: true }).click();
+  const evidence = page.getByRole('tab', { name: 'Findings & evidence' });
+  await evidence.focus();
+  await page.keyboard.press('End');
+  const details = page.getByRole('tab', { name: 'Case details' });
+  await expect(details).toBeFocused();
+  await expect(page.getByRole('tabpanel', { name: 'Case details' })).toBeVisible();
+  await page.keyboard.press('Home');
+  await expect(evidence).toBeFocused();
+  await expect(page.getByRole('tabpanel', { name: 'Findings & evidence' })).toBeVisible();
+  expect(await page.locator('main').evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0);
 });

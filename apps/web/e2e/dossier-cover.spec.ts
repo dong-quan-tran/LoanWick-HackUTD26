@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync } from 'node:fs';
-import { capture } from './capture';
+import { capture, settleMotion } from './capture';
 
 for (const viewport of [
   { name: 'desktop', width: 1440, height: 900 },
@@ -15,6 +15,7 @@ for (const viewport of [
     const heading = page.getByRole('heading', { name: 'Verify a loan contract', exact: true });
     await expect(cover).toBeVisible();
     await expect(page.getByRole('button', { name: 'Choose contract', exact: true })).toBeEnabled();
+    await settleMotion(page);
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => Array.from(document.images).every(image => image.complete && image.naturalWidth > 0));
@@ -25,7 +26,7 @@ for (const viewport of [
     await expect(cover).toHaveCount(0);
     await expect(heading).toBeFocused();
     await expect(page.getByRole('region', { name: 'Contract upload', exact: true })).toBeInViewport();
-    await page.getByRole('main').evaluate(element => Promise.all(element.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished)));
+    await settleMotion(page);
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
     await capture(page, `desk-${viewport.name}.png`);

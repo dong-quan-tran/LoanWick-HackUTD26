@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { capture } from './capture';
+import { capture, settleMotion } from './capture';
 
 test('simplified officer entry, staged verification messages, and plain-language concern details', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 }); await page.goto('/verify');
@@ -17,6 +17,7 @@ test('simplified officer entry, staged verification messages, and plain-language
   await expect(page.getByRole('combobox', { name: 'Loan application', exact: true })).not.toBeVisible();
   await expect(page.getByRole('tab')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Case history' })).toHaveCount(0);
+  await settleMotion(page);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Try a sample verification' }).click();
   await expect(page.getByRole('heading', { name: 'Verifying your contract' })).toBeVisible();
@@ -51,6 +52,7 @@ test('PDF and DOCX submission runs the staged verification sequence and rejects 
   await expect(page.getByRole('heading', { name: 'Verification complete' })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole('log', { name: 'Verification messages' })).toContainText('Verification checks finished.');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await settleMotion(page);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await capture(page, 'verification-intake-mobile.png');
   await page.getByRole('button', { name: 'New verification', exact: true }).click();

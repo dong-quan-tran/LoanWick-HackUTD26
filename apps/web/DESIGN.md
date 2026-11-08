@@ -280,6 +280,11 @@ A flat white bordered upload panel contains the small generated folio in a (116p
 ### Evidence and supporting documents
 Evidence panels keep application context, filename, document version, exact marked excerpt, locator, and source action together. The native source dialog has a title, close control, bounded size, and written access failure. Borrower synthetic-document explanation and action remain grouped in a pale tinted container; its text child can shrink without overflow. Generated folio and engraved-paper assets keep their adjacent provenance and prompt records. Banknote decoration appears only on the cover, masked away from text, and drifts over (24s/29s) only when motion is allowed.
 
+### Workspace entrances
+`src/motion.module.css` adapts the entrance language from `claude/visual-polish` (`a18838c`): an (8px) fade-and-rise with `cubic-bezier(.2, .8, .2, 1)`. The four portfolio summaries enter over (500ms), staggered by (70ms) with a maximum (210ms) delay. Pipeline segments grow from the left over (800ms); proportional requested-amount bars use (900ms). These bars describe portfolio distribution and requested amounts, not verification progress.
+
+The application table panel, borrower view, entered verification desk, and newly selected case tab use the same rise over (450ms). Case-tab entrance restarts on a tab change; ordinary subscription updates and typing keep the active view mounted. The shell stays still. Default content is visible; entrance styles apply only with `prefers-reduced-motion: no-preference`. Animations release their styles after arrival so popovers and dialogs retain their normal stacking. The dossier cover and its existing drift remain scoped exceptions.
+
 ## Do's and Don'ts
 
 ### Do:
