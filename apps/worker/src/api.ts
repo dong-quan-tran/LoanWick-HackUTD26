@@ -26,12 +26,12 @@ server.listen(port, host, () => {
 });
 
 async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
-  const url = request.url ?? "/";
-  if (request.method === "GET" && url === "/api/health") {
+  const path = (request.url ?? "/").split("?")[0]?.replace(/\/+$/, "") || "/";
+  if (request.method === "GET" && path === "/api/health") {
     send(response, 200, { ok: true });
     return;
   }
-  if (request.method !== "POST" || url !== "/api/investigate") {
+  if ((request.method !== "GET" && request.method !== "POST") || path !== "/api/investigate") {
     send(response, 404, { error: "NOT_FOUND", message: "not found" });
     return;
   }
