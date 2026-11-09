@@ -1,5 +1,9 @@
 # LoanWick's DealPilot - HackUTD
 
+> **Winner, Goldman Sachs Track — HackUTD 2026: ZeroDay**
+>
+> [View our project on Devpost](https://devpost.com/software/loan-wick)
+
 DealPilot is a hackathon prototype for evidence-backed commercial-loan investigation and human clarification. All included applications and documents are synthetic. No money moves.
 
 This tree combines the shared contracts and deterministic checks, the SpacetimeDB module, the officer/borrower/reviewer frontend, and the worker smoke client. The live adapter has passed a browser workflow against a disposable database with separate authorized role sessions. A connected NVIDIA investigation, document intake, and original-source downloads remain pending. See docs/DATABASE-TESTS.md for the tested database limits.
