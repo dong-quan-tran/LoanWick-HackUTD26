@@ -65,3 +65,7 @@ Use `@loanwick/contracts/domain` for SDK-independent types/constants without loa
 The frontend startup commands are documented above. Database setup is in [docs/DATABASE-TESTS.md](docs/DATABASE-TESTS.md) and [spacetimedb/README.md](spacetimedb/README.md). The worker smoke client is in [apps/worker/README.md](apps/worker/README.md) and does not connect to the database yet. Database identity bootstrap, private file storage, and model-provider secrets belong to those components; do not put worker secrets into VITE_* variables. Fixture identities are labels only and do not grant a real role.
 
 Shared checks run on pull requests and main pushes using Node 24 on Windows and Linux. Source JSON and database fixture text use LF line endings so document hashes stay stable across platforms. CI covers the shared packages, database checks, and web checks.
+
+## Developer
+
+Johnny (Dong Quan) Tran
