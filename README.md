@@ -68,4 +68,4 @@ Shared checks run on pull requests and main pushes using Node 24 on Windows and 
 
 ## Developer
 
-Johnny (Dong Quan) Tran
+[Johnny (Dong Quan) Tran](https://github.com/dong-quan-tran) | [dongquan.tran.johnny@gmail.com](mailto:dongquan.tran.johnny@gmail.com)
