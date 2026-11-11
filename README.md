@@ -75,3 +75,5 @@ Shared checks run on pull requests and main pushes using Node 24 on Windows and 
 [Johnny (Dong Quan) Tran](https://github.com/dong-quan-tran) | [dongquan.tran.johnny@gmail.com](mailto:dongquan.tran.johnny@gmail.com)
 
 [Vu Quang Minh Le](https://github.com/minhle211) | [minh.levuq@gmail.com](mailto:minh.levuq@gmail.com)
+
+[Quang Tuong (Jason) Pham](https://github.com/jasonpham2002) | [phamtuong20feb@gmail.com](mailto:phamtuong20feb@gmail.com)
